@@ -1,0 +1,776 @@
+/* ── TOOLBAR ──────────────────────────────────────────────── */
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.searchWrap {
+    position: relative;
+    flex: 1;
+    min-width: 180px;
+    max-width: 320px;
+    display: flex;
+    align-items: center;
+}
+
+.searchWrap svg {
+    position: absolute;
+    left: 10px;
+    color: var(--brown-400);
+    pointer-events: none;
+}
+
+.search {
+    width: 100%;
+    padding: 8px 12px 8px 34px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    font-size: 13px;
+    font-family: var(--font);
+    color: var(--brown-900);
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.search:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(212, 96, 26, .1);
+}
+
+.filterBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    color: var(--brown-700);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    font-family: var(--font);
+}
+
+.filterBtn:hover {
+    background: var(--brown-50);
+}
+
+.filterBtn.active {
+    background: var(--brown-100);
+    border-color: var(--brown-300);
+    color: var(--brown-900);
+    font-weight: 600;
+}
+
+.viewToggle {
+    display: flex;
+    border: 1px solid var(--brown-200);
+    border-radius: var(--radius-sm, 8px);
+    overflow: hidden;
+    background: #fff;
+}
+
+.vtBtn {
+    padding: 7px 12px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--brown-500);
+    font-size: 16px;
+    transition: all var(--transition);
+}
+
+.vtBtn.active {
+    background: var(--brown-100);
+    color: var(--accent);
+}
+
+/* ── BUTTONS ──────────────────────────────────────────────── */
+.btnPrimary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm, 8px);
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(212, 96, 26, .3);
+    transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+    white-space: nowrap;
+}
+
+.btnPrimary:hover {
+    background: #bf5516;
+    box-shadow: 0 4px 12px rgba(212, 96, 26, .4);
+    transform: translateY(-1px);
+}
+
+.btnPrimary svg {
+    width: 15px;
+    height: 15px;
+}
+
+.btnGhost {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    color: var(--brown-700);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+}
+
+.btnGhost:hover {
+    background: var(--brown-50);
+    border-color: var(--brown-300);
+}
+
+.btnDanger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition);
+}
+
+.btnDanger:hover {
+    background: #fee2e2;
+}
+
+.btnSm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* ── STATE MESSAGES ───────────────────────────────────────── */
+.stateMsg {
+    text-align: center;
+    padding: 40px;
+    font-size: 13px;
+    color: var(--brown-400);
+}
+
+.errorMsg {
+    color: var(--danger);
+}
+
+/* ── GRID VIEW ────────────────────────────────────────────── */
+.boothGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.boothCard {
+    background: #fff;
+    border-radius: var(--radius, 12px);
+    border: 1px solid var(--brown-100);
+    box-shadow: 0 1px 4px rgba(45, 26, 14, .08), 0 1px 2px rgba(45, 26, 14, .05);
+    overflow: hidden;
+    transition: box-shadow var(--transition), transform var(--transition);
+    cursor: pointer;
+}
+
+.boothCard:hover {
+    box-shadow: 0 4px 20px rgba(45, 26, 14, .1), 0 2px 8px rgba(45, 26, 14, .06);
+    transform: translateY(-2px);
+}
+
+.boothCard.inactive {
+    opacity: .65;
+}
+
+.bcHeader {
+    padding: 16px 18px 14px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--brown-50);
+}
+
+.bcAvatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 17px;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.bcAvatar.inactive {
+    background: var(--brown-300);
+}
+
+.bcInfo {
+    flex: 1;
+    margin-left: 12px;
+    min-width: 0;
+}
+
+.bcName {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--brown-900);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bcId {
+    font-size: 11px;
+    color: var(--brown-400);
+    margin-top: 1px;
+}
+
+.bcBadge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.badgeActive {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.badgeInactive {
+    background: var(--brown-100);
+    color: var(--brown-500);
+}
+
+.bcBody {
+    padding: 14px 18px;
+}
+
+.bcAddress {
+    font-size: 13px;
+    color: var(--brown-600);
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 14px;
+    line-height: 1.5;
+}
+
+.bcAddress svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--brown-400);
+}
+
+.bcStats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.bcStat {
+    background: var(--brown-50);
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+}
+
+.bcStatVal {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--brown-900);
+}
+
+.bcStatLbl {
+    font-size: 10px;
+    color: var(--brown-500);
+    margin-top: 1px;
+    line-height: 1.2;
+}
+
+.bcFooter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--brown-50);
+}
+
+.bcKeeper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.keeperAvatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: var(--brown-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--brown-700);
+    flex-shrink: 0;
+}
+
+.keeperName {
+    font-size: 12px;
+    color: var(--brown-600);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.keeperEmpty {
+    font-size: 12px;
+    color: var(--brown-300);
+}
+
+.bcActions {
+    display: flex;
+    gap: 6px;
+}
+
+.icBtn {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    color: var(--brown-500);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: all var(--transition);
+}
+
+.icBtn:hover {
+    background: var(--brown-50);
+    color: var(--brown-900);
+    border-color: var(--brown-300);
+}
+
+.icBtn.del:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #b91c1c;
+}
+
+/* ── TABLE VIEW ───────────────────────────────────────────── */
+.tableWrap {
+    background: #fff;
+    border-radius: var(--radius, 12px);
+    border: 1px solid var(--brown-100);
+    box-shadow: 0 1px 4px rgba(45, 26, 14, .08);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead th {
+    background: var(--brown-50);
+    padding: 11px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--brown-500);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    text-align: left;
+    border-bottom: 1px solid var(--brown-100);
+    white-space: nowrap;
+}
+
+tbody td {
+    padding: 13px 16px;
+    font-size: 13px;
+    color: var(--brown-800);
+    border-bottom: 1px solid var(--brown-50);
+    vertical-align: middle;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr:hover td {
+    background: var(--brown-50);
+}
+
+.tblName {
+    font-weight: 600;
+    color: var(--brown-900);
+}
+
+.tblAddr {
+    font-size: 12px;
+    color: var(--brown-500);
+    margin-top: 2px;
+}
+
+.monoCell {
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--brown-600);
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.badgeOn {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.badgeOff {
+    background: var(--brown-100);
+    color: var(--brown-500);
+}
+
+.actBtns {
+    display: flex;
+    gap: 6px;
+}
+
+/* ── EMPTY STATE ──────────────────────────────────────────── */
+.empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--brown-400);
+}
+
+.emptyIcon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.emptyTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--brown-600);
+    margin-bottom: 6px;
+}
+
+.emptySub {
+    font-size: 13px;
+}
+
+/* ── DRAWER ───────────────────────────────────────────────── */
+.drawerBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 14, 6, .4);
+    z-index: 900;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition);
+}
+
+.drawerBackdrop.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 380px;
+    background: #fff;
+    z-index: 901;
+    transform: translateX(100%);
+    transition: transform var(--transition);
+    box-shadow: -8px 0 32px rgba(45, 26, 14, .12);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.drawer.show {
+    transform: none;
+}
+
+.drawerHead {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--brown-100);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.drawerAvatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 20px;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.drawerInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.drawerName {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--brown-950, var(--brown-900));
+}
+
+.drawerId {
+    font-size: 12px;
+    color: var(--brown-400);
+}
+
+.drawerClose {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: var(--brown-50);
+    color: var(--brown-600);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: background var(--transition);
+}
+
+.drawerClose:hover {
+    background: var(--brown-100);
+}
+
+.drawerBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.detailSection {
+    margin-bottom: 20px;
+}
+
+.detailSectionTitle {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--brown-400);
+    margin-bottom: 10px;
+}
+
+.detailRow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--brown-50);
+    gap: 12px;
+}
+
+.detailRow:last-child {
+    border-bottom: none;
+}
+
+.detailKey {
+    font-size: 13px;
+    color: var(--brown-500);
+    flex-shrink: 0;
+}
+
+.detailVal {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--brown-900);
+    text-align: right;
+}
+
+.miniStaff {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--brown-50);
+    border-radius: 8px;
+    margin-bottom: 6px;
+}
+
+.staffAv {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--brown-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--brown-700);
+    flex-shrink: 0;
+}
+
+.staffInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.staffName {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brown-900);
+}
+
+.staffRole {
+    font-size: 11px;
+    color: var(--brown-500);
+}
+
+.drawerFoot {
+    padding: 14px 20px;
+    border-top: 1px solid var(--brown-100);
+    display: flex;
+    gap: 8px;
+}
+
+.tableWrap {
+    overflow-x: auto;
+}
+
+.thSticky,
+.tdSticky {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 2;
+}
+
+.thSticky {
+    background: var(--brown-50);
+    z-index: 3;
+}
+
+.itemCell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 200px;
+}
+
+.itemInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.itemName {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brown-900);
+}
+
+.itemCat {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.editBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid var(--brown-200);
+    border-radius: var(--radius-sm, 8px);
+    background: #fff;
+    color: var(--brown-600);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all var(--transition);
+}
+
+.editBtn:hover {
+    background: var(--brown-50);
+    border-color: var(--brown-300);
+    color: var(--brown-900);
+}
+
+.statusCell {
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* ── RESPONSIVE ───────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .searchWrap {
+        max-width: none;
+    }
+
+    .boothGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .drawer {
+        width: 100%;
+    }
+}

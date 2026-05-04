@@ -1,0 +1,475 @@
+/* src/pages/StokBooth/StokBoothMatrix.module.css */
+
+/* ── Page layout ──────────────────────────────────────────────────────────── */
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    min-height: 100%;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.pageHeader {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--brown-400, #a08060);
+}
+
+.breadcrumbSep {
+    opacity: 0.5;
+}
+
+.pageTitle {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--brown-900, #2c1a0e);
+    margin: 0;
+}
+
+.pageSubtitle {
+    font-size: 13px;
+    color: var(--brown-400, #a08060);
+    margin: 0;
+}
+
+/* ── Summary cards ────────────────────────────────────────────────────────── */
+.summary {
+    display: flex;
+    gap: 50px;
+    flex-wrap: wrap;
+}
+
+.sumCard {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--surface, #fff);
+    border: 0.5px solid var(--border, rgba(0, 0, 0, 0.1));
+    border-radius: 10px;
+    padding: 10px 18px;
+    min-width: 150px;
+}
+
+.sumValue {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--brown-900, #2c1a0e);
+    line-height: 1;
+}
+
+.sumLabel {
+    font-size: 11px;
+    color: var(--brown-400, #a08060);
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+.toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 10px 0 20px 30px;
+}
+
+.searchBox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface, #fff);
+    border: 0.5px solid var(--border, rgba(0, 0, 0, 0.12));
+    border-radius: 8px;
+    padding: 0 12px;
+    flex: 1;
+    min-width: 180px;
+    max-width: 280px;
+}
+
+.searchBox svg {
+    width: 14px;
+    height: 14px;
+    color: var(--brown-300, #c4a882);
+    flex-shrink: 0;
+}
+
+.searchBox input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 13px;
+    color: var(--brown-900, #2c1a0e);
+    width: 100%;
+    padding: 8px 0;
+}
+
+.searchBox input::placeholder {
+    color: var(--brown-300, #c4a882);
+}
+
+.select {
+    font-size: 13px;
+    padding: 7px 40px;
+    margin-left: 20px;
+    border-radius: 8px;
+    border: 0.5px solid var(--border, rgba(0, 0, 0, 0.12));
+    background: var(--surface, #fff);
+    color: var(--brown-900, #2c1a0e);
+    cursor: pointer;
+    outline: none;
+}
+
+.select:focus {
+    border-color: var(--brown-400, #a08060);
+}
+
+/* ── Card wrapper ─────────────────────────────────────────────────────────── */
+/* .card {
+    background: var(--surface, #fff);
+    border: 0.5px solid var(--border, rgba(0, 0, 0, 0.1));
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+} */
+
+.card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--brown-100);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.cardHeader {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--brown-100);
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.cardTitle {
+    margin-bottom: 20px;
+    padding-top: 15px;
+    padding-left: 50px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brown-900);
+}
+
+/* ── Table wrap (scroll) ──────────────────────────────────────────────────── */
+.tableWrap {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 520px;
+}
+
+/* ── Table ────────────────────────────────────────────────────────────────── */
+.table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+/* Sticky header row */
+.table thead th {
+    background: var(--surface-2, #faf8f5);
+    padding: 10px 14px;
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--brown-400, #a08060);
+    border-bottom: 0.5px solid var(--border, rgba(0, 0, 0, 0.1));
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+/* Sticky first column header */
+.thSticky {
+    text-align: left !important;
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 3 !important;
+    background: var(--surface-2, #faf8f5) !important;
+    min-width: 160px;
+}
+
+.thBooth {
+    text-align: center;
+    min-width: 100px;
+}
+
+/* Body cells */
+.table tbody td {
+    padding: 10px 14px;
+    border-bottom: 0.5px solid var(--border, rgba(0, 0, 0, 0.06));
+    vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table tbody tr:hover td {
+    background: var(--surface-2, #faf8f5);
+}
+
+/* Sticky first column body */
+.tdSticky {
+    position: sticky;
+    left: 0;
+    background: var(--surface, #fff);
+    z-index: 1;
+    min-width: 160px;
+    max-width: 200px;
+}
+
+.table tbody tr:hover .tdSticky {
+    background: var(--surface-2, #faf8f5);
+}
+
+.itemCell {
+    display: flex;
+    align-items: center;
+    /* justify-content: space-between; */
+    gap: 4px;
+}
+
+.itemInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.iconBtn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--brown-100);
+    background: #fff;
+    cursor: pointer;
+    color: var(--brown-500);
+    transition: all var(--transition);
+}
+
+.iconBtn svg {
+    width: 13px;
+    height: 13px;
+}
+
+.iconBtn:hover {
+    background: var(--brown-50);
+    color: var(--brown-800);
+    border-color: var(--brown-200);
+}
+
+
+.detailBtn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--brown-300, #c4a882);
+    cursor: pointer;
+    /* opacity: 0; */
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.detailBtn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.detailBtn:hover {
+    background: var(--brown-100, #f0e8de);
+    color: var(--brown-700, #5c3d1e);
+}
+
+/* tr:hover .detailBtn {
+    opacity: 1;
+} */
+
+.tdCenter {
+    text-align: center;
+}
+
+.itemName {
+    font-weight: 500;
+    color: var(--brown-900, #2c1a0e);
+    white-space: nowrap;
+}
+
+.itemCat {
+    font-size: 11px;
+    color: var(--brown-300, #c4a882);
+    white-space: nowrap;
+}
+
+/* ── Pills ────────────────────────────────────────────────────────────────── */
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 99px;
+    white-space: nowrap;
+    cursor: default;
+    user-select: none;
+}
+
+.pillAman {
+    background: #EAF3DE;
+    color: #3B6D11;
+}
+
+.pillMenipis {
+    background: #FAEEDA;
+    color: #854F0B;
+}
+
+.pillKritis {
+    background: #FCEBEB;
+    color: #A32D2D;
+}
+
+.pillHabis {
+    background: #F7C1C1;
+    color: #791F1F;
+}
+
+.pillOverstock {
+    background: #E6F1FB;
+    color: #185FA5;
+}
+
+.pillNonaktif {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--brown-300, #c4a882);
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dotAman {
+    background: #639922;
+}
+
+.dotMenipis {
+    background: #BA7517;
+}
+
+.dotKritis {
+    background: #E24B4A;
+}
+
+.dotHabis {
+    background: #A32D2D;
+}
+
+.dotOverstock {
+    background: #378ADD;
+}
+
+/* ── Tooltip ──────────────────────────────────────────────────────────────── */
+.pillWrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.tooltipPop {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    /* ← jarak dari pill, ubah 4px sesuai selera */
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface, #fff);
+    border: 0.5px solid var(--border, rgba(0, 0, 0, 0.12));
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--brown-900, #2c1a0e);
+    z-index: 9999;
+    min-width: 130px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    line-height: 1.9;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.pillWrap:hover .tooltipPop {
+    display: block;
+}
+
+.tooltipBooth {
+    font-weight: 500;
+    font-size: 11px;
+    color: var(--brown-400, #a08060);
+    margin-bottom: 4px;
+    border-bottom: 0.5px solid var(--border, rgba(0, 0, 0, 0.08));
+    padding-bottom: 4px;
+}
+
+.tooltipRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+}
+
+.tooltipLabel {
+    color: var(--brown-300, #c4a882);
+}
+
+.tooltipVal {
+    font-weight: 500;
+}
+
+/* ── Table footer ─────────────────────────────────────────────────────────── */
+.tableFooter {
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--brown-300, #c4a882);
+    border-top: 0.5px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+/* ── State messages ───────────────────────────────────────────────────────── */
+.stateMsg {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--brown-300, #c4a882);
+    font-size: 13px;
+}
+
+.stateMsgError {
+    color: var(--danger, #e24b4a);
+}

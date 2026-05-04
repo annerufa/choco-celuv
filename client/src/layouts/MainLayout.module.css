@@ -1,0 +1,21 @@
+/* src/layouts/MainLayout.module.css */
+
+.main {
+    margin-top: var(--navbar-h);
+    margin-left: var(--sidebar-w);
+    min-height: calc(100vh - var(--navbar-h));
+    transition: margin-left var(--transition);
+    padding: 24px;
+}
+
+.mainCollapsed {
+    margin-left: var(--sidebar-collapsed);
+}
+
+@media (max-width: 768px) {
+    .main {
+        margin-left: 0 !important;
+        padding: 16px;
+        padding-bottom: 72px;
+    }
+}

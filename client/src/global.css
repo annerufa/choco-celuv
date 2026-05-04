@@ -1,0 +1,62 @@
+/* src/global.css */
+
+/* ── CSS Variables ─────────────────────────────────── */
+:root {
+    --brown-900: #1C1008;
+    --brown-800: #2D1A0E;
+    --brown-700: #3D2314;
+    --brown-600: #5C3420;
+    --brown-500: #7A4830;
+    --brown-400: #A0643F;
+    --brown-300: #C68A6A;
+    --brown-200: #E8C4A8;
+    --brown-100: #F5E6D8;
+    --brown-50: #FDF5EE;
+    --accent: #D4500A;
+    --accent-light: #F4874A;
+    --success: #2E7D52;
+    --warning: #B45309;
+    --danger: #B91C1C;
+
+    --sidebar-w: 240px;
+    --sidebar-collapsed: 64px;
+    --navbar-h: 56px;
+    --transition: 0.25s cubic-bezier(.4, 0, .2, 1);
+    --radius: 10px;
+    --font: 'Plus Jakarta Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+}
+
+/* ── Reset ─────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Base ──────────────────────────────────────────── */
+body {
+    font-family: var(--font);
+    background: var(--brown-50);
+    color: var(--brown-900);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+button {
+    cursor: pointer;
+    font-family: var(--font);
+}
+
+input,
+select,
+textarea {
+    font-family: var(--font);
+}

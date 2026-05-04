@@ -1,0 +1,91 @@
+.mobileBottomNav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--brown-900);
+    border-top: 1px solid var(--brown-800);
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    z-index: 90;
+    justify-content: space-around;
+}
+
+@media (max-width: 768px) {
+    .mobileBottomNav {
+        display: flex;
+    }
+}
+
+.mobNavBtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 16px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--brown-500);
+    font-family: var(--font);
+    font-size: 9px;
+    font-weight: 600;
+    transition: color var(--transition);
+}
+
+.mobNavBtn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.active {
+    color: var(--accent-light);
+}
+
+/* src/components/MobileBottomNav/MobileBottomNav.module.css */
+
+.mobileBottomNav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--brown-900);
+    border-top: 1px solid var(--brown-800);
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    z-index: 90;
+    justify-content: space-around;
+}
+
+@media (max-width: 768px) {
+    .mobileBottomNav {
+        display: flex;
+    }
+}
+
+.mobNavBtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 16px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--brown-500);
+    font-family: var(--font);
+    font-size: 9px;
+    font-weight: 600;
+    transition: color var(--transition);
+    text-decoration: none;
+    /* untuk Link */
+}
+
+.mobNavBtn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.active {
+    color: var(--accent-light);
+}

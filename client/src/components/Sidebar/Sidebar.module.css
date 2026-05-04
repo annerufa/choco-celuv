@@ -1,0 +1,315 @@
+/* ── OVERLAY (mobile) ───────────────────────────── */
+.overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .5);
+    z-index: 80;
+    backdrop-filter: blur(2px);
+}
+
+@media (max-width: 768px) {
+    .overlay.visible {
+        display: block;
+    }
+}
+
+/* ── SIDEBAR ─────────────────────────────────────── */
+.sidebar {
+    position: fixed;
+    top: var(--navbar-h);
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-w);
+    /* background: var(--brown-900); */
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    z-index: 90;
+    transition: width var(--transition), transform var(--transition);
+    /* Baris 221 */
+    border-right: 1px solid #eddccc;
+    /* Baris 222 */
+    box-shadow: 0 1px 4px rgba(45, 26, 14, .08);
+    overflow: hidden;
+}
+
+.collapsed {
+    width: var(--sidebar-collapsed);
+}
+
+/* Mobile: sidebar geser masuk/keluar */
+@media (max-width: 768px) {
+    .sidebar {
+        width: var(--sidebar-w) !important;
+        transform: translateX(-100%);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, .4);
+    }
+
+    .mobile-open {
+        transform: translateX(0);
+    }
+}
+
+.sidebarScroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--brown-700) transparent;
+}
+
+/* ── MENU SECTION ───────────────────────────────── */
+.menuSection {
+    margin-bottom: 4px;
+}
+
+.menuLabel {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--brown-600);
+    padding: 8px 10px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: opacity var(--transition), height var(--transition);
+}
+
+.collapsed .menuLabel {
+    opacity: 0;
+    height: 0;
+    padding: 0;
+}
+
+/* ── MENU ITEM ──────────────────────────────────── */
+.menuItem {
+    position: relative;
+    margin-bottom: 2px;
+}
+
+.menuBtn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--brown-800);
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    transition: background var(--transition), color var(--transition);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.menuBtn:hover,
+.menuBtn.active {
+    background: var(--brown-800);
+    color: #fff;
+}
+
+.menuBtn.active {
+    color: #fff;
+    /* color: var(--accent-light); */
+}
+
+.menuIcon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menuIcon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.menuText {
+    flex: 1;
+    opacity: 1;
+    transition: opacity var(--transition);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.collapsed .menuText {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.menuArrow {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    transition: transform var(--transition), opacity var(--transition);
+}
+
+.collapsed .menuArrow {
+    opacity: 0;
+}
+
+.open>.menuBtn .menuArrow {
+    transform: rotate(90deg);
+}
+
+/* badge count */
+.menuBadge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    transition: opacity var(--transition);
+}
+
+.collapsed .menuBadge {
+    opacity: 0;
+}
+
+/* ── SUBMENU ────────────────────────────────────── */
+.submenu {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s cubic-bezier(.4, 0, .2, 1);
+    padding-left: 10px;
+}
+
+.open>.submenu {
+    max-height: 300px;
+}
+
+/* Collapsed sidebar: submenu muncul di samping */
+.collapsed .submenu {
+    position: fixed;
+    left: var(--sidebar-collapsed);
+    max-height: none !important;
+    /* background: var(--brown-800); */
+    background: #fff;
+    border-radius: 0 10px 10px 0;
+    padding: 6px;
+    width: 180px;
+    box-shadow: 4px 0 16px rgba(0, 0, 0, .3);
+    display: none;
+    z-index: 200;
+
+    margin-top: -40px;
+    /* ← ubah nilai ini, makin besar makin naik */
+}
+
+.collapsed .submenuOpen>.submenu {
+    display: block;
+}
+
+.submenuBtn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--brown-800);
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    transition: background var(--transition), color var(--transition);
+    white-space: nowrap;
+}
+
+.submenuBtn::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--brown-600);
+    flex-shrink: 0;
+    transition: background var(--transition);
+}
+
+.submenuBtn:hover {
+    background: var(--brown-800);
+    color: #fff;
+}
+
+.submenuBtn:hover::before {
+    background: #fff;
+}
+
+.submenuBtn.active {
+    color: #fff;
+    background: var(--accent-light);
+
+    /* background: var(--brown-800); */
+}
+
+.submenuBtn.active::before {
+    background: #fff;
+}
+
+/* ── TOOLTIP (collapsed mode) ────────────────────── */
+.tooltip {
+    position: fixed;
+    left: calc(var(--sidebar-collapsed) + 8px);
+    background: var(--brown-700);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 6px;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 300;
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: opacity .15s, transform .15s;
+}
+
+.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* ── SIDEBAR FOOTER ─────────────────────────────── */
+.sidebarFooter {
+    padding: 12px 8px;
+    /* Baris 221 */
+    border-top: 1px solid #eddccc;
+    /* Baris 222 */
+    box-shadow: 4px 1px 4px rgba(45, 26, 14, .08);
+    /* border-top: 1px solid var(--brown-800); */
+    flex-shrink: 0;
+}
+
+
+.collapsed .menuBtn.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 0 3px 3px 0;
+}
+
+/* menu aktif di collapsed — icon jadi accent color
+.collapsed .menuBtn.active {
+    background: var(--brown-800);
+    color: var(--accent-light);
+} */

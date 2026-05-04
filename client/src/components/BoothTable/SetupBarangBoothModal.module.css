@@ -1,0 +1,368 @@
+/* SetupBarangBoothModal.module.css */
+
+/* ── BACKDROP ─────────────────────────────────────────────── */
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 14, 6, 0.45);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* ── MODAL ────────────────────────────────────────────────── */
+.modal {
+    background: #fff;
+    border-radius: var(--radius, 12px);
+    width: 100%;
+    max-width: 560px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 40px rgba(45, 26, 14, 0.18), 0 2px 8px rgba(45, 26, 14, 0.1);
+    overflow: hidden;
+}
+
+/* ── HEADER ───────────────────────────────────────────────── */
+.header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--brown-100);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.headerInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.headerLabel {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--brown-400);
+    margin: 0 0 4px;
+}
+
+.headerTitle {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--brown-900);
+    margin: 0 0 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.headerSub {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0;
+}
+
+.closeBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: var(--brown-50);
+    color: var(--brown-500);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background var(--transition), color var(--transition);
+}
+
+.closeBtn:hover {
+    background: var(--brown-100);
+    color: var(--brown-900);
+}
+
+/* ── COLUMN LABELS ────────────────────────────────────────── */
+.colLabels {
+    display: grid;
+    grid-template-columns: 1fr 90px 90px 52px;
+    gap: 8px;
+    padding: 8px 20px;
+    background: var(--brown-50);
+    border-bottom: 1px solid var(--brown-100);
+    flex-shrink: 0;
+}
+
+.colLabels span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--brown-400);
+}
+
+.colMin,
+.colMax {
+    text-align: center;
+}
+
+.colActive {
+    text-align: center;
+}
+
+/* ── BODY (scrollable) ────────────────────────────────────── */
+.body {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* ── ROW ──────────────────────────────────────────────────── */
+.row {
+    display: grid;
+    grid-template-columns: 1fr 90px 90px 52px;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--brown-50);
+    transition: background var(--transition);
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.row:hover {
+    background: var(--brown-50);
+}
+
+.rowInactive {
+    opacity: 0.5;
+}
+
+/* Booth name cell */
+.boothName {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brown-900);
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.boothIdx {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--brown-300);
+    font-family: monospace;
+    flex-shrink: 0;
+}
+
+/* ── NUMBER INPUT ─────────────────────────────────────────── */
+.fieldWrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.numInput {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    font-size: 13px;
+    font-family: var(--font);
+    font-weight: 600;
+    color: var(--brown-900);
+    text-align: center;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    -moz-appearance: textfield;
+}
+
+.numInput::-webkit-outer-spin-button,
+.numInput::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+.numInput:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(212, 96, 26, 0.1);
+}
+
+.numInput:disabled {
+    background: var(--brown-50);
+    color: var(--brown-300);
+    cursor: not-allowed;
+    border-color: var(--brown-100);
+}
+
+.inputError {
+    border-color: #f87171 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.errMsg {
+    font-size: 10px;
+    color: #b91c1c;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* ── TOGGLE ───────────────────────────────────────────────── */
+.toggleWrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.toggle {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    border-radius: 9px;
+    background: var(--brown-200);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background var(--transition);
+    flex-shrink: 0;
+}
+
+.toggle:focus-visible {
+    outline: 3px solid rgba(212, 96, 26, 0.4);
+    outline-offset: 2px;
+}
+
+.toggleOn {
+    background: var(--accent);
+}
+
+.toggleThumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform var(--transition);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.toggleOn .toggleThumb {
+    transform: translateX(14px);
+}
+
+/* ── FOOTER ───────────────────────────────────────────────── */
+.footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--brown-100);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    background: var(--brown-50);
+}
+
+.footerNote {
+    flex: 1;
+    font-size: 11px;
+    color: var(--brown-400);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.footerActions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* ── BUTTONS (mengikuti gaya BoothTable) ──────────────────── */
+.btnPrimary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm, 8px);
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(212, 96, 26, 0.3);
+    transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+    white-space: nowrap;
+}
+
+.btnPrimary:hover {
+    background: #bf5516;
+    box-shadow: 0 4px 12px rgba(212, 96, 26, 0.4);
+    transform: translateY(-1px);
+}
+
+.btnGhost {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    color: var(--brown-700);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+    white-space: nowrap;
+}
+
+.btnGhost:hover {
+    background: var(--brown-50);
+    border-color: var(--brown-300);
+}
+
+/* ── RESPONSIVE ───────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .backdrop {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .modal {
+        max-height: 92vh;
+        border-radius: var(--radius, 12px) var(--radius, 12px) 0 0;
+    }
+
+    .colLabels,
+    .row {
+        grid-template-columns: 1fr 72px 72px 44px;
+        gap: 6px;
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .footerActions {
+        justify-content: flex-end;
+    }
+}

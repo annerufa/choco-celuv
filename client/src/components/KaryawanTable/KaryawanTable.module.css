@@ -1,0 +1,609 @@
+/* ── TABLE CARD ─────────────────────────────────── */
+.card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--brown-100);
+    overflow: hidden;
+}
+
+.cardHeader {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--brown-100);
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.cardTitle {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brown-900);
+}
+
+.cardActions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ── SEARCH ─────────────────────────────────────── */
+.searchBox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--brown-50);
+    border: 1px solid var(--brown-100);
+    border-radius: 8px;
+    padding: 6px 12px;
+    transition: border-color var(--transition);
+}
+
+.searchBox:focus-within {
+    border-color: var(--brown-300);
+}
+
+.searchBox svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--brown-400);
+}
+
+.searchBox input {
+    border: none;
+    background: transparent;
+    font-family: var(--font);
+    font-size: 12px;
+    color: var(--brown-900);
+    outline: none;
+    width: 140px;
+}
+
+.searchBox input::placeholder {
+    color: var(--brown-400);
+}
+
+/* ── FILTER BUTTONS ──────────────────────────────── */
+.filterGroup {
+    display: flex;
+    border: 1px solid var(--brown-200);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.filterBtn {
+    padding: 6px 12px;
+    border: none;
+    background: #fff;
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--brown-500);
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition);
+    border-right: 1px solid var(--brown-200);
+}
+
+.filterBtn:last-child {
+    border-right: none;
+}
+
+.filterBtn:hover {
+    background: var(--brown-50);
+    color: var(--brown-700);
+}
+
+.filterActive {
+    background: var(--accent) !important;
+    color: #fff !important;
+    font-weight: 600;
+}
+
+/* ── BUTTONS ─────────────────────────────────────── */
+.btnPrimary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(212, 80, 10, 0.25);
+    transition: background var(--transition), box-shadow var(--transition);
+    white-space: nowrap;
+}
+
+.btnPrimary:hover {
+    background: var(--accent-light);
+    box-shadow: 0 4px 12px rgba(212, 80, 10, 0.35);
+}
+
+.btnPrimary svg {
+    width: 15px;
+    height: 15px;
+}
+
+.btnGhost {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    color: var(--brown-700);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+}
+
+.btnGhost:hover {
+    background: var(--brown-50);
+    border-color: var(--brown-300);
+}
+
+.btnDanger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: #FEE2E2;
+    color: var(--danger);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition);
+}
+
+.btnDanger:hover {
+    background: #FECACA;
+}
+
+.btnSm {
+    font-size: 12px;
+    padding: 7px 12px;
+}
+
+/* ── TABLE ───────────────────────────────────────── */
+.tableWrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead th {
+    padding: 10px 20px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--brown-500);
+    background: var(--brown-50);
+    border-bottom: 1px solid var(--brown-100);
+    white-space: nowrap;
+}
+
+tbody td {
+    padding: 12px 20px;
+    font-size: 13px;
+    color: var(--brown-800);
+    border-bottom: 1px solid var(--brown-50);
+    vertical-align: middle;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr:hover td {
+    background: var(--brown-50);
+}
+
+/* ── CELL VARIANTS ───────────────────────────────── */
+.idCell {
+    font-size: 12px;
+    color: var(--brown-400);
+    font-weight: 500;
+    width: 40px;
+}
+
+.monoCell {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--brown-600);
+}
+
+.boothCell {
+    font-size: 12px;
+    color: var(--brown-600);
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stateCell {
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 13px;
+    color: var(--brown-400);
+}
+
+.errorCell {
+    color: var(--danger);
+}
+
+/* ── EMPLOYEE CELL ───────────────────────────────── */
+.employeeCell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+}
+
+.employeeName {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brown-900);
+    line-height: 1.3;
+}
+
+.employeeEmail {
+    font-size: 11px;
+    color: var(--brown-400);
+    line-height: 1.3;
+}
+
+/* ── PILLS ───────────────────────────────────────── */
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pill::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.6;
+    flex-shrink: 0;
+}
+
+.brown {
+    background: var(--brown-100);
+    color: var(--brown-700);
+}
+
+.accent {
+    background: #FEE8D8;
+    color: var(--accent);
+}
+
+.success {
+    background: #D1FAE5;
+    color: var(--success);
+}
+
+.warning {
+    background: #FEF3C7;
+    color: var(--warning);
+}
+
+.danger {
+    background: #FEE2E2;
+    color: var(--danger);
+}
+
+/* ── ACTION BUTTONS ──────────────────────────────── */
+.actionBtns {
+    display: flex;
+    gap: 6px;
+}
+
+.iconBtn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--brown-100);
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brown-500);
+    transition: all var(--transition);
+}
+
+.iconBtn svg {
+    width: 13px;
+    height: 13px;
+}
+
+.iconBtn:hover {
+    background: var(--brown-50);
+    color: var(--brown-800);
+    border-color: var(--brown-200);
+}
+
+.dangerBtn:hover {
+    background: #FEE2E2;
+    color: var(--danger);
+    border-color: #FCA5A5;
+}
+
+/* ── TABLE FOOTER ────────────────────────────────── */
+.tableFooter {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--brown-100);
+    font-size: 12px;
+    color: var(--brown-500);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pagination {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.pageBtn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--brown-100);
+    background: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--font);
+    color: var(--brown-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+}
+
+.pageBtn:hover {
+    background: var(--brown-50);
+    border-color: var(--brown-200);
+}
+
+.pageBtn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.activePage {
+    background: var(--accent) !important;
+    color: #fff !important;
+    border-color: var(--accent) !important;
+}
+
+.pageEllipsis {
+    font-size: 12px;
+    color: var(--brown-400);
+    padding: 0 2px;
+    line-height: 28px;
+}
+
+/* ── DETAIL DRAWER ───────────────────────────────── */
+.drawerBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    z-index: 40;
+    animation: fadeIn 0.2s ease;
+}
+
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 340px;
+    background: #fff;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+.drawerHead {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--brown-100);
+}
+
+.drawerAvatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.drawerInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.drawerName {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--brown-900);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.drawerId {
+    font-size: 12px;
+    color: var(--brown-400);
+    margin-top: 2px;
+}
+
+.drawerClose {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--brown-100);
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--brown-500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all var(--transition);
+}
+
+.drawerClose:hover {
+    background: var(--brown-50);
+    color: var(--brown-800);
+}
+
+.drawerBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.detailSection {
+    margin-bottom: 20px;
+}
+
+.detailSectionTitle {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--brown-400);
+    margin-bottom: 12px;
+}
+
+.detailRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--brown-50);
+}
+
+.detailRow:last-child {
+    border-bottom: none;
+}
+
+.detailKey {
+    font-size: 12px;
+    color: var(--brown-400);
+    flex-shrink: 0;
+}
+
+.detailVal {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--brown-800);
+    text-align: right;
+    word-break: break-all;
+}
+
+.drawerFoot {
+    padding: 16px 20px;
+    border-top: 1px solid var(--brown-100);
+    display: flex;
+    gap: 8px;
+}
+
+/* ── RESPONSIVE ──────────────────────────────────── */
+@media (max-width: 480px) {
+    .cardHeader {
+        padding: 12px 14px;
+    }
+
+    thead th,
+    tbody td {
+        padding: 10px 14px;
+    }
+
+    .searchBox input {
+        width: 100px;
+    }
+
+    .drawer {
+        width: 100%;
+    }
+
+    .filterGroup {
+        display: none;
+    }
+}
