@@ -1,20 +1,23 @@
 // statsConfig.js
 export function getStatsBarang(barangList) {
-    const totalAktif = barangList.filter(b => b.is_active).length;
-    const totalAman = barangList.filter(b => b.is_active && b.stok_status === 'Aman').length;
-    const totalMenipis = barangList.filter(b => b.is_active && b.stok_status === 'Menipis').length;
-    const totalKritis = barangList.filter(b => b.is_active && ['Kritis', 'Habis'].includes(b.stok_status)).length;
+    const totalAktif = barangList.filter(b => b.stock_active).length;
+    const totalOver = barangList.filter(b => b.stock_active && b.stok_status === 'Overstock').length;
+    const totalMenipis = barangList.filter(b => b.stock_active && b.stok_status === 'Menipis').length;
+    const totalKritis = barangList.filter(b => b.stock_active && ['Kritis', 'Habis'].includes(b.stok_status)).length;
 
     return [
         { id: 'total', icon: 'barang', iconVariant: 'brown', value: totalAktif, label: 'Total barang aktif' },
-        { id: 'aman', icon: 'bahan', iconVariant: 'success', value: totalAman, label: 'Stok barang aman' },
         {
             id: 'menipis', icon: 'perlengkapan', iconVariant: 'warning', value: totalMenipis, label: 'Stok menipis',
-            change: totalMenipis > 0 ? { type: 'down', text: 'Perlu restock' } : null
+            change: totalMenipis > 0 ? { type: 'down', text: 'Segera restock barang' } : null
+        },
+        {
+            id: 'over', icon: 'warning', iconVariant: 'accent', value: totalOver, label: 'Overstock',
+            change: totalOver > 0 ? { type: 'up', text: 'Stok terlalu banyak' } : null
         },
         {
             id: 'kritis', icon: 'warning', iconVariant: 'accent', value: totalKritis, label: 'Stok kritis dan habis',
-            change: totalKritis > 0 ? { type: 'down', text: 'Perlu restock' } : null
+            change: totalKritis > 0 ? { type: 'down', text: 'Stok di bawah batas aman' } : null
         },
     ];
 }

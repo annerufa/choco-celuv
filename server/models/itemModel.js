@@ -13,8 +13,10 @@ const getAllPerLoc = async (loc_id) => {
         `SELECT 
             i.*,
             sl.current_stock,
+            sl.safety_stock,
             sl.min_qty,
-            sl.max_qty
+            sl.max_qty,
+            sl.is_active AS stock_active
          FROM items i
          JOIN stock_per_location sl ON i.id = sl.item_id
          WHERE sl.location_id = ?
@@ -25,7 +27,7 @@ const getAllPerLoc = async (loc_id) => {
 };
 
 const create = async (data) => {
-    const { name, category, unit, is_active } = data;
+    const { name, category, unit, safety_stock, min_qty, max_qty, is_active } = data;
 
     const conn = await db.getConnection();
 
@@ -43,7 +45,7 @@ const create = async (data) => {
 
         // 2. Ambil semua lokasi yang ada
         const [locations] = await conn.execute(
-            `SELECT id FROM stock_locations`
+            `SELECT id, type FROM stock_locations`
         );
 
         if (locations.length === 0) {
@@ -52,10 +54,19 @@ const create = async (data) => {
 
         // 3. Generate stock_per_location untuk semua lokasi
         for (const loc of locations) {
+            const isGudangPusat = loc.type === 'warehouse';
+            console.log('isGudangPusat:', isGudangPusat);
+
             await conn.execute(
-                `INSERT INTO stock_per_location (item_id, location_id, current_stock, min_qty, max_qty)
-                 VALUES (?, ?, 0, ?, ?)`,
-                [item_id, loc.id, data.min_qty ?? 0, data.max_qty ?? 0]
+                `INSERT INTO stock_per_location (item_id, location_id, current_stock, min_qty, max_qty, safety_stock)
+         VALUES (?, ?, 0, ?, ?, ?)`,
+                [
+                    item_id,
+                    loc.id,
+                    isGudangPusat ? min_qty : 0,
+                    isGudangPusat ? max_qty : 0,
+                    isGudangPusat ? safety_stock : 0,
+                ]
             );
         }
 

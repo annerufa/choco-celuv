@@ -71,8 +71,9 @@ export default function TambahBarangModal({ isOpen, onClose, onSubmit }) {
                     name: formData.nama,
                     category: formData.kategori,
                     unit: formData.satuan,
-                    min_qty: Number(formData.min),
-                    max_qty: Number(formData.max),
+                    safety_stock: Number(formData.safety_stock) || 0,
+                    min_qty: Number(formData.min) || 0,
+                    max_qty: Number(formData.max) || 0,
                     is_active: 1,
                     // avg_cost & last_cost tidak dikirim — backend default 0
                 }),
@@ -136,7 +137,7 @@ export default function TambahBarangModal({ isOpen, onClose, onSubmit }) {
                         </div>
 
                         {/* Kategori */}
-                        <div className={styles.formGroup}>
+                        <div className={`${styles.formGroup}  ${styles.halfWidth}`}>
                             <label className={styles.label} htmlFor="kategori">Kategori</label>
                             <select
                                 id="kategori"
@@ -152,7 +153,7 @@ export default function TambahBarangModal({ isOpen, onClose, onSubmit }) {
                         </div>
 
                         {/* Satuan */}
-                        <div className={styles.formGroup}>
+                        <div className={`${styles.formGroup}  ${styles.halfWidth}`}>
                             <label className={styles.label} htmlFor="satuan">Satuan</label>
                             <select
                                 id="satuan"
@@ -167,32 +168,69 @@ export default function TambahBarangModal({ isOpen, onClose, onSubmit }) {
                             {errors.satuan && <span className={styles.errorMsg}>{errors.satuan}</span>}
                         </div>
 
+                        {/* safety stock */}
+                        <div className={`${styles.formGroup} ${styles.miniWidth}`}>
+                            <label className={styles.label} htmlFor="safety_stock">Stok Cadangan</label>
+                            <div className={styles.inputWithSuffix}>
+                                <input
+                                    id="safety_stock"
+                                    name="safety_stock"
+                                    type="text"
+                                    className={`${styles.input} ${errors.safety_stock ? styles.inputError : ''}`}
+                                    placeholder="5000"
+                                    value={formData.safety_stock ? Number(formData.safety_stock).toLocaleString('id') : ''}
+                                    onChange={(e) => {
+                                        const raw = e.target.value.replace(/\D/g, '');
+                                        handleChange({ target: { name: 'safety_stock', value: raw } });
+                                    }}
+                                />
+                                <span className={styles.suffix}>{formData.satuan}</span>
+                            </div>
+                            {errors.safety_stock && <span className={styles.errorMsg}>{errors.safety_stock}</span>}
+                        </div>
+
                         {/* Min & Max */}
-                        <div className={styles.formGroup}>
-                            <label className={styles.label} htmlFor="min">Stok Minimum Gudang Pusat</label>
-                            <input
-                                id="min"
-                                name="min"
-                                type="number"
-                                className={`${styles.input} ${errors.min ? styles.inputError : ''}`}
-                                placeholder="0"
-                                value={formData.min}
-                                onChange={handleChange}
-                            />
+                        <div className={`${styles.formGroup} ${styles.miniWidth}`}>
+                            <label className={styles.label} htmlFor="min">Stok Minimum</label>
+                            <div className={styles.inputWithSuffix}>
+                                <input
+                                    id="min"
+                                    name="min"
+                                    type="text"
+                                    className={`${styles.input} ${errors.min ? styles.inputError : ''}`}
+                                    placeholder="5000"
+                                    value={formData.min ? Number(formData.min).toLocaleString('id') : ''}
+                                    onChange={(e) => {
+                                        const raw = e.target.value.replace(/\D/g, '');
+                                        handleChange({ target: { name: 'min', value: raw } });
+                                    }}
+                                />
+                                <span className={styles.suffix}>{formData.satuan}</span>
+                            </div>
+                            <div className={styles.formHint}>Stok minimum untuk segera pesan ke suplier</div>
                             {errors.min && <span className={styles.errorMsg}>{errors.min}</span>}
                         </div>
 
-                        <div className={styles.formGroup}>
-                            <label className={styles.label} htmlFor="max">Stok Maksimum Gudang Pusat</label>
-                            <input
-                                id="max"
-                                name="max"
-                                type="number"
-                                className={`${styles.input} ${errors.max ? styles.inputError : ''}`}
-                                placeholder="0"
-                                value={formData.max}
-                                onChange={handleChange}
-                            />
+                        <div className={`${styles.formGroup} ${styles.miniWidth}`}>
+                            <label className={styles.label} htmlFor="max">Stok Maksimum</label>
+                            <div className={styles.inputWithSuffix}>
+                                <input
+                                    id="max"
+                                    name="max"
+                                    type="text"
+                                    className={`${styles.input} ${errors.max ? styles.inputError : ''}`}
+                                    placeholder="3000"
+                                    value={formData.max ? Number(formData.max).toLocaleString('id') : ''}
+                                    onChange={(e) => {
+                                        // Strip semua non-digit dulu, baru simpan ke state
+                                        const raw = e.target.value.replace(/\D/g, '');
+                                        handleChange({ target: { name: 'max', value: raw } });
+                                    }}
+                                />
+                                <span className={styles.suffix}>{formData.satuan}</span>
+                            </div>
+
+                            <div className={styles.formHint}>Total maks/distribusi + cadangan</div>
                             {errors.max && <span className={styles.errorMsg}>{errors.max}</span>}
                         </div>
 
@@ -208,6 +246,6 @@ export default function TambahBarangModal({ isOpen, onClose, onSubmit }) {
                 </div>
 
             </div>
-        </div>
+        </div >
     );
 }

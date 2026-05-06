@@ -8,15 +8,21 @@ import StockChart from '../../components/StockChart/StockChart';
 import BarangTable from '../../components/BarangTable/BarangTable';
 import { getStatsBarang } from '../../components/StatsGrid/statsConfig';
 
-function getStokStatus(stok, min, max) {
+// function getStokStatus(stok, min, max) {
+//     if (stok <= 0) return 'Habis';
+//     const criticalThreshold = min * 0.4;
+//     if (stok <= criticalThreshold) return 'Kritis';
+//     if (stok <= min) return 'Menipis';
+//     if (stok > max) return 'Overstock';
+//     return 'Aman';
+// }
+function getStokStatus(stok, min, max, safetyStock) {
     if (stok <= 0) return 'Habis';
-    const criticalThreshold = min * 0.4;
-    if (stok <= criticalThreshold) return 'Kritis';
-    if (stok <= min) return 'Menipis';
-    if (stok > max) return 'Overstock';
+    if (stok <= safetyStock) return 'Kritis';  // di bawah safety stock = darurat
+    if (stok <= min) return 'Menipis';          // sudah waktunya order
+    if (stok > max) return 'Overstock';         // terlalu banyak
     return 'Aman';
 }
-
 export default function DataBarangPage() {
     const { user } = useAuth();
     const stokEndpoint = user?.location_id ? `/items?location_id=${user.location_id}` : null;
@@ -39,7 +45,7 @@ export default function DataBarangPage() {
                 display_stok: unitMap[item.unit] ? stok_sekarang / 1000 : stok_sekarang,
                 display_unit: unitMap[item.unit] || item.unit,
                 min, max,
-                stok_status: getStokStatus(stok_sekarang, min, max),
+                stok_status: getStokStatus(stok_sekarang, min, max, item.safety_stock ?? 0),
                 status_label: item.is_active ? 'Aktif' : 'Nonaktif',
             };
         });

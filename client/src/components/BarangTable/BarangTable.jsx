@@ -148,9 +148,11 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
         setBarangList(prev => [{
             ...newItem,
             stok_sekarang: 0,
+            // display_stok: 0,
             min: 0,
             max: 0,
-            stok_status: 'Kritis',
+            stock_active: true,
+            stok_status: 'Habis',
             status_label: 'Aktif',
         }, ...prev]);
         toast.success(`${newItem.name} berhasil ditambahkan!`);
@@ -163,32 +165,13 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
     }
 
     // Submit edit — hit API
-    async function handleEditBarang(id, formData) {
-        try {
-            const res = await fetch(`${BASE_URL}/items/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${getToken()}`,
-                },
-                body: JSON.stringify(formData),
-            });
-
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.payload?.message ?? 'Gagal mengupdate barang');
-
-            const updated = json.payload?.data ?? json;
-            setBarangList(prev => prev.map(b =>
-                b.id === id
-                    ? { ...b, ...updated, status_label: updated.is_active ? 'Aktif' : 'Nonaktif' }
-                    : b
-            ));
-
-            toast.success(`${updated.name} berhasil diupdate!`); // ← tambah ini
-
-        } catch (err) {
-            toast.error(err.message); // ← dan ini
-        }
+    function handleEditBarang(updatedItem) {
+        setBarangList(prev => prev.map(item =>
+            item.id === updatedItem.id
+                ? { ...item, ...updatedItem } // ← merge, jadi min/max/stok tetap dari data lama
+                : item
+        ));
+        toast.success(`${updatedItem.name} berhasil diperbarui!`);
     }
 
     // Nonaktifkan — hit API DELETE (soft delete)
@@ -368,15 +351,15 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                             <td className={styles.monoCell}>{item.display_stok} {item.display_unit}</td>
 
                                             <td>
-                                                <span className={`${styles.pill} ${styles[item.is_active ? stokStatusVariant[item.stok_status] : 'grey']}`}>
-                                                    {item.is_active ? item.stok_status : 'Nonaktif'}
+                                                <span className={`${styles.pill} ${styles[item.stock_active ? stokStatusVariant[item.stok_status] : 'grey']}`}>
+                                                    {item.stock_active ? item.stok_status : 'Nonaktif'}
                                                 </span>
                                                 {/* <span className={`${styles.pill} ${styles[stokStatusVariant[item.stok_status]]}`}>
                                                     {item.stok_status}
                                                 </span> */}
                                             </td>
                                             <td>
-                                                <span className={`${styles.pill} ${styles[item.is_active ? statusVariant[item.status_label] : 'grey']}`}>
+                                                <span className={`${styles.pill} ${styles[item.stock_active ? statusVariant[item.status_label] : 'grey']}`}>
                                                     {item.status_label}
                                                 </span>
                                             </td>
@@ -408,7 +391,7 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                                     </button>
 
                                                     {/* Nonaktifkan — sembunyikan kalau sudah nonaktif */}
-                                                    {item.is_active ? (
+                                                    {item.stock_active ? (
                                                         <button
                                                             className={`${styles.iconBtn} ${styles.danger}`}
                                                             aria-label="Nonaktifkan"

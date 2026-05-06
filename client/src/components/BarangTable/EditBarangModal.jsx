@@ -6,7 +6,7 @@ const KATEGORI = ['Bahan Baku', 'Hasil Mixing', 'Packaging', 'Lainnya'];
 const SATUAN = ['gram', 'ml', 'pcs', 'liter', 'kg'];
 
 export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
-    const [formData, setFormData] = useState({ name: '', category: '', unit: '', max: '', min: '', is_active: 1 });
+    const [formData, setFormData] = useState({ name: '', category: '', unit: '', safety: '', max: '', min: '', is_active: 1 });
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
@@ -17,6 +17,7 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
                 name: item.name ?? '',
                 category: item.category ?? '',
                 unit: item.unit ?? '',
+                safety: parseFloat(item.safety ?? ''),
                 min: parseFloat(item.min ?? ''),
                 max: parseFloat(item.max ?? ''),
                 is_active: item.is_active ?? 1,
@@ -53,7 +54,29 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
 
         setLoading(true);
         try {
-            await onSubmit(item.id, formData);
+            const res = await fetch(`${BASE_URL}/items/${item.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                },
+                body: JSON.stringify({
+                    name: formData.nama,
+                    category: formData.kategori,
+                    unit: formData.satuan,
+                    safety_stock: Number(formData.safety_stock) || 0,
+                    min_qty: Number(formData.min) || 0,
+                    max_qty: Number(formData.max) || 0,
+                    is_active: 1,
+                }),
+            });
+
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.payload?.message ?? 'Gagal mengupdate barang');
+
+            const updatedItem = json.payload?.data ?? json;
+            onSubmit(updatedItem);
+            console.log('after onSubmit');
             onClose();
         } catch (err) {
             setErrors({ submit: err.message || 'Gagal menyimpan perubahan' });
@@ -103,7 +126,7 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
                         </div>
 
                         {/* Kategori */}
-                        <div className={styles.formGroup}>
+                        <div className={`${styles.formGroup}  ${styles.halfWidth}`}>
                             <label className={styles.label} htmlFor="edit-category">Kategori</label>
                             <select
                                 id="edit-category"
@@ -119,13 +142,13 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
                         </div>
 
                         {/* Satuan */}
-                        <div className={styles.formGroup}>
+                        <div className={`${styles.formGroup}  ${styles.halfWidth}`}>
                             <label className={styles.label} htmlFor="edit-unit">Satuan</label>
                             <select
                                 id="edit-unit"
-                                name="unit"
+                                name="satuan"
                                 className={`${styles.input} ${errors.unit ? styles.inputError : ''}`}
-                                value={formData.unit}
+                                value={formData.satuan}
                                 onChange={handleChange}
                             >
                                 <option value="">Pilih satuan...</option>
@@ -134,9 +157,30 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
                             {errors.unit && <span className={styles.errorMsg}>{errors.unit}</span>}
                         </div>
 
+                        <div className={`${styles.formGroup} ${styles.miniWidth}`}>
+                            <label className={styles.label} htmlFor="edit-safety">Stok Cadangan</label>
+                            <div className={styles.inputWithSuffix}>
+                                <input
+                                    id="edit-safety"
+                                    name="safety_stock"
+                                    type="text"
+                                    className={`${styles.input} ${errors.safety_stock ? styles.inputError : ''}`}
+                                    placeholder="5000"
+                                    value={formData.safety_stock ? Number(formData.safety_stock).toLocaleString('id') : ''}
+                                    onChange={(e) => {
+                                        const raw = e.target.value.replace(/\D/g, '');
+                                        handleChange({ target: { name: 'safety_stock', value: raw } });
+                                    }}
+                                />
+                                <span className={styles.suffix}>{formData.satuan}</span>
+                            </div>
+                            {errors.safety_stock && <span className={styles.errorMsg}>{errors.safety_stock}</span>}
+                        </div>
+
+
                         {/* Min */}
-                        <div className={styles.formGroup}>
-                            <label className={styles.label} htmlFor="edit-min">Stok Minimun Gudang Pusat</label>
+                        <div className={`${styles.formGroup} ${styles.miniWidth}`}>
+                            <label className={styles.label} htmlFor="edit-min">Stok Minimun</label>
                             <input
                                 id="edit-min"
                                 name="min"
@@ -150,8 +194,8 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
                         </div>
 
                         {/* Satuan */}
-                        <div className={styles.formGroup}>
-                            <label className={styles.label} htmlFor="edit-max">Stok Minimun Gudang Pusat</label>
+                        <div className={`${styles.formGroup} ${styles.miniWidth}`}>
+                            <label className={styles.label} htmlFor="edit-max">Stok Minimun</label>
                             <input
                                 id="edit-max"
                                 name="max"

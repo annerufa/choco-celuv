@@ -187,6 +187,20 @@ tbody tr:hover td {
     background: var(--brown-50);
 }
 
+/* BarangTable.module.css */
+.inputWithSuffix {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.suffix {
+    position: absolute;
+    right: 12px;
+    color: var(--brown-400);
+    pointer-events: none;
+}
+
 .pill {
     display: inline-flex;
     align-items: center;

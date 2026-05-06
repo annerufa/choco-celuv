@@ -69,7 +69,7 @@
 
 .formGrid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
     gap: 16px;
 }
 
@@ -77,6 +77,14 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+
+.miniWidth {
+    grid-column: span 2;
+}
+
+.halfWidth {
+    grid-column: span 3;
 }
 
 .fullWidth {
@@ -143,6 +151,28 @@
     border: none;
     border-radius: 0;
     box-shadow: none !important;
+}
+
+.formHint {
+    font-size: 10px;
+    color: var(--brown-400);
+    margin-top: 4px;
+    margin-left: 4px;
+}
+
+/* BarangTable.module.css */
+.inputWithSuffix {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.suffix {
+    position: absolute;
+    font-size: 11px;
+    right: 12px;
+    color: var(--brown-400);
+    pointer-events: none;
 }
 
 .errorMsg {
