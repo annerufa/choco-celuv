@@ -25,11 +25,24 @@ const create = async (data) => {
         const booth_id = result.insertId;
         const namaLokasi = `Gudang ${name}`;
 
+        // tambah gudang baru
         const [stokLoc] = await conn.execute(
             `INSERT INTO stock_locations (name, type, booth_id)
              VALUES (?, ?, ?)`,
             [namaLokasi, 'booth', booth_id]
         );
+
+        // tambah stock_per_location untuk semua item yang ada
+        const [items] = await conn.execute(
+            `SELECT id FROM items`
+        );
+        for (const item of items) {
+            await conn.execute(
+                `INSERT INTO stock_per_location (item_id, location_id, current_stock, min_qty, max_qty) 
+                    VALUES (?, ?, 0, 0, 0)`,
+                [item.id, stokLoc.insertId]
+            );
+        }
 
 
         await conn.commit();

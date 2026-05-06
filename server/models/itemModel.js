@@ -5,7 +5,7 @@ const getAll = async () => {
     const [rows] = await db.query(
         'SELECT * FROM items ORDER BY id DESC',
     );
-    return rows[0];
+    return rows;
 };
 
 const getAllPerLoc = async (loc_id) => {
@@ -18,7 +18,6 @@ const getAllPerLoc = async (loc_id) => {
          FROM items i
          JOIN stock_per_location sl ON i.id = sl.item_id
          WHERE sl.location_id = ?
-         AND i.is_active = 1
          ORDER BY i.name ASC`,
         [loc_id]
     );

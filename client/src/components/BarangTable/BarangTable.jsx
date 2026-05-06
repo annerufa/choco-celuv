@@ -14,7 +14,7 @@ const ITEMS_PER_PAGE = 7;
 const statusVariant = {
     'Aktif': 'success',
     'Stok Kritis': 'warning',
-    'Nonaktif': 'danger',
+    'Nonaktif': 'grey',
 };
 
 const kategoriVariant = {
@@ -66,6 +66,9 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
     // const [barangList, setBarangList] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const [filterStokStatus, setFilterStokStatus] = useState([]); // array of selected status
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+
     // const [actionLoading, setActionLoading] = useState(null); // item id yang sedang diproses
 
     /// Proses data item + stok (tanpa merge manual)
@@ -103,12 +106,24 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
     // }, [stokData]); // Hapus 'items' dari sini karena sudah tidak dipakai
 
     // Reset halaman saat search berubah
-    useEffect(() => { setCurrentPage(1); }, [searchQuery]);
-
+    // useEffect(() => { setCurrentPage(1); }, [searchQuery]);
+    // Reset halaman saat search atau filter berubah
+    useEffect(() => { setCurrentPage(1); }, [searchQuery, filterStokStatus]);
     // ── Filter & Pagination ───────────────────────────────────
-    const filtered = barangList.filter(b =>
-        b.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // const filtered = barangList.filter(b =>
+    //     b.name.toLowerCase().includes(searchQuery.toLowerCase())
+    // );
+    const filtered = barangList.filter(b => {
+        const matchSearch = b.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchStok = filterStokStatus.length === 0 || filterStokStatus.includes(b.stok_status);
+        return matchSearch && matchStok;
+    });
+
+    const toggleFilterStok = (status) => {
+        setFilterStokStatus(prev =>
+            prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+        );
+    };
 
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
     const paginated = filtered.slice(
@@ -228,13 +243,78 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
                         </div>
-
+                        {/* 
                         <button className={styles.btnGhost}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
                             </svg>
                             Filter
-                        </button>
+                        </button> */}
+                        <div style={{ position: 'relative' }}>
+                            <button
+                                className={styles.btnGhost}
+                                onClick={() => setIsFilterOpen(prev => !prev)}
+                                style={filterStokStatus.length > 0 ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                                </svg>
+                                Filter
+                                {filterStokStatus.length > 0 && (
+                                    <span style={{
+                                        background: 'var(--primary)',
+                                        color: '#fff',
+                                        borderRadius: '999px',
+                                        fontSize: '11px',
+                                        padding: '0 6px',
+                                        marginLeft: '4px',
+                                        lineHeight: '8px',
+                                    }}>
+                                        {filterStokStatus.length}
+                                    </span>
+                                )}
+                            </button>
+
+                            {isFilterOpen && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 'calc(100% + 8px)',
+                                    right: 0,
+                                    background: 'var(--surface, #fff)',
+                                    border: '1px solid var(--border, #e5e7eb)',
+                                    borderRadius: '10px',
+                                    boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+                                    padding: '12px',
+                                    minWidth: '180px',
+                                    zIndex: 100,
+                                }}>
+                                    <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--brown-400, #9ca3af)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        Status Stok
+                                    </p>
+                                    {Object.keys(stokStatusVariant).map(status => (
+                                        <label key={status} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 4px', cursor: 'pointer', borderRadius: '6px', fontSize: '14px' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={filterStokStatus.includes(status)}
+                                                onChange={() => toggleFilterStok(status)}
+                                                style={{ accentColor: 'var(--accent)', width: '15px', height: '15px' }}
+                                            />
+                                            <span className={`${styles.pill} ${styles[stokStatusVariant[status]]}`} style={{ marginBottom: 0 }}>
+                                                {status}
+                                            </span>
+                                        </label>
+                                    ))}
+                                    {filterStokStatus.length > 0 && (
+                                        <button
+                                            onClick={() => setFilterStokStatus([])}
+                                            style={{ marginTop: '10px', width: '100%', fontSize: '12px', color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '2px 4px' }}
+                                        >
+                                            ✕ Reset filter
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
                         <button className={styles.btnPrimary} onClick={() => setIsTambahOpen(true)}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -285,14 +365,18 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                                     ? `Rp ${Number(item.last_price).toLocaleString('id')} / ${item.unit}`
                                                     : '-'}
                                             </td>
-                                            <td className={styles.monoCell}>{item.display_stok} {item.unit}</td>
+                                            <td className={styles.monoCell}>{item.display_stok} {item.display_unit}</td>
+
                                             <td>
-                                                <span className={`${styles.pill} ${styles[stokStatusVariant[item.stok_status]]}`}>
-                                                    {item.stok_status}
+                                                <span className={`${styles.pill} ${styles[item.is_active ? stokStatusVariant[item.stok_status] : 'grey']}`}>
+                                                    {item.is_active ? item.stok_status : 'Nonaktif'}
                                                 </span>
+                                                {/* <span className={`${styles.pill} ${styles[stokStatusVariant[item.stok_status]]}`}>
+                                                    {item.stok_status}
+                                                </span> */}
                                             </td>
                                             <td>
-                                                <span className={`${styles.pill} ${styles[statusVariant[item.status_label]]}`}>
+                                                <span className={`${styles.pill} ${styles[item.is_active ? statusVariant[item.status_label] : 'grey']}`}>
                                                     {item.status_label}
                                                 </span>
                                             </td>

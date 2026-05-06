@@ -33,7 +33,7 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
 
     // ── Handlers ──────────────────────────────────────────────
     async function handleTambahBooth(newBooth) {
-        const response = await fetch('http://localhost:3000/api/booths', {
+        const response = await fetch('http://localhost:3001/api/booth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newBooth),

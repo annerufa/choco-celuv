@@ -231,6 +231,12 @@ tbody tr:hover td {
     color: var(--danger);
 }
 
+
+.grey {
+    background: #f7f4f4;
+    color: #a8a8a8;
+}
+
 .actionBtns {
     display: flex;
     gap: 6px;

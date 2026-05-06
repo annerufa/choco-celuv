@@ -167,58 +167,9 @@ export default function TambahBarangModal({ isOpen, onClose, onSubmit }) {
                             {errors.satuan && <span className={styles.errorMsg}>{errors.satuan}</span>}
                         </div>
 
-                        {/* Harga Rata-rata
-                        <div className={styles.formGroup}>
-                            <label className={styles.label} htmlFor="hargaRata">Harga Rata-rata</label>
-                            <div className={styles.inputPrefix}>
-                                <span>Rp</span>
-                                <input
-                                    id="hargaRata"
-                                    name="hargaRata"
-                                    type="number"
-                                    className={styles.input}
-                                    placeholder="0"
-                                    value={formData.hargaRata}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                        </div>
-
-                        Harga Terakhir
-                        <div className={styles.formGroup}>
-                            <label className={styles.label} htmlFor="hargaTerakhir">Harga Terakhir</label>
-                            <div className={styles.inputPrefix}>
-                                <span>Rp</span>
-                                <input
-                                    id="hargaTerakhir"
-                                    name="hargaTerakhir"
-                                    type="number"
-                                    className={styles.input}
-                                    placeholder="0"
-                                    value={formData.hargaTerakhir}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                        </div>
-
-                        Stok Awal
-                        <div className={styles.formGroup}>
-                            <label className={styles.label} htmlFor="stokAwal">Stok Awal</label>
-                            <input
-                                id="stokAwal"
-                                name="stokAwal"
-                                type="number"
-                                className={`${styles.input} `}
-                                placeholder="0"
-                                value={formData.stokAwal}
-                                onChange={handleChange}
-                            />
-                            {errors.stokAwal && <span className={styles.errorMsg}>{errors.stokAwal}</span>}
-                        </div> */}
-
                         {/* Min & Max */}
                         <div className={styles.formGroup}>
-                            <label className={styles.label} htmlFor="min">Stok Minimum</label>
+                            <label className={styles.label} htmlFor="min">Stok Minimum Gudang Pusat</label>
                             <input
                                 id="min"
                                 name="min"
@@ -232,7 +183,7 @@ export default function TambahBarangModal({ isOpen, onClose, onSubmit }) {
                         </div>
 
                         <div className={styles.formGroup}>
-                            <label className={styles.label} htmlFor="max">Stok Maksimum</label>
+                            <label className={styles.label} htmlFor="max">Stok Maksimum Gudang Pusat</label>
                             <input
                                 id="max"
                                 name="max"

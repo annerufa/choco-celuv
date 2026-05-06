@@ -20,6 +20,7 @@ function getStokStatus(stok, min, max) {
 export default function DataBarangPage() {
     const { user } = useAuth();
     const stokEndpoint = user?.location_id ? `/items?location_id=${user.location_id}` : null;
+    // console.log('stokEndpoint:', stokEndpoint);
     const { data: stokData, loading, error, fetchData, createData, updateData, deleteData } = useApi(stokEndpoint);
 
     const [barangList, setBarangList] = useState([]);

@@ -1,9 +1,9 @@
 // statsConfig.js
 export function getStatsBarang(barangList) {
     const totalAktif = barangList.filter(b => b.is_active).length;
-    const totalAman = barangList.filter(b => b.stok_status === 'Aman').length;
-    const totalMenipis = barangList.filter(b => b.stok_status === 'Menipis').length;
-    const totalKritis = barangList.filter(b => ['Kritis', 'Habis'].includes(b.stok_status)).length;
+    const totalAman = barangList.filter(b => b.is_active && b.stok_status === 'Aman').length;
+    const totalMenipis = barangList.filter(b => b.is_active && b.stok_status === 'Menipis').length;
+    const totalKritis = barangList.filter(b => b.is_active && ['Kritis', 'Habis'].includes(b.stok_status)).length;
 
     return [
         { id: 'total', icon: 'barang', iconVariant: 'brown', value: totalAktif, label: 'Total barang aktif' },

@@ -8,7 +8,8 @@ const getAllItems = async (req, res) => {
         const data = location_id
             ? await Items.getAllPerLoc(location_id)
             : await Items.getAll();
-        response(200, data, 'Berhasil mengambil data barang', res);
+        console.log('Data items:', data); // Debug log
+        response(200, data, 'Berhasil mengambil data semua barang', res);
     } catch (err) {
         response(500, null, err.message, res);
     }
