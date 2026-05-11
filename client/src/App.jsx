@@ -7,13 +7,15 @@ import DashboardPage from './pages/Dashboard/DashboardPage';
 import PemilikDashboard from './pages/Dashboard/PemilikDashboard';
 import KurirDashboard from './pages/Dashboard/KurirDashboard';
 import BoothDashboard from './pages/Dashboard/BoothDashboard';
-import PurchasePage from './pages/Purchase/PurchasePage';
+import PurchasePage from './pages/Pembelian/PembelianPage';
+import DetailPembelianPage from './pages/Pembelian/DetailPembelianPage';
 
 import DataBarangPage from './pages/DataBarang/DataBarangPage';
 import DataBarangBoothPage from './pages/DataBarang/DataBarangBoothPage';
 import DetailBarangPage from './pages/DataBarang/DetailBarangPage';
 
 import DataBoothPage from './pages/DataBooth/DataBoothPage';
+import DistribusiPage from './pages/Distribusi/DistribusiPage';
 
 import DataKaryawanPage from './pages/DataKaryawan/DataKaryawanPage';
 import JadwalPage from './pages/DataKaryawan/JadwalPage';
@@ -22,11 +24,15 @@ import ResepPage from './pages/Resep/ResepPage';
 
 import ProtectedRoute from './routes/ProtectedRoute';
 
+// import HomePenjaga from './pages/Penjaga/Home';
+import HomePenjaga from './pages/Mobileapp/MobileApp';
+
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LoginPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/tes" element={<HomePenjaga />} />
 
       <Route element={<MainLayout />}>
         {/* Pemilik — desktop layout */}
@@ -50,12 +56,15 @@ export default function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="/pembelian" element={
+        {/* <Route path="/pembelian" element={
           <ProtectedRoute allowedRoles={['pemilik', 'penjaga_booth']}>
             <PurchasePage />
           </ProtectedRoute>
-        } />
+        } /> */}
 
+
+        <Route path="/pembelian" element={<PurchasePage />} />
+        <Route path="/pembelian/:id" element={<DetailPembelianPage />} />
         <Route path="/barang" element={<DataBarangPage />} />
         <Route path="/barang/:id" element={<DetailBarangPage />} />
         <Route path="/barang/booth" element={<DataBarangBoothPage />} />
@@ -67,6 +76,9 @@ export default function App() {
         <Route path="/karyawan/jadwal" element={<JadwalPage />} />
 
         <Route path="/resep" element={<ResepPage />} />
+
+        <Route path="/distribusi" element={<DistribusiPage />} />
+
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

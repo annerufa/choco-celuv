@@ -70,7 +70,7 @@ export const menuConfig = [
             {
                 id: 'distribusi',
                 label: 'Distribusi',
-                path: null,
+                path: '/distribusi',
                 icon: 'distribusi',
                 // submenu: [
                 //   { label: 'Daftar Booth', path: '/booth' },

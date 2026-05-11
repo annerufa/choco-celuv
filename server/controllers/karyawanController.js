@@ -11,6 +11,23 @@ const getAllKaryawan = async (req, res) => {
     }
 };
 
+const getKurir = async (req, res) => {
+    try {
+        const data = await Karyawan.getKurir();
+        response(200, data, 'Berhasil mengambil data Kurir', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+const getPenjaga = async (req, res) => {
+    try {
+        const data = await Karyawan.getPenjaga();
+        response(200, data, 'Berhasil mengambil data penjaga booth', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
 const createKaryawan = async (req, res) => {
     try {
         // hashing password sebelum disimpan ke database
@@ -66,4 +83,4 @@ const deleteKaryawan = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
-module.exports = { getAllKaryawan, createKaryawan, updateKaryawan, deleteKaryawan };
+module.exports = { getAllKaryawan, createKaryawan, updateKaryawan, deleteKaryawan, getKurir, getPenjaga };

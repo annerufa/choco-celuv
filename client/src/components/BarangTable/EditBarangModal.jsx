@@ -2,11 +2,12 @@
 import { useState, useEffect } from 'react';
 import styles from './TambahBarangModal.module.css'; // pakai CSS yang sama
 
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 const KATEGORI = ['Bahan Baku', 'Hasil Mixing', 'Packaging', 'Lainnya'];
-const SATUAN = ['gram', 'ml', 'pcs', 'liter', 'kg'];
+const SATUAN = ['gram', 'ml', 'pcs', 'kg', 'L'];
 
 export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
-    const [formData, setFormData] = useState({ name: '', category: '', unit: '', safety: '', max: '', min: '', is_active: 1 });
+    const [formData, setFormData] = useState({ name: '', category: '', unit: '', safety_stock: '', max: '', min: '', is_active: 1 });
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
@@ -17,7 +18,7 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
                 name: item.name ?? '',
                 category: item.category ?? '',
                 unit: item.unit ?? '',
-                safety: parseFloat(item.safety ?? ''),
+                safety_stock: parseFloat(item.safety_stock ?? ''),
                 min: parseFloat(item.min ?? ''),
                 max: parseFloat(item.max ?? ''),
                 is_active: item.is_active ?? 1,
@@ -61,22 +62,24 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 },
                 body: JSON.stringify({
-                    name: formData.nama,
-                    category: formData.kategori,
-                    unit: formData.satuan,
+                    name: formData.name,
+                    category: formData.category,
+                    unit: formData.unit,
                     safety_stock: Number(formData.safety_stock) || 0,
                     min_qty: Number(formData.min) || 0,
                     max_qty: Number(formData.max) || 0,
-                    is_active: 1,
+                    is_active: formData.is_active,
                 }),
             });
 
             const json = await res.json();
             if (!res.ok) throw new Error(json.payload?.message ?? 'Gagal mengupdate barang');
 
-            const updatedItem = json.payload?.data ?? json;
-            onSubmit(updatedItem);
-            console.log('after onSubmit');
+            // const updatedItem = json.payload?.data ?? json;
+            onSubmit({ ...formData, id: item.id });
+            // onSubmit(updatedItem);
+            // console.log('Updated item:', updatedItem); // Debug log
+
             onClose();
         } catch (err) {
             setErrors({ submit: err.message || 'Gagal menyimpan perubahan' });
@@ -146,9 +149,9 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
                             <label className={styles.label} htmlFor="edit-unit">Satuan</label>
                             <select
                                 id="edit-unit"
-                                name="satuan"
+                                name="unit"
                                 className={`${styles.input} ${errors.unit ? styles.inputError : ''}`}
-                                value={formData.satuan}
+                                value={formData.unit}
                                 onChange={handleChange}
                             >
                                 <option value="">Pilih satuan...</option>
@@ -172,7 +175,7 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
                                         handleChange({ target: { name: 'safety_stock', value: raw } });
                                     }}
                                 />
-                                <span className={styles.suffix}>{formData.satuan}</span>
+                                <span className={styles.suffix}>{formData.unit}</span>
                             </div>
                             {errors.safety_stock && <span className={styles.errorMsg}>{errors.safety_stock}</span>}
                         </div>
@@ -212,7 +215,7 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
                         <div className={`${styles.formGroup} ${styles.fullWidth}`}>
                             <label className={styles.label}>Status</label>
                             <div style={{ display: 'flex', gap: 12 }}>
-                                {[{ val: 1, label: 'Aktif' }, { val: 0, label: 'Nonaktif' }].map(opt => (
+                                {[{ val: 1, label: 'Masih digunakan' }, { val: 0, label: 'Tidak digunakan' }].map(opt => (
                                     <label key={opt.val} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
                                         <input
                                             type="radio"

@@ -5,9 +5,20 @@ const getAll = async () => {
     const [rows] = await db.query(
         "SELECT * FROM users WHERE role = 'kurir' OR role = 'penjaga_booth' ORDER BY id DESC;",
     );
-    return rows[0];
+    return rows;
 };
-
+const getKurir = async () => {
+    const [rows] = await db.query(
+        "SELECT * FROM users WHERE role = 'kurir' ORDER BY id DESC;",
+    );
+    return rows;
+};
+const getPenjaga = async () => {
+    const [rows] = await db.query(
+        "SELECT * FROM users WHERE role = 'penjaga_booth' ORDER BY id DESC;",
+    );
+    return rows;
+};
 const create = async (data) => {
     const { name, no_hp, alamat, role, entry_date, username, password, is_active } = data;
 
@@ -130,4 +141,4 @@ const update = async (id, data) => {
 
 // update, remove, getById, dll...
 
-module.exports = { getAll, create, update };
+module.exports = { getAll, create, update, getKurir, getPenjaga };

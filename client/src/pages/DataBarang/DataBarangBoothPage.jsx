@@ -171,7 +171,7 @@ export default function DataBarangBoothPage() {
                     Stok per Booth
                 </div>
                 <h1 className={styles.pageTitle}>Data Barang Booth</h1>
-                <p className={styles.pageSubtitle}>Monitor stok semua booth dalam satu tampilan</p>
+                <p className={styles.pageSubtitle}>Monitor stok semua barang di booth</p>
             </div>
 
             {/* Summary */}
@@ -233,7 +233,8 @@ export default function DataBarangBoothPage() {
                         <table className={styles.table}>
                             <thead>
                                 <tr>
-                                    <th className={styles.thSticky}>Item</th>
+                                    <th className={`${styles.thSticky} ${styles.thStickyFirst}`}>Item</th>
+                                    <th className={`${styles.thSticky} ${styles.thStickySecond}`}>Aksi</th>
                                     {visibleBooths.map(b => (
                                         <th key={b.id} className={styles.thBooth}>{b.name}</th>
                                     ))}
@@ -242,12 +243,16 @@ export default function DataBarangBoothPage() {
                             <tbody>
                                 {filteredItems.map(item => (
                                     <tr key={item.id}>
-                                        <td className={styles.tdSticky}>
+                                        <td className={`${styles.tdSticky} ${styles.tdStickyFirst}`}>
                                             <div className={styles.itemCell}>
                                                 <div className={styles.itemInfo}>
                                                     <span className={styles.itemName}>{item.name}</span>
                                                     <span className={styles.itemCat}>{item.category}</span>
                                                 </div>
+                                            </div>
+                                        </td>
+                                        <td className={`${styles.tdSticky} ${styles.tdStickySecond}`}>
+                                            <div className={styles.itemCell}>
                                                 <button
                                                     className={styles.iconBtn}
                                                     onClick={() => openSetup(item)}   // ← ganti ini

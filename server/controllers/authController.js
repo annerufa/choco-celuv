@@ -7,30 +7,50 @@ const SECRET = process.env.JWT_SECRET;
 
 const login = async (req, res) => {
     const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ message: 'Username dan password wajib diisi.' });
+    }
 
-    console.log('username:', username);
-    console.log('password:', password); // cek apakah undefined
     try {
-        const user = await User.findByUsername(username);
+        const user = await User.findUsername(username);
+
         if (!user) return response(401, null, 'Username tidak ditemukan', res);
-        console.log('user dari db:', user);
-        console.log('user.password:', user.password); // cek apakah undefined
+        // if (!user.is_active) return response(403, null, 'Akun tidak aktif. Hubungi pemilik.', res);
 
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) return response(401, null, 'Password salah', res);
 
-        const location = user.role === 'pemilik' ? 1 : user.location_id;
-        console.log('location yang digunakan untuk token:', location);
+        // 3. Bangun payload token berdasarkan role
+        const payload = {
+            id: user.id,
+            name: user.name,
+            role: user.role,
+        };
 
-        const token = jwt.sign(
-            {
-                id: user.id, name: user.name, role: user.role, location_id: location, booth_id: user.booth_id, // ← dari hasil join 
-            },
-            SECRET,
-            { expiresIn: '8h' }
-        );
+        // cek role untuk menentukan location_id yang dimasukkan ke token
+        if (user.role === 'pemilik') {
+            payload.location_id = 1;
+            payload.booth_id = null;
+        } else if (user.role === 'kurir') {
+            payload.location_id = null;
+            payload.booth_id = null;
+        } else {
+            // Penjaga booth butuh booth_id + location_id dari jadwal hari ini
+            const boothData = await user.getLocationId(user.id);
 
-        response(200, { token, user: { id: user.id, name: user.name, role: user.role, location_id: location, booth_id: user.booth_id } }, 'Login berhasil', res);
+            if (!boothData) {
+                return res.status(403).json({
+                    message: 'Tidak ada jadwal jaga untuk hari ini. Hubungi pemilik.'
+                });
+            }
+
+            payload.booth_id = boothData.booth_id;
+            payload.location_id = boothData.location_id;
+        }
+        // 4. Sign token
+        const token = jwt.sign(payload, SECRET, { expiresIn: '8h' });
+        console.log(token);
+        response(200, { token, user: { id: user.id, name: user.name, role: user.role, location_id: payload.location_id, booth_id: payload.booth_id } }, 'Login berhasil', res);
     } catch (err) {
         response(500, null, err.message, res);
     }

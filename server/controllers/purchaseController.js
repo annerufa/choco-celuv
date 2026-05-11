@@ -116,14 +116,36 @@ const cancel = async (req, res) => {
 // ─────────────────────────────────────────────
 // GET ALL PURCHASES
 // GET /api/purchase
-// Query params: loc_id, type, status, start_date, end_date, limit, offset
+// Query params: type, status, start_date, end_date, limit, offset
 // ─────────────────────────────────────────────
 const getAll = async (req, res) => {
+  const location_id = req.user.location_id ?? null;
+
   try {
-    const { loc_id, type, status, start_date, end_date, limit, offset } = req.query;
+    const { type, status, start_date, end_date, limit, offset } = req.query;
 
     const result = await purchaseModel.getAll({
-      loc_id, type, status, start_date, end_date, limit, offset
+      location_id, type, status, start_date, end_date, limit, offset
+    });
+
+    res.json({
+      data: result.data,
+      total_count: result.total_count,
+    });
+
+  } catch (err) {
+    console.error('[getAll purchase]', err);
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+};
+
+const getByLoc = async (req, res) => {
+  try {
+    const location_id = req.user.location_id ?? null;
+    const { type, status, start_date, end_date, limit, offset } = req.query;
+
+    const result = await purchaseModel.getByLoc({
+      location_id, type, status, start_date, end_date, limit, offset
     });
 
     res.json({
@@ -157,4 +179,4 @@ const getById = async (req, res) => {
   }
 };
 
-module.exports = { create, cancel, getAll, getById };
+module.exports = { create, cancel, getAll, getById, getByLoc };

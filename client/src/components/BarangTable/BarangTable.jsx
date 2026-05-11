@@ -30,6 +30,7 @@ const stokStatusVariant = {
     'Menipis': 'warning',
     'Kritis': 'danger',
     'Habis': 'danger',
+    'Nonaktif': 'grey',
 };
 
 // function getStokStatus(stok, min, max) {
@@ -51,7 +52,6 @@ function getToken() {
 export default function BarangTable({ barangList, setBarangList, loading, error }) {
     // const { user } = useAuth();
     const navigate = useNavigate();
-
     // const stokEndpoint = user?.location_id ? `/items?location_id=${user.location_id}` : null;
     // console.log("location id:", user.location_id);
     // console.log("stok endpoint:", stokEndpoint);
@@ -68,6 +68,7 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
     const [currentPage, setCurrentPage] = useState(1);
     const [filterStokStatus, setFilterStokStatus] = useState([]); // array of selected status
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [actionLoading, setActionLoading] = useState(null);
 
     // const [actionLoading, setActionLoading] = useState(null); // item id yang sedang diproses
 
@@ -145,10 +146,13 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
 
     function handleTambahBarang(newItem) {
         // newItem sudah berupa object hasil API
+        const unitMap = { ml: 'L', gram: 'kg' };
         setBarangList(prev => [{
             ...newItem,
             stok_sekarang: 0,
-            // display_stok: 0,
+            current_stock: 0,
+            display_stok: 0,
+            display_unit: unitMap[newItem.unit] || newItem.unit,
             min: 0,
             max: 0,
             stock_active: true,
@@ -166,17 +170,26 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
 
     // Submit edit — hit API
     function handleEditBarang(updatedItem) {
-        setBarangList(prev => prev.map(item =>
-            item.id === updatedItem.id
-                ? { ...item, ...updatedItem } // ← merge, jadi min/max/stok tetap dari data lama
-                : item
-        ));
+
+        console.log('updatedItem dari API:', updatedItem);
+        console.log('barangList saat ini:', barangList);
+        setBarangList(prev => prev.map(item => {
+            if (item.id !== updatedItem.id) return item;
+            const unitMap = { ml: 'L', gram: 'kg' };
+            const newUnit = updatedItem.unit ?? item.unit;
+            return {
+                ...item,
+                ...updatedItem,
+                display_unit: unitMap[newUnit] || newUnit,
+                status_label: (updatedItem.is_active ?? item.is_active) ? 'Aktif' : 'Nonaktif',
+            };
+        }));
         toast.success(`${updatedItem.name} berhasil diperbarui!`);
     }
 
     // Nonaktifkan — hit API DELETE (soft delete)
     async function handleNonaktifkan(item) {
-        if (!confirm(`Nonaktifkan "${item.name}"?`)) return;
+        if (!window.confirm(`Nonaktifkan "${item.name}"?`)) return;
 
         setActionLoading(item.id);
         try {
@@ -190,7 +203,7 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
 
             setBarangList(prev => prev.map(b =>
                 b.id === item.id
-                    ? { ...b, is_active: 0, status_label: 'Nonaktif' }
+                    ? { ...b, is_active: 0, stok_status: 'Nonaktif', status_label: 'Nonaktif' }
                     : b
             ));
         } catch (err) {
@@ -335,7 +348,7 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                 paginated.map((item, index) => {
                                     const nomor = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
                                     return (
-                                        <tr key={item.id} style={{ opacity: loading === item.id ? 0.5 : 1 }}>
+                                        <tr key={item.id} style={{ opacity: actionLoading === item.id ? 0.5 : 1 }}>
                                             <td className={styles.idCell}>{nomor}</td>
                                             <td className={styles.namaCell}>{item.name}</td>
                                             <td>
@@ -344,8 +357,8 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                                 </span>
                                             </td>
                                             <td className={styles.monoCell}>
-                                                {item.last_price
-                                                    ? `Rp ${Number(item.last_price).toLocaleString('id')} / ${item.unit}`
+                                                {item.display_last_price != null
+                                                    ? `Rp ${Number(item.display_last_price).toLocaleString('id')} / ${item.display_unit}`
                                                     : '-'}
                                             </td>
                                             <td className={styles.monoCell}>{item.display_stok} {item.display_unit}</td>
@@ -354,9 +367,6 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                                 <span className={`${styles.pill} ${styles[item.stock_active ? stokStatusVariant[item.stok_status] : 'grey']}`}>
                                                     {item.stock_active ? item.stok_status : 'Nonaktif'}
                                                 </span>
-                                                {/* <span className={`${styles.pill} ${styles[stokStatusVariant[item.stok_status]]}`}>
-                                                    {item.stok_status}
-                                                </span> */}
                                             </td>
                                             <td>
                                                 <span className={`${styles.pill} ${styles[item.stock_active ? statusVariant[item.status_label] : 'grey']}`}>
@@ -382,7 +392,7 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                                         className={styles.iconBtn}
                                                         aria-label="Edit barang"
                                                         onClick={() => handleOpenEdit(item)}
-                                                        disabled={loading === item.id}
+                                                        disabled={actionLoading === item.id}
                                                     >
                                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -391,12 +401,12 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                                     </button>
 
                                                     {/* Nonaktifkan — sembunyikan kalau sudah nonaktif */}
-                                                    {item.stock_active ? (
+                                                    {/* {item.stock_active ? (
                                                         <button
                                                             className={`${styles.iconBtn} ${styles.danger}`}
                                                             aria-label="Nonaktifkan"
                                                             onClick={() => handleNonaktifkan(item)}
-                                                            disabled={loading === item.id}
+                                                            disabled={actionLoading === item.id}
                                                         >
                                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                                                 <circle cx="12" cy="12" r="10" />
@@ -404,8 +414,8 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                                             </svg>
                                                         </button>
                                                     ) : (
-                                                        <span style={{ width: 28 }} /> // placeholder biar kolom tidak geser
-                                                    )}
+                                                        <span style={{ width: 28 }} /> 
+                                                    )} */}
                                                 </div>
                                             </td>
                                         </tr>

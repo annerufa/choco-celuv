@@ -201,10 +201,22 @@
 .thSticky {
     text-align: left !important;
     position: sticky !important;
-    left: 0 !important;
+    /* left: 0 !important; */
     z-index: 3 !important;
     background: var(--surface-2, #faf8f5) !important;
+    /* min-width: 160px; */
+}
+
+.thStickyFirst {
+    left: 0 !important;
     min-width: 160px;
+    /* max-width: 200px; */
+}
+
+.thStickySecond {
+    left: 160px !important;
+    min-width: 80px;
+    /* max-width: 150px; */
 }
 
 .thBooth {
@@ -230,11 +242,27 @@
 /* Sticky first column body */
 .tdSticky {
     position: sticky;
-    left: 0;
+    /* left: 0; */
     background: var(--surface, #fff);
     z-index: 1;
+    /* min-width: 160px;
+    max-width: 200px; */
+}
+
+.tdStickyFirst {
+    left: 0;
     min-width: 160px;
     max-width: 200px;
+}
+
+.tdStickySecond {
+    left: 160px;
+    min-width: 80px;
+}
+
+.table tbody tr:hover .tdStickyFirst,
+.table tbody tr:hover .tdStickySecond {
+    background: var(--surface-2, #faf8f5);
 }
 
 .table tbody tr:hover .tdSticky {

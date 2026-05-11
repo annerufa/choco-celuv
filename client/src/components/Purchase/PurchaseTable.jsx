@@ -1,129 +1,111 @@
-// src/components/BarangTable/BarangTable.jsx
 import { useState, useEffect } from 'react';
-import styles from './BarangTable.module.css';
-import TambahBarangModal from './TambahBarangModal';
+import styles from './PurchaseTable.module.css';
+import TambahPurchaseModal from './TambahPurchaseModal';
+import { usePurchase } from '../../hooks/usePurchase';
 import { useApi } from '../../hooks/useApi';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+
 
 const ITEMS_PER_PAGE = 10;
 
+const typeVariant = {
+    'warehouse': 'accent',
+    'booth': 'warning',
+};
+
+const typeLabel = {
+    'warehouse': 'Gudang Pusat',
+    'booth': 'Booth',
+};
+
 const statusVariant = {
-    'Aktif': 'success',
-    'Stok Kritis': 'warning',
-    'Nonaktif': 'danger',
+    'dikonfirmasi': 'success',
+    'dibatalkan': 'danger',
 };
 
-const kategoriVariant = {
-    'bahan mentah': 'warning',
-    'Hasil Mixing': 'accent',
-    'Perlengkapan': 'warning',
-};
-
-const stokStatusVariant = {
-    'Aman': 'success',
-    'Overstock': 'warning',
-    'Kritis': 'danger',
-};
-
-function getStokStatus(stok, min, max) {
-    if (stok <= min) return 'Kritis';
-    if (stok >= max) return 'Overstock';
-    return 'Aman';
-}
-
-export default function BarangTable({ locationId = 1 }) {
-    const { data: items, loading: loadingItems, error: errorItems } = useApi('/items');
-    const { data: stokData, loading: loadingStok, error: errorStok } = useApi(`/stock-per-location?location_id=${locationId}`);
-
-    const loading = loadingItems || loadingStok;
-    const error = errorItems || errorStok;
-
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [barangList, setBarangList] = useState([]);
+export default function PurchaseTable() {
+    const [purchaseList, setPurchaseList] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [actionLoading, setActionLoading] = useState(null);
 
-    // Merge items + stok setelah keduanya loaded
+    const { getAll, cancelPurchase } = usePurchase();
+    const { data: itemList } = useApi('/items');
+
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
+
+    // Load data pembelian
     useEffect(() => {
-        if (!items || !stokData) return;
+        fetchPurchases();
+    }, []);
 
-        const stokMap = {};
-        stokData.forEach(s => { stokMap[s.item_id] = s; });
+    async function fetchPurchases() {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await getAll();
+            setPurchaseList(result.data ?? []);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }
 
-        const merged = items.map(item => {
-            const stok = stokMap[item.id];
-            const stok_sekarang = stok?.current_stock ?? 0;
-            const min = stok?.min ?? 0;
-            const max = stok?.max ?? 0;
-            return {
-                ...item,
-                stok_sekarang,
-                min,
-                max,
-                stok_status: getStokStatus(stok_sekarang, min, max),
-            };
-        });
+    useEffect(() => { setCurrentPage(1); }, [searchQuery]);
 
-        setBarangList(merged);
-    }, [items, stokData]);
-
-    // Reset ke halaman 1 kalau search berubah
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchQuery]);
-
-    // Filter berdasarkan search
-    const filtered = barangList.filter(b =>
-        b.name.toLowerCase().includes(searchQuery.toLowerCase())
+    // Filter berdasarkan supplier
+    const filtered = purchaseList.filter(p =>
+        p.supplier.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Pagination
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
     const paginated = filtered.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE
     );
 
-    // Nomor halaman dengan ellipsis
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
-        .filter(page =>
-            page === 1 ||
-            page === totalPages ||
-            Math.abs(page - currentPage) <= 1
-        )
+        .filter(page => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
         .reduce((acc, page, i, arr) => {
             if (i > 0 && page - arr[i - 1] > 1) acc.push('...');
             acc.push(page);
             return acc;
         }, []);
 
-    function handleTambahBarang(formData) {
-        const newBarang = {
-            id: String(barangList.length + 1).padStart(3, '0'),
-            name: formData.nama,
-            category: formData.kategori,
-            unit: formData.satuan,
-            harga: formData.hargaTerakhir
-                ? `Rp ${Number(formData.hargaTerakhir).toLocaleString('id')}/${formData.satuan}`
-                : '-',
-            status: 'Aktif',
-            stok_sekarang: 0,
-            min: 0,
-            max: 0,
-            stok_status: 'Kritis',
-        };
-        setBarangList(prev => [...prev, newBarang]);
+    function handleSuccess(newPurchase) {
+        fetchPurchases(); // refresh dari server
+        toast.success('Pembelian berhasil ditambahkan!');
+    }
+
+    async function handleCancel(purchase) {
+        if (!window.confirm(`Batalkan pembelian dari "${purchase.supplier}"?`)) return;
+        setActionLoading(purchase.id);
+        try {
+            await cancelPurchase(purchase.id);
+            setPurchaseList(prev => prev.map(p =>
+                p.id === purchase.id ? { ...p, status: 'dibatalkan' } : p
+            ));
+            toast.success('Pembelian berhasil dibatalkan');
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setActionLoading(null);
+        }
     }
 
     return (
         <>
             <div className={styles.card}>
 
-                {/* Header tabel */}
+                {/* Header */}
                 <div className={styles.cardHeader}>
-                    <span className={styles.cardTitle}>Daftar Barang — Gudang Pusat</span>
+                    <span className={styles.cardTitle}>Daftar Pembelian</span>
                     <div className={styles.cardActions}>
-
-                        {/* Search */}
                         <div className={styles.searchBox}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                 <circle cx="11" cy="11" r="8" />
@@ -131,25 +113,17 @@ export default function BarangTable({ locationId = 1 }) {
                             </svg>
                             <input
                                 type="text"
-                                placeholder="Cari barang..."
+                                placeholder="Cari supplier..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
                         </div>
-
-                        <button className={styles.btnGhost}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                            </svg>
-                            Filter
-                        </button>
-
                         <button className={styles.btnPrimary} onClick={() => setIsModalOpen(true)}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                 <line x1="12" y1="5" x2="12" y2="19" />
                                 <line x1="5" y1="12" x2="19" y2="12" />
                             </svg>
-                            Tambah Barang
+                            Tambah Pembelian
                         </button>
                     </div>
                 </div>
@@ -160,84 +134,76 @@ export default function BarangTable({ locationId = 1 }) {
                         <thead>
                             <tr>
                                 <th>No</th>
-                                <th>Nama Barang</th>
-                                <th>Kategori</th>
-                                <th>Harga</th>
-                                <th>Stok</th>
-                                {/* <th>Satuan</th> */}
-                                {/* <th>Min</th>
-                                <th>Max</th> */}
-                                <th>Status Stok</th>
+                                <th>Tanggal</th>
+                                <th>Supplier</th>
+                                <th>Tujuan</th>
+                                <th>Total</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr>
-                                    <td colSpan={11} style={{ textAlign: 'center', color: 'var(--brown-400)' }}>
-                                        Memuat data...
-                                    </td>
-                                </tr>
+                                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--brown-400)' }}>Memuat data...</td></tr>
                             ) : error ? (
-                                <tr>
-                                    <td colSpan={11} style={{ textAlign: 'center', color: 'var(--danger)' }}>
-                                        Gagal memuat data barang
-                                    </td>
-                                </tr>
+                                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--danger)' }}>{error}</td></tr>
                             ) : filtered.length === 0 ? (
-                                <tr>
-                                    <td colSpan={11} style={{ textAlign: 'center', color: 'var(--brown-400)' }}>
-                                        Tidak ada barang ditemukan
-                                    </td>
-                                </tr>
+                                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--brown-400)' }}>Tidak ada pembelian ditemukan</td></tr>
                             ) : (
-                                paginated.map((item, index) => {
+                                paginated.map((purchase, index) => {
                                     const nomor = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
+                                    const sudahBatal = purchase.status === 'dibatalkan';
                                     return (
-                                        <tr key={item.id}>
+                                        <tr key={purchase.id} style={{ opacity: actionLoading === purchase.id ? 0.5 : 1 }}>
                                             <td className={styles.idCell}>{nomor}</td>
-                                            <td className={styles.namaCell}>{item.name}</td>
+                                            <td>{new Date(purchase.date).toLocaleDateString('id-ID')}</td>
+                                            <td className={styles.namaCell}>{purchase.supplier}</td>
                                             <td>
-                                                <span className={`${styles.pill} ${styles[kategoriVariant[item.category]]}`}>
-                                                    {item.category}
+                                                <span className={`${styles.pill} ${styles[typeVariant[purchase.type] ?? 'brown']}`}>
+                                                    {typeLabel[purchase.type] ?? purchase.type}
+                                                    {purchase.type === 'booth' && purchase.location_name
+                                                        ? ` — ${purchase.location_name}` : ''}
                                                 </span>
                                             </td>
-                                            {/* <td className={styles.monoCell}>{item.unit}</td> */}
-                                            <td className={styles.monoCell}>{item.last_cost}</td>
-                                            <td className={styles.monoCell}>{item.stok_sekarang} {item.unit}</td>
-                                            {/* <td className={styles.monoCell}>{item.min}</td> */}
-                                            {/* <td className={styles.monoCell}>{item.max}</td> */}
-                                            <td>
-                                                <span className={`${styles.pill} ${styles[stokStatusVariant[item.stok_status]]}`}>
-                                                    {item.stok_status}
-                                                </span>
+                                            <td className={styles.monoCell}>
+                                                Rp {Number(purchase.total).toLocaleString('id')}
                                             </td>
                                             <td>
-                                                <span className={`${styles.pill} ${styles[statusVariant[item.status]]}`}>
-                                                    {item.status}
+                                                <span className={`${styles.pill} ${styles[statusVariant[purchase.status] ?? 'grey']}`}>
+                                                    {purchase.status}
                                                 </span>
                                             </td>
                                             <td>
                                                 <div className={styles.actionBtns}>
-                                                    <button className={styles.iconBtn} aria-label="Lihat detail">
+                                                    {/* Detail */}
+
+                                                    <button
+                                                        className={styles.iconBtn}
+                                                        aria-label="Lihat detail"
+                                                        onClick={() => navigate(`/pembelian/${purchase.id}`)}
+                                                    >
                                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                                                             <circle cx="12" cy="12" r="3" />
                                                         </svg>
                                                     </button>
-                                                    <button className={styles.iconBtn} aria-label="Edit barang">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                                        </svg>
-                                                    </button>
-                                                    <button className={`${styles.iconBtn} ${styles.danger}`} aria-label="Nonaktifkan">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                                            <circle cx="12" cy="12" r="10" />
-                                                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                                                        </svg>
-                                                    </button>
+
+                                                    {/* Batalkan — sembunyikan kalau sudah batal */}
+                                                    {!sudahBatal ? (
+                                                        <button
+                                                            className={`${styles.iconBtn} ${styles.danger}`}
+                                                            aria-label="Batalkan"
+                                                            onClick={() => handleCancel(purchase)}
+                                                            disabled={actionLoading === purchase.id}
+                                                        >
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                                <circle cx="12" cy="12" r="10" />
+                                                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                                                            </svg>
+                                                        </button>
+                                                    ) : (
+                                                        <span style={{ width: 28 }} />
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -248,24 +214,19 @@ export default function BarangTable({ locationId = 1 }) {
                     </table>
                 </div>
 
-                {/* Footer pagination */}
+                {/* Footer */}
                 <div className={styles.tableFooter}>
                     <span>
-                        Menampilkan {paginated.length} dari {filtered.length} barang
-                        {filtered.length !== barangList.length && ` (difilter dari ${barangList.length} total)`}
+                        Menampilkan {paginated.length} dari {filtered.length} pembelian
+                        {filtered.length !== purchaseList.length && ` (difilter dari ${purchaseList.length} total)`}
                     </span>
                     {totalPages > 1 && (
                         <div className={styles.pagination}>
-                            <button
-                                className={styles.pageBtn}
-                                onClick={() => setCurrentPage(p => p - 1)}
-                                disabled={currentPage === 1}
-                            >
+                            <button className={styles.pageBtn} onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <polyline points="15 18 9 12 15 6" />
                                 </svg>
                             </button>
-
                             {pageNumbers.map((page, i) =>
                                 page === '...' ? (
                                     <span key={`ellipsis-${i}`} className={styles.pageEllipsis}>...</span>
@@ -279,12 +240,7 @@ export default function BarangTable({ locationId = 1 }) {
                                     </button>
                                 )
                             )}
-
-                            <button
-                                className={styles.pageBtn}
-                                onClick={() => setCurrentPage(p => p + 1)}
-                                disabled={currentPage === totalPages}
-                            >
+                            <button className={styles.pageBtn} onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <polyline points="9 18 15 12 9 6" />
                                 </svg>
@@ -292,13 +248,13 @@ export default function BarangTable({ locationId = 1 }) {
                         </div>
                     )}
                 </div>
-
             </div>
 
-            <TambahBarangModal
+            <TambahPurchaseModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSubmit={handleTambahBarang}
+                onSuccess={handleSuccess}
+                itemList={itemList}
             />
         </>
     );

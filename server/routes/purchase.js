@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 // const purchase = require('../controllers/purchaseController');
-const { create, cancel, getAll, getById } = require('../controllers/purchaseController');
+const { create, cancel, getAll, getById, getByLoc } = require('../controllers/purchaseController');
 const auth = require('../middleware/authenticate');
 
 // router.get('/', auth, purchase.getAll);
@@ -19,7 +19,8 @@ const auth = require('../middleware/authenticate');
 
 router.get('/', auth, getAll);
 router.post('/', auth, create);
-router.get('/:id', auth, getById);
+// router.get('/:loc_id', auth, getByLoc);
 router.patch('/:id/cancel', auth, cancel);
+router.get('/:id', auth, getById);
 
 module.exports = router;

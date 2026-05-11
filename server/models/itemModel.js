@@ -71,7 +71,19 @@ const create = async (data) => {
         }
 
         await conn.commit();
-        return { id: item_id, ...data };
+        // return { id: item_id, ...data };
+        return {
+            id: item_id,
+            name,
+            category,
+            unit,
+            is_active: data.is_active ?? 1,
+            avg_price: 0,
+            last_price: 0,
+            safety_stock,
+            min_qty,
+            max_qty,
+        };
 
     } catch (err) {
         await conn.rollback();
@@ -142,8 +154,73 @@ const getMatrix = async () => {
     return rows[0];
 };
 
+const update = async (id, data, location_id) => {
+    const { name, category, unit, safety_stock, min_qty, max_qty, is_active } = data;
+
+    const conn = await db.getConnection();
+
+    try {
+        await conn.beginTransaction();
+
+        // 1. update tabel item 
+        const [result] = await conn.execute(
+            `UPDATE items SET name=?, category=?, unit=?, is_active=?
+             WHERE id=?`,
+            [name, category, unit, is_active, id]
+        );
+        // 2. update tabel stock_per_location untuk lokasi gudang pusat saja
+        const [result2] = await conn.execute(
+            `UPDATE stock_per_location SET min_qty=?, max_qty=?, is_active=?, safety_stock=? WHERE item_id=? AND location_id = ?`,
+            [min_qty, max_qty, is_active, safety_stock, id, location_id]
+        );
+
+        if (location_id === 1) {
+            await conn.execute(
+                `UPDATE stock_per_location SET is_active=? 
+                 WHERE item_id=? AND location_id != 1`,
+                [is_active, id]
+            );
+        }
+
+        await conn.commit();
+        // return { id: item_id, ...data };
+        return {
+            id: id,
+            name,
+            category,
+            unit,
+            is_active: data.is_active ?? 1,
+            safety_stock,
+            min_qty,
+            max_qty,
+        };
+
+    } catch (err) {
+        await conn.rollback();
+        throw err;
+    } finally {
+        conn.release();
+    }
+};
+
+const remove = async (id, isActive) => {
+    await db.query('UPDATE items SET is_active = ? WHERE id = ?', [isActive, id]);
+};
+
+const removePerLoc = async (itemId, locationId, isActive) => {
+    await db.query(
+        'UPDATE stock_per_location SET is_active = ? WHERE item_id = ? AND location_id = ?',
+        [isActive, itemId, locationId]
+    );
+};
+
+const getConversions = async (item_id) => {
+    const [rows] = await db.query(
+        `SELECT * FROM unit_conversions WHERE item_id = ?`,
+        [item_id]
+    );
+    return rows;
+};
 
 
-// update, remove, getById, dll...
-
-module.exports = { getAll, create, getAllPerLoc, getById, getMatrix, getItem, getByItemId, getByLocation };
+module.exports = { getAll, create, update, remove, removePerLoc, getAllPerLoc, getById, getMatrix, getItem, getByItemId, getByLocation, getConversions };

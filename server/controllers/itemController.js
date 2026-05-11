@@ -8,7 +8,7 @@ const getAllItems = async (req, res) => {
         const data = location_id
             ? await Items.getAllPerLoc(location_id)
             : await Items.getAll();
-        console.log('Data items:', data); // Debug log
+        // console.log('Data items:', data); // Debug log
         response(200, data, 'Berhasil mengambil data semua barang', res);
     } catch (err) {
         response(500, null, err.message, res);
@@ -28,7 +28,7 @@ const getItem = async (req, res) => {
 const getByItemOrLocation = async (req, res) => {
     try {
         const { item_id, location_id } = req.query;
-        console.log('Query Params:', item_id); // Debug log
+        // console.log('Query Params:', item_id); // Debug log
         let data;
         if (item_id) data = await Items.getByItemId(item_id);
         else if (location_id) data = await Items.getByLocation(location_id);
@@ -40,14 +40,17 @@ const getByItemOrLocation = async (req, res) => {
     }
 };
 
-// const getItemsPerLoc = async (req, res) => {
-//     try {
-//         const data = await Items.getAllPerLoc(req.params.id);
-//         response(200, data, 'Berhasil mengambil data barang pada lokasi id', res);
-//     } catch (err) {
-//         response(500, null, err.message, res);
-//     }
-// };
+const getItemsPerLoc = async (req, res) => {
+    const locationId = req.user.location_id ?? null;
+
+    try {
+        const data = await Items.getAllPerLoc(locationId);
+        response(200, data, 'Berhasil mengambil data barang dan stok pada lokasi id', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
 const createItems = async (req, res) => {
     try {
         const result = await Items.create(req.body);
@@ -63,20 +66,43 @@ const createItems = async (req, res) => {
 };
 
 const updateItems = async (req, res) => {
+
     try {
-        await Items.update(req.params.id, req.body);
+        const locationId = req.user.location_id ?? null;
+        console.log('locationId:', locationId); // Debug log
+        await Items.update(req.params.id, req.body, locationId);
         response(200, null, 'Barang berhasil diupdate', res);
     } catch (err) {
+        console.error('Update error:', err); // ← tambah logging
         response(500, null, err.message, res);
     }
 };
 
 const deleteItems = async (req, res) => {
     try {
-        await Items.remove(req.params.id);
-        response(200, null, 'Barang berhasil dihapus', res);
+        const locationId = req.user.location_id ?? null;
+        const isActive = req.body.is_active ?? 0; // 0 = nonaktif, 1 = aktifkan
+
+        if (locationId) {
+            await Items.removePerLoc(req.params.id, locationId, isActive);
+        } else {
+            await Items.remove(req.params.id, isActive);
+        }
+
+        const msg = isActive ? 'Barang berhasil diaktifkan' : 'Barang berhasil dinonaktifkan';
+        response(200, null, msg, res);
     } catch (err) {
         response(500, null, err.message, res);
     }
 };
-module.exports = { getAllItems, createItems, updateItems, deleteItems, getItem, getByItemOrLocation };
+
+const getConversions = async (req, res) => {
+    try {
+        const data = await Items.getConversions(req.params.item_id);
+        response(200, data, 'Berhasil', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+module.exports = { getAllItems, createItems, getConversions, updateItems, deleteItems, getItem, getItemsPerLoc, getByItemOrLocation };

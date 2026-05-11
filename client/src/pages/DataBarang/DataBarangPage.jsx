@@ -44,6 +44,9 @@ export default function DataBarangPage() {
                 ...item,
                 display_stok: unitMap[item.unit] ? stok_sekarang / 1000 : stok_sekarang,
                 display_unit: unitMap[item.unit] || item.unit,
+                display_last_price: item.last_price != null
+                    ? (unitMap[item.unit] ? item.last_price * 1000 : item.last_price)
+                    : null,
                 min, max,
                 stok_status: getStokStatus(stok_sekarang, min, max, item.safety_stock ?? 0),
                 status_label: item.is_active ? 'Aktif' : 'Nonaktif',
@@ -70,7 +73,7 @@ export default function DataBarangPage() {
 
             {/* Stats */}
 
-            <StatsGrid stats={stats} />;
+            <StatsGrid stats={stats} />
 
             {/* <StatsGrid /> */}
 

@@ -6,10 +6,25 @@ const findByEmail = (email) => new Promise((resolve, reject) => {
     });
 });
 
-// const findByUsername = async (username) => {
-//     const [rows] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
-//     return rows[0];
-// };
+const findUsername = async (username) => {
+    const [rows] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
+    return rows[0] || null;
+};
+// Ambil location_id gudang pusat (untuk pemilik)
+// Gudang pusat = stock_locations type 'warehouse', asumsi hanya 1
+
+const getLocationId = async (employeeId) => {
+    const [rows] = await db.query(
+        `SELECT es.booth_id, sl.id AS location_id
+       FROM employee_schedules es
+       JOIN stock_locations sl ON sl.booth_id = es.booth_id AND sl.type = 'booth'
+       WHERE es.employee_id = ?
+         AND es.is_active = 1
+       LIMIT 1`,
+        [employeeId]
+    );
+    return rows[0] || null;
+}
 
 const findByUsername = async (username) => {
     const [rows] = await db.query(
@@ -29,4 +44,4 @@ const findByUsername = async (username) => {
 };
 
 
-module.exports = { findByEmail, findByUsername };
+module.exports = { findByEmail, findByUsername, findUsername, getLocationId };

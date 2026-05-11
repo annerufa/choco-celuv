@@ -46,14 +46,14 @@ const create = async (data) => {
             const { item_id, buy_qty, unit_price, buy_unit = null } = item;
             const total_price = buy_qty * unit_price;
 
-            // ── Konversi satuan beli → satuan dasar ──────────────────
-            const multiplier = await getMultiplier(conn, item_id, buy_unit);
-            const stock_qty = buy_qty * multiplier;        // qty dalam satuan dasar
-            const cost_base = unit_price / multiplier;     // harga per satuan dasar
+            // ── Hitung qty & validasi ─────────────────────────────
+            const multiplier = await getMultiplier(conn, item.item_id, item.buy_unit);
+            const stock_qty = item.buy_qty * multiplier;
+            const cost_base = item.unit_price / multiplier; // pindah ke sini, pakai multiplier yang sama
 
             // ── Ambil stok & avg_cost SEBELUM diupdate ───────────────
             const [[currentItem]] = await conn.execute(
-                `SELECT avg_cost FROM items WHERE id = ?`,
+                `SELECT avg_price FROM items WHERE id = ?`,
                 [item_id]
             );
 
@@ -70,7 +70,7 @@ const create = async (data) => {
             }
 
             const old_qty = Number(currentStock.current_stock) || 0;
-            const old_avg = Number(currentItem?.avg_cost) || 0;
+            const old_avg = Number(currentItem?.avg_price) || 0;
 
             // ── Weighted Average Cost ─────────────────────────────────
             const weighted_avg = (old_qty + stock_qty) > 0
@@ -110,8 +110,8 @@ const create = async (data) => {
             // ── Update last_cost & avg_cost di items ──────────────────
             await conn.execute(
                 `UPDATE items SET
-                    last_cost  = ?,
-                    avg_cost   = ?,
+                    last_price  = ?,
+                    avg_price   = ?,
                     updated_at = NOW()
                  WHERE id = ?`,
                 [cost_base, weighted_avg, item_id]
@@ -150,7 +150,7 @@ const cancel = async (id, cancelled_by) => {
 
         // 2. Ambil semua items di purchase ini
         const [items] = await conn.execute(
-            `SELECT * FROM purchase_items WHERE purchase_id = ?`,
+            `SELECT pi.*, i.name AS item_name FROM purchase_items pi JOIN items i on pi.item_id = i.id WHERE purchase_id = ?`,
             [id]
         );
 
@@ -167,12 +167,12 @@ const cancel = async (id, cancelled_by) => {
             );
 
             if (!currentStock) {
-                throw new Error(`Stok item id ${item.item_id} tidak ditemukan`);
+                throw new Error(`Stok item id ${item.item_name} tidak ditemukan`);
             }
 
             if (Number(currentStock.current_stock) < stock_qty) {
                 throw new Error(
-                    `Stok item id ${item.item_id} tidak mencukupi untuk dibatalkan. ` +
+                    `Stok item id ${item.item_name} tidak mencukupi untuk dibatalkan. ` +
                     `Stok saat ini: ${currentStock.current_stock}, perlu dikembalikan: ${stock_qty}`
                 );
             }
@@ -183,6 +183,49 @@ const cancel = async (id, cancelled_by) => {
                  SET current_stock = current_stock - ?
                  WHERE item_id = ? AND location_id = ?`,
                 [stock_qty, item.item_id, purchase.loc_id]
+            );
+
+            // Setelah kurangi stok, recalculate avg_cost
+            const [[currentItem]] = await conn.execute(
+                `SELECT avg_price, last_price FROM items WHERE id = ?`,
+                [item.item_id]
+            );
+
+            const [[newStock]] = await conn.execute(
+                `SELECT current_stock FROM stock_per_location
+     WHERE item_id = ? AND location_id = ?`,
+                [item.item_id, purchase.loc_id]
+            );
+
+            const cost_base = item.unit_price / multiplier; // multiplier sudah ada dari atas
+            const sisa_qty = Number(newStock.current_stock); // sudah dikurangi
+            const old_avg = Number(currentItem.avg_cost);
+
+            // Reverse weighted average:
+            // avg_lama = (sisa × avg_baru + qty_cancel × harga_cancel) / (sisa + qty_cancel)
+            // → avg_baru = (avg_lama × total_sebelum - qty_cancel × harga_cancel) / sisa
+            const total_sebelum = sisa_qty + stock_qty;
+            const new_avg = sisa_qty > 0
+                ? ((old_avg * total_sebelum) - (cost_base * stock_qty)) / sisa_qty
+                : 0;
+
+            // Update last_cost dari pembelian aktif terakhir
+            const [[lastPurchase]] = await conn.execute(
+                `SELECT pi.unit_price, pi.buy_unit 
+     FROM purchase_items pi
+     JOIN purchases p ON pi.purchase_id = p.id
+     WHERE pi.item_id = ? AND p.status = 'dikonfirmasi' AND p.id != ?
+     ORDER BY p.date DESC LIMIT 1`,
+                [item.item_id, id]
+            );
+
+            const new_last_cost = lastPurchase
+                ? lastPurchase.unit_price / (await getMultiplier(conn, item.item_id, lastPurchase.buy_unit))
+                : 0;
+
+            await conn.execute(
+                `UPDATE items SET avg_price = ?, last_price = ? WHERE id = ?`,
+                [Math.max(0, new_avg), new_last_cost, item.item_id]
             );
 
             // Catat movement OUT
@@ -216,11 +259,11 @@ const cancel = async (id, cancelled_by) => {
 // GET ALL PURCHASES
 // Query params: loc_id, type, status, start_date, end_date, limit, offset
 // ─────────────────────────────────────────────
-const getAll = async ({ loc_id, type, status, start_date, end_date, limit = 50, offset = 0 } = {}) => {
+const getAll = async ({ location_id, type, status, start_date, end_date, limit = 50, offset = 0 } = {}) => {
     const where = [];
     const params = [];
 
-    if (loc_id) { where.push('p.loc_id = ?'); params.push(loc_id); }
+    if (location_id) { where.push('p.loc_id = ?'); params.push(location_id); }
     if (type) { where.push('p.type = ?'); params.push(type); }
     if (status) { where.push('p.status = ?'); params.push(status); }
     if (start_date) { where.push('p.date >= ?'); params.push(start_date); }
@@ -258,10 +301,12 @@ const getById = async (id) => {
         `SELECT
             p.*,
             sl.name AS location_name,
-            u.name  AS created_by_name
+            u.name  AS created_by_name,
+            u2.name AS cancelled_by_name
          FROM purchases p
          LEFT JOIN stock_locations sl ON p.loc_id = sl.id
          LEFT JOIN users u            ON p.created_by = u.id
+         LEFT JOIN users u2 ON p.cancelled_by = u2.id
          WHERE p.id = ?`,
         [id]
     );
@@ -281,5 +326,7 @@ const getById = async (id) => {
 
     return { ...purchase, items };
 };
+
+
 
 module.exports = { create, cancel, getAll, getById };
