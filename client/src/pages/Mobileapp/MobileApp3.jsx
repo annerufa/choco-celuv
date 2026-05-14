@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import "./mobile.css";
+import "./mobile2.css";
+import { useAuth } from '../../context/AuthContext'; // tambah ini
+import { useNavigate } from 'react-router-dom'; // tambah ini
 
 // icons
 import { IconHome, IconStok, IconKasir, IconAbsensi, IconProfil } from "./Icons";
@@ -21,7 +23,7 @@ import AbsensiPage from "./AbsensiPage";
 const NAV = {
   kurir: [
     { id: "home", label: "Beranda", Icon: IconHome },
-    { id: "stok", label: "Stok", Icon: IconStok },
+    { id: "pengiriman", label: "Pengiriman", Icon: IconStok },
     { id: "absensi", label: "Absensi", Icon: IconAbsensi },
     { id: "profil", label: "Profil", Icon: IconProfil },
   ],
@@ -55,10 +57,22 @@ function PageRenderer({ role, page, setPage }) {
 
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function MobileApp() {
-  const [role, setRole] = useState("kurir");
+  const { user, logout } = useAuth();       // tambah ini
+  const navigate = useNavigate();     // tambah ini
+  const [role, setRole] = useState(user?.role || "");
   const [page, setPage] = useState("home");
 
+
+  function handleLogout() {           // tambah ini
+    logout();
+    navigate('/login');
+  }
+
   // Jika role kurir & sedang di halaman kasir-only → redirect ke home
+  useEffect(() => {
+    if (user?.role) setRole(user?.role);
+  }, [user]);
+
   useEffect(() => {
     if (role === "kurir" && page === "kasir") setPage("home");
   }, [role]);
@@ -69,36 +83,27 @@ export default function MobileApp() {
   };
 
   return (
-    // <div className="app-wrap">
-
-
-    // {/* ── PHONE FRAME ── */ }
-    < div className="phone" >
-
+    <div className="phone">
 
       {/* SCREEN */}
-      < div className="screen" key={`${role}-${page}`
-      }>
+      <div className="screen" key={`${role}-${page}`}>
         <PageRenderer role={role} page={page} setPage={setPage} />
-      </div >
+      </div>
 
       {/* BOTTOM NAV */}
-      < nav className="botnav" >
-        {
-          NAV[role].map(({ id, label, Icon }) => (
-            <div
-              key={id}
-              className={`ni${page === id ? " active" : ""}`}
-              onClick={() => setPage(id)}
-            >
-              <Icon />
-              <span>{label}</span>
-              <div className="ni-pip" />
-            </div>
-          ))
-        }
-      </nav >
-    </div >
-    /* </div> */
+      <nav className="botnav">
+        {NAV[role].map(({ id, label, Icon }) => (
+          <div
+            key={id}
+            className={`ni${page === id ? " active" : ""}`}
+            onClick={() => setPage(id)}
+          >
+            <Icon />
+            <span>{label}</span>
+            <div className="ni-pip" />
+          </div>
+        ))}
+      </nav>
+    </div>
   );
 }

@@ -28,9 +28,15 @@
     animation: spin 0.7s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
 
-.errorWrap svg { color: var(--danger); }
+.errorWrap svg {
+    color: var(--danger);
+}
 
 /* ── Header ──────────────────────────────────────── */
 .pageHeader {
@@ -73,7 +79,9 @@
     cursor: pointer;
 }
 
-.breadcrumbLink:hover { text-decoration: underline; }
+.breadcrumbLink:hover {
+    text-decoration: underline;
+}
 
 /* ── Hero Card ───────────────────────────────────── */
 .heroCard {
@@ -121,14 +129,18 @@
     flex-wrap: wrap;
 }
 
-.metaDot { color: var(--brown-300); }
+.metaDot {
+    color: var(--brown-300);
+}
 
 .metaText {
     font-size: 12px;
     color: var(--brown-500);
 }
 
-.metaText strong { color: var(--brown-800); }
+.metaText strong {
+    color: var(--brown-800);
+}
 
 .heroStats {
     display: flex;
@@ -226,6 +238,8 @@
 .lokList {
     display: flex;
     flex-direction: column;
+    max-height: 400px;
+    overflow-y: auto;
 }
 
 .lokRow {
@@ -237,7 +251,9 @@
     gap: 6px 12px;
 }
 
-.lokRow:last-child { border-bottom: none; }
+.lokRow:last-child {
+    border-bottom: none;
+}
 
 .lokInfo {
     display: flex;
@@ -315,13 +331,23 @@
     font-size: 13px;
 }
 
-.infoRow:last-child { border-bottom: none; }
+.infoRow:last-child {
+    border-bottom: none;
+}
 
-.infoLabel { color: var(--brown-500); }
-.infoValue { font-weight: 600; color: var(--brown-800); }
+.infoLabel {
+    color: var(--brown-500);
+}
+
+.infoValue {
+    font-weight: 600;
+    color: var(--brown-800);
+}
 
 /* ── Movements Table ─────────────────────────────── */
-.tableWrap { overflow-x: auto; }
+.tableWrap {
+    overflow-x: auto;
+}
 
 .table {
     width: 100%;
@@ -349,10 +375,17 @@
     vertical-align: middle;
 }
 
-.table tbody tr:last-child td { border-bottom: none; }
-.table tbody tr:hover td { background: var(--brown-50); }
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
 
-.monoCell { font-family: var(--mono); }
+.table tbody tr:hover td {
+    background: var(--brown-50);
+}
+
+.monoCell {
+    font-family: var(--mono);
+}
 
 .movPill {
     display: inline-flex;
@@ -373,11 +406,27 @@
     opacity: .6;
 }
 
-.in  { background: #D1FAE5; color: var(--success); }
-.out { background: #FEE2E2; color: var(--danger);  }
+.in {
+    background: #D1FAE5;
+    color: var(--success);
+}
 
-.qtyIn  { color: var(--success); font-weight: 700; font-family: var(--mono); }
-.qtyOut { color: var(--danger);  font-weight: 700; font-family: var(--mono); }
+.out {
+    background: #FEE2E2;
+    color: var(--danger);
+}
+
+.qtyIn {
+    color: var(--success);
+    font-weight: 700;
+    font-family: var(--mono);
+}
+
+.qtyOut {
+    color: var(--danger);
+    font-weight: 700;
+    font-family: var(--mono);
+}
 
 /* ── Pills ───────────────────────────────────────── */
 .pill {
@@ -399,12 +448,35 @@
     opacity: .6;
 }
 
-.pillBrown   { background: var(--brown-100); color: var(--brown-700); }
-.pillSuccess { background: #D1FAE5;          color: var(--success);   }
-.pillDanger  { background: #FEE2E2;          color: var(--danger);    }
-.success     { background: #D1FAE5;          color: var(--success);   }
-.warning     { background: #FEF3C7;          color: var(--warning);   }
-.danger      { background: #FEE2E2;          color: var(--danger);    }
+.pillBrown {
+    background: var(--brown-100);
+    color: var(--brown-700);
+}
+
+.pillSuccess {
+    background: #D1FAE5;
+    color: var(--success);
+}
+
+.pillDanger {
+    background: #FEE2E2;
+    color: var(--danger);
+}
+
+.success {
+    background: #D1FAE5;
+    color: var(--success);
+}
+
+.warning {
+    background: #FEF3C7;
+    color: var(--warning);
+}
+
+.danger {
+    background: #FEE2E2;
+    color: var(--danger);
+}
 
 /* ── Buttons ─────────────────────────────────────── */
 .btnGhost {
@@ -428,6 +500,23 @@
     border-color: var(--brown-300);
 }
 
+.lokList::-webkit-scrollbar {
+    width: 4px;
+}
+
+.lokList::-webkit-scrollbar-track {
+    background: var(--brown-50);
+}
+
+.lokList::-webkit-scrollbar-thumb {
+    background: var(--brown-200);
+    border-radius: 99px;
+}
+
+.lokList::-webkit-scrollbar-thumb:hover {
+    background: var(--brown-300);
+}
+
 /* ── Responsive ──────────────────────────────────── */
 @media (max-width: 768px) {
     .heroCard {
@@ -440,13 +529,17 @@
         justify-content: space-between;
     }
 
-    .heroStat { padding: 12px 16px; }
+    .heroStat {
+        padding: 12px 16px;
+    }
 
     .grid {
         grid-template-columns: 1fr;
     }
 
-    .fullWidth { grid-column: 1; }
+    .fullWidth {
+        grid-column: 1;
+    }
 }
 
 @media (max-width: 480px) {

@@ -7,6 +7,12 @@ const getAll = async () => {
     );
     return rows;
 };
+const getAllwithJadwal = async () => {
+    const [rows] = await db.query(
+        "SELECT k.id, k.name, k.role, j.booth_id, b.name AS nama_booth, b.longitude, b.latitude, j.shift, j.expected_clock_in AS jam_masuk, j.expected_clock_out AS jam_pulang, k.is_active FROM users k LEFT JOIN ( SELECT s1.* FROM employee_schedules s1 WHERE s1.created_at = ( SELECT MAX(s2.created_at) FROM employee_schedules s2 WHERE s2.employee_id = s1.employee_id AND s2.is_active = 1 ) AND s1.employee_id IN ( SELECT id FROM users WHERE role != 'kurir' ) ) j ON k.id = j.employee_id LEFT JOIN booth b ON j.booth_id = b.id WHERE k.role != 'pemilik'",
+    );
+    return rows;
+};
 const getKurir = async () => {
     const [rows] = await db.query(
         "SELECT * FROM users WHERE role = 'kurir' ORDER BY id DESC;",
@@ -20,7 +26,7 @@ const getPenjaga = async () => {
     return rows;
 };
 const create = async (data) => {
-    const { name, no_hp, alamat, role, entry_date, username, password, is_active } = data;
+    const { name, no_hp, alamat, role, entry_date, username, password } = data;
 
     // console.log("data d model:", name, no_hp, alamat, role, entry_date, username, password, is_active);
     const conn = await db.getConnection();
@@ -141,4 +147,4 @@ const update = async (id, data) => {
 
 // update, remove, getById, dll...
 
-module.exports = { getAll, create, update, getKurir, getPenjaga };
+module.exports = { getAll, create, update, getKurir, getPenjaga, getAllwithJadwal };

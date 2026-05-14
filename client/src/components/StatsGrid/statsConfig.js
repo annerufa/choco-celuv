@@ -1,9 +1,10 @@
 // statsConfig.js
 export function getStatsBarang(barangList) {
-    const totalAktif = barangList.filter(b => b.stock_active).length;
-    const totalOver = barangList.filter(b => b.stock_active && b.stok_status === 'Overstock').length;
-    const totalMenipis = barangList.filter(b => b.stock_active && b.stok_status === 'Menipis').length;
-    const totalKritis = barangList.filter(b => b.stock_active && ['Kritis', 'Habis'].includes(b.stok_status)).length;
+    const aktif = barangList.filter(b => b.is_active);
+    const totalAktif = aktif.length;
+    const totalOver = aktif.filter(b => b.stok_status === 'Overstock').length;
+    const totalMenipis = aktif.filter(b => b.stok_status === 'Menipis').length;
+    const totalKritis = aktif.filter(b => ['Kritis', 'Habis'].includes(b.stok_status)).length;
 
     return [
         { id: 'total', icon: 'barang', iconVariant: 'brown', value: totalAktif, label: 'Total barang aktif' },
@@ -21,6 +22,20 @@ export function getStatsBarang(barangList) {
         },
     ];
 }
+export function getStatsKaryawan(karyawanList) {
+    const totalKaryawan = karyawanList.length;
+    const karyawanAktif = karyawanList.filter(k => k.is_active).length;
+    const totalKurir = karyawanList.filter(k => k.is_active && k.role === 'kurir').length;
+    const totalPenjaga = karyawanList.filter(k => k.is_active && k.role === 'penjaga_booth').length;
+
+    return [
+        { id: 'total', icon: 'person', variant: 'br', value: totalKaryawan, label: 'Total Karyawan' },
+        { id: 'aktif', icon: 'aktif', iconVariant: 'gn', value: karyawanAktif, label: 'Total Karyawan Aktif' },
+        { id: 'kurir', icon: 'kurir', iconVariant: 'rd', value: totalKurir, label: 'Total Kurir' },
+        { id: 'penjaga', icon: 'booth', variant: 'or', value: totalPenjaga, label: 'Total Penjaga Booth' },
+    ];
+}
+
 // src/components/StatsGrid/statsConfig.js
 export const getStatsBooth = (boothList) => {
     const totalBooth = boothList.length;
@@ -47,18 +62,3 @@ export function getStatsKeuangan(transaksiList) {
     ];
 }
 
-// src/components/StatsGrid/statsConfig.js
-export const getStatsKaryawan = (karyawanList) => {
-
-    const karyawanAktif = karyawanList.filter(b => b.is_active).length;
-    // const karyawanOn = karyawanList.filter(b => ['Kritis', 'Habis'].includes(b.stok_status)).length;
-    // const karyawanOff = karyawanList.filter(b => ['Kritis', 'Habis'].includes(b.stok_status)).length;
-
-    return [
-        { id: 'aktif', icon: 'barang', iconVariant: 'brown', value: totalAktif, label: 'Total karyawan aktif' },
-        { id: 'on', icon: 'bahan', iconVariant: 'success', value: totalAman, label: 'Karyawan Clock-in' }
-        // totalKaryawan: karyawanList.length,
-        // karyawanAktif: karyawanList.filter(k => k.is_active).length,
-        // Tambahkan statistik lain sesuai kebutuhan
-    ];
-};

@@ -4,10 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import styles from './BarangTable.module.css';
 import TambahBarangModal from './TambahBarangModal';
 import EditBarangModal from './EditBarangModal';
+import ConfirmModal from '../Shared/ConfirmModal';
 import toast from 'react-hot-toast';
-// import { useApi } from '../../hooks/useApi';
-// import { useAuth } from '../../context/AuthContext'; // tambah ini
-
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 const ITEMS_PER_PAGE = 7;
 
@@ -69,6 +67,9 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
     const [filterStokStatus, setFilterStokStatus] = useState([]); // array of selected status
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [actionLoading, setActionLoading] = useState(null);
+    const [modalLoading, setModalLoading] = useState(false);
+    const [modalError, setModalError] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
     // const [actionLoading, setActionLoading] = useState(null); // item id yang sedang diproses
 
@@ -108,12 +109,11 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
 
     // Reset halaman saat search berubah
     // useEffect(() => { setCurrentPage(1); }, [searchQuery]);
+
     // Reset halaman saat search atau filter berubah
     useEffect(() => { setCurrentPage(1); }, [searchQuery, filterStokStatus]);
+
     // ── Filter & Pagination ───────────────────────────────────
-    // const filtered = barangList.filter(b =>
-    //     b.name.toLowerCase().includes(searchQuery.toLowerCase())
-    // );
     const filtered = barangList.filter(b => {
         const matchSearch = b.name.toLowerCase().includes(searchQuery.toLowerCase());
         const matchStok = filterStokStatus.length === 0 || filterStokStatus.includes(b.stok_status);
@@ -142,72 +142,126 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
 
     // ── Handlers ─────────────────────────────────────────────
 
-    // Tambah barang baru — hit API
+    // Tambah barang baru — hit API, lalu update state dengan response dari API (yang sudah lengkap dengan stok dan konversi)
+    async function handleTambahBarang(formData) {
+        setModalLoading(true);
+        setModalError(null);
 
-    function handleTambahBarang(newItem) {
-        // newItem sudah berupa object hasil API
-        const unitMap = { ml: 'L', gram: 'kg' };
-        setBarangList(prev => [{
-            ...newItem,
-            stok_sekarang: 0,
-            current_stock: 0,
-            display_stok: 0,
-            display_unit: unitMap[newItem.unit] || newItem.unit,
-            min: 0,
-            max: 0,
-            stock_active: true,
-            stok_status: 'Habis',
-            status_label: 'Aktif',
-        }, ...prev]);
-        toast.success(`${newItem.name} berhasil ditambahkan!`);
+        try {
+            const res = await fetch(`${BASE_URL}/items`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`,
+                },
+                body: JSON.stringify(formData),
+            });
+
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.payload?.message ?? json.message ?? 'Gagal menambahkan barang');
+
+            const newItem = json.payload?.data ?? json;
+            if (!newItem) throw new Error('Response API tidak mengandung data barang baru');
+
+            // newItem sudah berupa object hasil API
+            const unitMap = { ml: 'L', gram: 'kg' };
+            setBarangList(prev => [{
+                ...newItem,
+                stok_sekarang: 0,
+                current_stock: 0,
+                display_stok: 0,
+                display_unit: unitMap[newItem.unit] || newItem.unit,
+                min: 0,
+                max: 0,
+                stock_active: true,
+                stok_status: 'Habis',
+                status_label: 'Aktif',
+            }, ...prev]);
+            toast.success(`${newItem.name} berhasil ditambahkan!`);
+            setIsTambahOpen(false);
+        } catch (err) {
+            setModalError(err.message);
+        } finally {
+            setModalLoading(false);
+        }
     }
 
     // Buka modal edit
     function handleOpenEdit(item) {
         setSelectedItem(item);
+        setModalError(null);
         setIsEditOpen(true);
     }
 
-    // Submit edit — hit API
-    function handleEditBarang(updatedItem) {
-
-        console.log('updatedItem dari API:', updatedItem);
-        console.log('barangList saat ini:', barangList);
-        setBarangList(prev => prev.map(item => {
-            if (item.id !== updatedItem.id) return item;
-            const unitMap = { ml: 'L', gram: 'kg' };
-            const newUnit = updatedItem.unit ?? item.unit;
-            return {
-                ...item,
-                ...updatedItem,
-                display_unit: unitMap[newUnit] || newUnit,
-                status_label: (updatedItem.is_active ?? item.is_active) ? 'Aktif' : 'Nonaktif',
-            };
-        }));
-        toast.success(`${updatedItem.name} berhasil diperbarui!`);
-    }
-
-    // Nonaktifkan — hit API DELETE (soft delete)
-    async function handleNonaktifkan(item) {
-        if (!window.confirm(`Nonaktifkan "${item.name}"?`)) return;
-
-        setActionLoading(item.id);
+    // Submit edit — hit API, lalu update state
+    async function handleEditBarang(formData) {
+        setModalLoading(true);
+        setModalError(null);
         try {
-            const res = await fetch(`${BASE_URL}/items/${item.id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${getToken()}` },
+            const res = await fetch(`${BASE_URL}/items/${selectedItem.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`,
+                },
+                body: JSON.stringify(formData),
             });
 
             const json = await res.json();
-            if (!res.ok) throw new Error(json.payload?.message ?? 'Gagal menonaktifkan barang');
+            if (!res.ok) throw new Error(json.payload?.message ?? 'Gagal mengupdate barang');
+
+            const updatedItem = { ...formData, id: selectedItem.id };
+            setBarangList(prev => prev.map(item => {
+                if (item.id !== updatedItem.id) return item;
+                const unitMap = { ml: 'L', gram: 'kg' };
+                const newUnit = updatedItem.unit ?? item.unit;
+                return {
+                    ...item,
+                    ...updatedItem,
+                    display_unit: unitMap[newUnit] || newUnit,
+                    status_label: (updatedItem.is_active ?? item.is_active) ? 'Aktif' : 'Nonaktif',
+                };
+            }));
+            toast.success(`${updatedItem.name} berhasil diperbarui!`);
+            setIsEditOpen(false);
+        } catch (err) {
+            setModalError(err.message);
+        } finally {
+            setModalLoading(false);
+        }
+    }
+
+    // Nonaktifkan — hit API DELETE (soft delete)
+    function handleToggleStatus(item) {
+        setConfirmModal({ isOpen: true, item });
+    }
+
+    async function handleConfirmToggle() {
+        const item = confirmModal.item;
+        const newStatus = item.is_active ? 0 : 1;
+
+        setActionLoading(item.id);
+        try {
+            const res = await fetch(`${BASE_URL}/items/${item.id}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`,
+                },
+                body: JSON.stringify({ is_active: newStatus }),
+            });
+
+            if (!res.ok) throw new Error('Gagal mengupdate status');
 
             setBarangList(prev => prev.map(b =>
                 b.id === item.id
-                    ? { ...b, is_active: 0, stok_status: 'Nonaktif', status_label: 'Nonaktif' }
+                    ? { ...b, is_active: newStatus, status_label: newStatus ? 'Aktif' : 'Nonaktif' }
                     : b
             ));
+            toast.success(`${item.name} berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}!`);
+            setConfirmModal({ isOpen: false, item: null });
         } catch (err) {
-            alert(err.message);
+            toast.error(err.message);
         } finally {
             setActionLoading(null);
         }
@@ -364,13 +418,13 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                             <td className={styles.monoCell}>{item.display_stok} {item.display_unit}</td>
 
                                             <td>
-                                                <span className={`${styles.pill} ${styles[item.stock_active ? stokStatusVariant[item.stok_status] : 'grey']}`}>
-                                                    {item.stock_active ? item.stok_status : 'Nonaktif'}
+                                                <span className={`${styles.pill} ${styles[item.is_active ? stokStatusVariant[item.stok_status] : 'grey']}`}>
+                                                    {item.is_active ? item.stok_status : 'Nonaktif'}
                                                 </span>
                                             </td>
                                             <td>
-                                                <span className={`${styles.pill} ${styles[item.stock_active ? statusVariant[item.status_label] : 'grey']}`}>
-                                                    {item.status_label}
+                                                <span className={`${styles.pill} ${styles[item.is_active ? statusVariant[item.status_label] : 'grey']}`}>
+                                                    {item.is_active ? item.status_label : 'Nonaktif'}
                                                 </span>
                                             </td>
                                             <td>
@@ -401,21 +455,28 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                                     </button>
 
                                                     {/* Nonaktifkan — sembunyikan kalau sudah nonaktif */}
-                                                    {/* {item.stock_active ? (
-                                                        <button
-                                                            className={`${styles.iconBtn} ${styles.danger}`}
-                                                            aria-label="Nonaktifkan"
-                                                            onClick={() => handleNonaktifkan(item)}
-                                                            disabled={actionLoading === item.id}
-                                                        >
+
+                                                    <button
+                                                        className={`${styles.iconBtn} ${item.is_active ? styles.btnNonaktif : styles.btnAktifkan}`}
+                                                        aria-label={item.is_active ? "Nonaktifkan barang" : "Aktifkan barang"}
+                                                        onClick={() => handleToggleStatus(item)}
+                                                        disabled={actionLoading === item.id}
+                                                    >
+                                                        {item.is_active ? (
+                                                            // ikon slash/ban
                                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                                                 <circle cx="12" cy="12" r="10" />
                                                                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                                                             </svg>
-                                                        </button>
-                                                    ) : (
-                                                        <span style={{ width: 28 }} /> 
-                                                    )} */}
+                                                        ) : (
+                                                            // ikon centang/check
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                                <polyline points="20 6 9 17 4 12" />
+                                                            </svg>
+                                                        )}
+                                                    </button>
+                                                    <span style={{ width: 28 }} />
+
                                                 </div>
                                             </td>
                                         </tr>
@@ -468,16 +529,36 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
             {/* Modal Tambah */}
             <TambahBarangModal
                 isOpen={isTambahOpen}
-                onClose={() => setIsTambahOpen(false)}
+                onClose={() => { setIsTambahOpen(false); setModalError(null); }}
                 onSubmit={handleTambahBarang}
+                loading={modalLoading}
+                submitError={modalError}
             />
 
             {/* Modal Edit */}
             <EditBarangModal
                 isOpen={isEditOpen}
-                onClose={() => setIsEditOpen(false)}
+                onClose={() => { setIsEditOpen(false); setModalError(null); }}
                 onSubmit={handleEditBarang}
                 item={selectedItem}
+                loading={modalLoading}
+                submitError={modalError}
+            />
+
+            {/* Confirm Modal */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, item: null })}
+                onConfirm={handleConfirmToggle}
+                variant={confirmModal.item?.is_active ? 'danger' : 'success'}
+                title={confirmModal.item?.is_active ? 'Nonaktifkan Barang?' : 'Aktifkan Barang?'}
+                message={
+                    confirmModal.item?.is_active
+                        ? `"${confirmModal.item?.name}" tidak akan muncul dalam perhitungan stok.`
+                        : `"${confirmModal.item?.name}" akan aktif kembali dan masuk perhitungan stok.`
+                }
+                confirmLabel={confirmModal.item?.is_active ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan'}
+                loading={actionLoading === confirmModal.item?.id}
             />
         </>
     );

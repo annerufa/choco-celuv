@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE = 'http://localhost:3001/api/products';
+const BASE = `${import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'}/products`;
 
 // Ambil semua produk, return payload.data langsung
 export const getProducts = async () => {

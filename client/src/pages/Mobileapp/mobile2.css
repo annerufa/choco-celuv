@@ -1,29 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700;9..40,800;9..40,900&display=swap');
 
 :root {
-  --bg0: #0e0a07;
-  --bg1: #131009;
-  --bg2: #1c1610;
-  --bg3: #241d14;
-  --bg4: #2e2519;
-  --bg5: #3a2f1e;
-  --border: rgba(255, 220, 130, 0.07);
-  --border2: rgba(255, 220, 130, 0.14);
-  --text1: #f5ead8;
-  --text2: #9e8c73;
-  --text3: #5c4f3a;
-  --accent: #e8a020;
-  --accent2: #c4811a;
-  --accentsoft: rgba(232, 160, 32, 0.15);
-  --accentglow: rgba(232, 160, 32, 0.08);
-  --green: #4caf7a;
-  --greensoft: rgba(76, 175, 122, 0.15);
-  --red: #d9534f;
-  --redsoft: rgba(217, 83, 79, 0.15);
-  --blue: #5b9bd5;
-  --bluesoft: rgba(91, 155, 213, 0.15);
-  --purple: #9b72cf;
-  --purplesoft: rgba(155, 114, 207, 0.15);
+  --bg0: #ffffff;
+  --bg1: #f7f5f2;
+  --bg2: #eeeae4;
+  --bg3: #e6e0d8;
+  --bg4: #ddd6cc;
+  --bg5: #d4cbbf;
+  --bg6: #5c2603;
+  --brown-900: #1C1008;
+  --brown-800: #2D1A0E;
+  --brown-700: #3D2314;
+  --orange: #D4500A;
+  --orange-light: #F4874A;
+  --border: rgba(120, 90, 40, 0.10);
+  --border2: rgba(120, 90, 40, 0.18);
+  --text1: #1a1309;
+  --text2: #6b5a42;
+  --text3: #a8967e;
+  --accent: #c47b10;
+  --accent2: #a8660c;
+  --accentsoft: rgba(196, 123, 16, 0.12);
+  --accentglow: rgba(196, 123, 16, 0.08);
+  --green: #2e8a56;
+  --greensoft: rgba(46, 138, 86, 0.12);
+  --red: #c0392b;
+  --redsoft: rgba(192, 57, 43, 0.12);
+  --blue: #2563a8;
+  --bluesoft: rgba(37, 99, 168, 0.12);
+  --purple: #7c4daa;
+  --purplesoft: rgba(124, 77, 170, 0.12);
 }
 
 * {
@@ -35,7 +41,7 @@
 body {
   font-family: 'DM Sans', system-ui, sans-serif;
   color: var(--text1);
-  background: #f8f6f4;
+  background: #ede8e0;
 }
 
 /* ── APP WRAP ── */
@@ -47,21 +53,97 @@ body {
   padding: 14px 0 10px;
 }
 
+/* ── ROLE SWITCHER ── */
+.role-switch-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.role-switch-bar span {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.role-switcher {
+  display: flex;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.swbtn {
+  flex: 1;
+  padding: 5px 14px;
+  text-align: center;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.swbtn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
 /* ── PHONE ── */
 .phone {
-  width: 100vw;
+  width: 100%;
+  max-width: 600px;
+  height: 100dvh;
+  border-radius: 0;
+  margin: 0 auto;
+  padding-top: 0;
+  padding-bottom: 0;
+  background: var(--bg1);
+  border: 1.5px solid var(--border2);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 8px 40px rgba(100, 70, 20, 0.13);
 }
 
+/* ── STATUS BAR ── */
+.statusbar {
+  height: 46px;
+  background: var(--bg0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.s-time {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text1);
+}
+
+.s-icons {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  color: var(--text1);
+  font-size: 12px;
+  font-weight: 600;
+}
 
 /* ── SCREEN ── */
 .screen {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  background: var(--bluesoft);
+  background: var(--bg1);
   scrollbar-width: none;
 }
 
@@ -71,13 +153,15 @@ body {
 
 /* ── BOTTOM NAV ── */
 .botnav {
-  height: 74px;
-  background: var(--accentsoft);
+  /* height: 74px; */
+  background: var(--brown-900);
   border-top: 1px solid var(--border2);
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 0 4px 8px;
+  /* padding: 0 4px 0px; */
+  height: calc(64px + env(safe-area-inset-bottom));
+  padding: 0 4px calc(8px + env(safe-area-inset-bottom));
   flex-shrink: 0;
 }
 
@@ -96,30 +180,30 @@ body {
 .ni svg {
   width: 21px;
   height: 21px;
-  color: var(--text3);
+  color: var(--orange-light);
   transition: color 0.2s;
 }
 
 .ni span {
   font-size: 10px;
   font-weight: 600;
-  color: var(--text3);
+  color: var(--orange-light);
   transition: color 0.2s;
 }
 
 .ni.active svg {
-  color: var(--accent);
+  color: var(--bg3);
 }
 
 .ni.active span {
-  color: var(--accent);
+  color: var(--bg3);
 }
 
 .ni-pip {
   width: 3px;
   height: 3px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--bg3);
   opacity: 0;
   transition: opacity 0.2s;
   margin-top: 1px;
@@ -148,8 +232,9 @@ body {
 
 /* ── PAGE HEADER ── */
 .phead {
-  padding: 16px 20px 12px;
-  background: var(--accentsoft);
+  padding: calc(env(safe-area-inset-top) + 16px) 20px 12px;
+  /* padding: 16px 20px 12px; */
+  background: var(--brown-800);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -165,12 +250,12 @@ body {
 .ptitle {
   font-size: 20px;
   font-weight: 800;
-  color: var(--text1);
+  color: var(--bg0);
 }
 
 .psub {
   font-size: 12px;
-  color: var(--text2);
+  color: var(--bg1);
   margin-top: 2px;
 }
 
@@ -193,11 +278,11 @@ body {
 
 /* ── HERO CARD ── */
 .hero {
-  background: var(--bg3);
+  background: #D4500A;
   border-radius: 20px;
   padding: 20px;
   margin-bottom: 18px;
-  border: 1px solid var(--border2);
+  border: none;
   position: relative;
   overflow: hidden;
 }
@@ -210,12 +295,12 @@ body {
   width: 140px;
   height: 140px;
   border-radius: 50%;
-  background: var(--accentglow);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .hero-lbl {
   font-size: 11px;
-  color: var(--text2);
+  color: rgba(255, 255, 255, 0.75);
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin-bottom: 4px;
@@ -224,7 +309,7 @@ body {
 .hero-val {
   font-size: 32px;
   font-weight: 900;
-  color: var(--text1);
+  color: #fff;
   letter-spacing: -1.5px;
 }
 
@@ -232,8 +317,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--accentsoft);
-  color: var(--accent);
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
   font-size: 11px;
   font-weight: 700;
   padding: 3px 9px;
@@ -249,21 +334,21 @@ body {
 
 .hmini {
   flex: 1;
-  background: var(--bg4);
+  background: rgba(255, 255, 255, 0.38);
   border-radius: 12px;
   padding: 10px 12px;
 }
 
 .hmini-lbl {
-  font-size: 10px;
-  color: var(--text3);
+  font-size: 12px;
+  color: rgba(14, 12, 12, 0.945);
   margin-bottom: 2px;
 }
 
 .hmini-val {
   font-size: 15px;
   font-weight: 800;
-  color: var(--text1);
+  color: #fff;
 }
 
 /* ── STAT CARDS ── */
@@ -275,16 +360,17 @@ body {
 }
 
 .scard {
-  background: var(--bg2);
+  background: var(--bg0);
   border-radius: 16px;
   padding: 14px;
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  box-shadow: 0 1px 4px rgba(100, 70, 20, 0.06);
 }
 
 .scard:active {
-  border-color: var(--border2);
+  border-color: var(--accent);
 }
 
 .sicon {
@@ -323,11 +409,73 @@ body {
   display: inline-block;
 }
 
+/* ── STAT CARD ROW (2 kolom: icon kiri, info kanan) ── */
+.scard-row {
+  background: var(--bg0);
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  box-shadow: 0 1px 4px rgba(100, 70, 20, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.scard-row:active {
+  border-color: var(--accent);
+}
+
+.scard-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.scard-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.scard-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.scard-val {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text1);
+  line-height: 1;
+}
+
+.scard-lbl {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.scard-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  margin-top: 2px;
+  display: inline-block;
+  align-self: flex-start;
+}
+
 /* ── SECTION TITLE ── */
 .sec-title {
   font-size: 13px;
   font-weight: 700;
-  color: var(--text2);
+  color: var(--text3);
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin-bottom: 10px;
@@ -344,10 +492,11 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--bg2);
+  background: var(--bg0);
   border-radius: 12px;
   padding: 12px;
   border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(100, 70, 20, 0.05);
 }
 
 .act-ic {
@@ -398,11 +547,12 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg3);
+  background: var(--bg0);
   border-radius: 12px;
   padding: 10px 14px;
   border: 1px solid var(--border);
   margin-bottom: 14px;
+  box-shadow: 0 1px 3px rgba(100, 70, 20, 0.05);
 }
 
 .srchbar svg {
@@ -445,15 +595,15 @@ body {
   border-radius: 20px;
   white-space: nowrap;
   cursor: pointer;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border2);
   color: var(--text2);
-  background: var(--bg2);
+  background: var(--bg0);
   flex-shrink: 0;
 }
 
 .chip.active {
   background: var(--accent);
-  color: var(--bg0);
+  color: #fff;
   border-color: var(--accent);
 }
 
@@ -468,17 +618,18 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--bg2);
+  background: var(--bg0);
   border-radius: 13px;
   padding: 12px 14px;
   border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(100, 70, 20, 0.05);
 }
 
 .sthumb {
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: var(--bg4);
+  background: var(--bg2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -535,14 +686,15 @@ body {
 
 /* ── ABSENSI ── */
 .absen-hero {
-  background: var(--bg3);
+  background: var(--);
   border-radius: 20px;
   padding: 20px;
-  border: 1px solid var(--border2);
+  border: 1px solid var(--border);
   margin-bottom: 14px;
   text-align: center;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 1px 6px rgba(100, 70, 20, 0.07);
 }
 
 .absen-hero::before {
@@ -589,7 +741,7 @@ body {
 
 .abtn-in {
   background: var(--green);
-  color: #061209;
+  color: #fff;
 }
 
 .abtn-out {
@@ -605,11 +757,12 @@ body {
 
 .astat {
   flex: 1;
-  background: var(--bg2);
+  background: var(--bg0);
   border-radius: 12px;
   padding: 10px;
   border: 1px solid var(--border);
   text-align: center;
+  box-shadow: 0 1px 3px rgba(100, 70, 20, 0.05);
 }
 
 .astat-val {
@@ -633,10 +786,11 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--bg2);
+  background: var(--bg0);
   border-radius: 12px;
   padding: 11px 13px;
   border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(100, 70, 20, 0.05);
 }
 
 .aava {
@@ -672,10 +826,10 @@ body {
 
 /* ── KASIR / CART ── */
 .ktotal {
-  background: var(--bg3);
+  background: var(--accent);
   border-radius: 18px;
   padding: 16px 18px;
-  border: 1px solid var(--border2);
+  border: none;
   margin-bottom: 14px;
   display: flex;
   align-items: center;
@@ -693,17 +847,18 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--bg2);
+  background: var(--bg0);
   border-radius: 12px;
   padding: 11px 13px;
   border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(100, 70, 20, 0.05);
 }
 
 .kthumb {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: var(--bg4);
+  background: var(--bg2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -735,7 +890,7 @@ body {
   height: 26px;
   border-radius: 7px;
   border: 1px solid var(--border2);
-  background: var(--bg4);
+  background: var(--bg1);
   color: var(--text1);
   font-size: 15px;
   font-weight: 800;
@@ -760,12 +915,13 @@ body {
   border-radius: 15px;
   border: none;
   background: var(--accent);
-  color: var(--bg0);
+  color: #fff;
   font-size: 15px;
   font-weight: 900;
   cursor: pointer;
   font-family: inherit;
   letter-spacing: 0.2px;
+  box-shadow: 0 4px 14px rgba(196, 123, 16, 0.25);
 }
 
 /* ── PROFIL ── */
@@ -773,6 +929,7 @@ body {
   text-align: center;
   padding: 24px 20px 16px;
   background: var(--bg0);
+  border-bottom: 1px solid var(--border);
 }
 
 .pava-lg {
@@ -784,7 +941,7 @@ body {
   justify-content: center;
   font-size: 28px;
   font-weight: 900;
-  color: var(--bg0);
+  color: #fff;
   margin: 0 auto 12px;
   position: relative;
 }
@@ -794,7 +951,7 @@ body {
   inset: -3px;
   border-radius: 50%;
   border: 2px solid var(--accent);
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .pname {
@@ -827,11 +984,12 @@ body {
 }
 
 .mitems {
-  background: var(--bg2);
+  background: var(--bg0);
   border-radius: 16px;
   border: 1px solid var(--border);
   margin: 0 20px;
   overflow: hidden;
+  box-shadow: 0 1px 4px rgba(100, 70, 20, 0.06);
 }
 
 .mrow {

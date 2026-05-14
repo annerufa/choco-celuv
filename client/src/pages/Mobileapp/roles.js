@@ -1,11 +1,11 @@
 export const ROLES = {
   kurir: {
-    name: "Raka Kurniawan",
-    init: "RK",
-    sub: "Kurir · Shift Pagi",
+    name: "Aziz Kurniawan",
+    init: "AK",
+    sub: "Kurir",
     badge: "🛵 Kurir",
-    badgeStyle: { background: "rgba(232,160,32,.15)", color: "#e8a020" },
-    avaGrad: "linear-gradient(135deg,#b86a10,#e8a020)",
+    badgeStyle: { background: "rgba(232,160,32,.15)", color: "#5c2603" },
+    avaGrad: "linear-gradient(135deg,#FFE1D4,#FF7700)",
   },
   kasir: {
     name: "Dina Nurhayati",

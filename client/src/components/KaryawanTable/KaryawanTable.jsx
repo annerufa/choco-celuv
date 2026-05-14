@@ -1,6 +1,8 @@
 // src/components/KaryawanTable/KaryawanTable.jsx
 import { useState, useEffect } from 'react';
 import styles from './KaryawanTable.module.css';
+import TambahKaryawanModal from './TambahKaryawanModal';
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -9,21 +11,16 @@ function getInitials(name) {
 }
 
 const roleVariant = {
-    'Penjaga Booth': 'success',
-    'Kurir': 'accent',
+    'penjaga_booth': 'success',
+    'kurir': 'accent',
     // 'Supervisor': 'success',
 };
 
-export default function KaryawanTable({
-    karyawanList = [],
-    setKaryawanList,
-    loading = false,
-    error = null,
-    fetchData,
-}) {
+export default function KaryawanTable({ karyawanList, setKaryawanList, loading, error }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
+    const [isTambahOpen, setIsTambahOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
     const [drawerTarget, setDrawerTarget] = useState(null);
@@ -37,9 +34,9 @@ export default function KaryawanTable({
             (filterStatus === 'active' && k.is_active) ||
             (filterStatus === 'inactive' && !k.is_active);
         const matchSearch =
-            k.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            k.employee_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            k.role.toLowerCase().includes(searchQuery.toLowerCase());
+            k.name.toLowerCase().includes(searchQuery.toLowerCase())
+        // k.booth_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        // k.role.toLowerCase().includes(searchQuery.toLowerCase());
         return matchStatus && matchSearch;
     });
 
@@ -54,6 +51,44 @@ export default function KaryawanTable({
         }, []);
 
     // ── Handlers ──────────────────────────────────────────────
+    async function handleTambahKaryawan(newKaryawan) {
+        const response = await fetch(`${BASE_URL}/karyawan`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newKaryawan),
+        });
+
+        const json = await response.json();
+        if (!response.ok) throw new Error(json.payload?.message || 'Gagal menyimpan karyawan');
+
+        const saved = json.payload.data;
+        setKaryawanList(prev => [saved, ...prev]);
+        toast.success(`Data ${saved.name} berhasil ditambahkan!`);
+    }
+
+
+    function handleOpenEdit(booth) {
+        setSelectedBooth(booth);
+        setIsEditOpen(true);
+    }
+
+    async function handleEditKaryawan(id, updatedData) {
+        const response = await fetch(`${BASE_URL}/karyawan/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData),
+        });
+
+        const json = await response.json();
+        if (!response.ok) throw new Error(json.payload.message || 'Gagal update Karyawan');
+
+        const saved = json.payload.data;
+        setBoothList(prev => prev.map(b => b.id === id ? saved : b)); // update list tanpa refetch
+        toast.success(`Data ${saved.name} berhasil diupdate!`);
+    }
+
+
+
     function handleNonaktifkan(k) {
         if (!window.confirm(`Nonaktifkan "${k.name}"?`)) return;
         setKaryawanList(prev => prev.map(x => x.id === k.id ? { ...x, is_active: false } : x));
@@ -89,7 +124,7 @@ export default function KaryawanTable({
                                 </button>
                             ))}
                         </div>
-                        <button className={styles.btnPrimary} onClick={() => { setEditTarget(null); setIsModalOpen(true); }}>
+                        <button className={styles.btnPrimary} onClick={() => setIsTambahOpen(true)}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                             </svg>
@@ -103,12 +138,10 @@ export default function KaryawanTable({
                         <thead>
                             <tr>
                                 <th>No</th>
-                                <th>Karyawan</th>
-                                {/* <th>Kode</th> */}
+                                <th>Nama Karyawan</th>
                                 <th>Jabatan</th>
                                 <th>Booth Ditugaskan</th>
-                                <th>No. HP</th>
-                                {/* <th>Tgl. Bergabung</th> */}
+                                <th>Shift</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
                             </tr>
@@ -125,31 +158,25 @@ export default function KaryawanTable({
                                     <td className={styles.idCell}>{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
                                     <td>
                                         <div className={styles.employeeCell}>
-                                            <div
+                                            {/* <div
                                                 className={styles.avatar}
                                                 style={{ background: k.is_active ? 'var(--accent)' : 'var(--brown-300)' }}
                                             >
                                                 {getInitials(k.name)}
-                                            </div>
+                                            </div> */}
                                             <div>
                                                 <div className={styles.employeeName}>{k.name}</div>
-                                                <div className={styles.employeeEmail}>{k.email}</div>
+                                                {/* <div className={styles.employeeEmail}>{`${styles.pill} ${styles[roleVariant[k.role] ?? 'brown']}`}</div> */}
                                             </div>
                                         </div>
                                     </td>
-                                    {/* <td className={styles.monoCell}>{k.employee_code}</td> */}
                                     <td>
                                         <span className={`${styles.pill} ${styles[roleVariant[k.role] ?? 'brown']}`}>
                                             {k.role}
                                         </span>
                                     </td>
-                                    <td className={styles.boothCell}>{k.booth}</td>
-                                    <td className={styles.monoCell}>{k.phone}</td>
-                                    {/* <td>
-                                        {new Date(k.join_date).toLocaleDateString('id-ID', {
-                                            day: 'numeric', month: 'short', year: 'numeric',
-                                        })}
-                                    </td> */}
+                                    <td className={styles.boothCell}>{k.nama_booth ?? '-'}</td>
+                                    <td className={styles.monoCell}>{k.shift ?? 'On Call'}</td>
                                     <td>
                                         <span className={`${styles.pill} ${k.is_active ? styles.success : styles.danger}`}>
                                             {k.is_active ? 'Aktif' : 'Nonaktif'}
@@ -294,6 +321,13 @@ export default function KaryawanTable({
                     </div>
                 </>
             )}
+
+            {/* MODAL TAMBAH */}
+            <TambahKaryawanModal
+                isOpen={isTambahOpen}
+                onClose={() => setIsTambahOpen(false)}
+                onSubmit={handleTambahKaryawan}
+            />
         </>
     );
 }

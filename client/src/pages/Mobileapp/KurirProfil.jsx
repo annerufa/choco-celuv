@@ -1,9 +1,17 @@
 import { ROLES } from "./roles";
 import { IconChevron, IconUser, IconLock, IconPin, IconActivity, IconLogout } from "./Icons";
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 export default function KurirProfil() {
   const r = ROLES.kurir;
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
+  function handleLogout() {
+    logout();
+    navigate('/login');
+  }
   return (
     <div className="page">
       {/* AVATAR HEADER */}
@@ -70,8 +78,8 @@ export default function KurirProfil() {
                 <IconActivity />
               </div>
               <div>
-                <div className="mtitle">Performa Saya</div>
-                <div className="msub">Rating 4.9 · 98% tepat waktu</div>
+                <div className="mtitle">Akurasi Pengiriman Saya</div>
+                <div className="msub">Rating 4.9 · 98% kecocokan barang</div>
               </div>
               <div className="mchev"><IconChevron /></div>
             </div>
@@ -82,12 +90,12 @@ export default function KurirProfil() {
         <div className="mgrp">
           <div className="mgrp-title">Lainnya</div>
           <div className="mitems">
-            <div className="mrow">
+            <div className="mrow" onClick={handleLogout}>
               <div className="mic" style={{ background: "var(--redsoft)", color: "var(--red)" }}>
                 <IconLogout />
               </div>
               <div>
-                <div className="mtitle" style={{ color: "var(--red)" }}>Keluar</div>
+                <div className="mtitle" style={{ color: "var(--red)" }} >Keluar</div>
               </div>
               <div className="mchev"><IconChevron /></div>
             </div>

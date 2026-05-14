@@ -17,7 +17,8 @@ const getAllItems = async (req, res) => {
 
 const getItem = async (req, res) => {
     try {
-        const data = await Items.getItem(req.params.id);
+        const locationId = req.user.location_id ?? null;
+        const data = await Items.getItem(req.params.id, locationId);
         response(200, data, 'Berhasil mengambil data barang', res);
     } catch (err) {
         response(500, null, err.message, res);
@@ -77,7 +78,19 @@ const updateItems = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
+const statusItem = async (req, res) => {
+    try {
+        const locationId = req.user.location_id ?? null;
+        const isActive = req.body.is_active ?? 0; // 0 = nonaktif, 1 = aktifkan
 
+        await Items.statusChange(req.params.id, isActive, locationId);
+
+        const msg = isActive ? 'Barang berhasil diaktifkan' : 'Barang berhasil dinonaktifkan';
+        response(200, null, msg, res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
 const deleteItems = async (req, res) => {
     try {
         const locationId = req.user.location_id ?? null;
@@ -105,4 +118,4 @@ const getConversions = async (req, res) => {
     }
 };
 
-module.exports = { getAllItems, createItems, getConversions, updateItems, deleteItems, getItem, getItemsPerLoc, getByItemOrLocation };
+module.exports = { getAllItems, statusItem, createItems, getConversions, updateItems, deleteItems, getItem, getItemsPerLoc, getByItemOrLocation };

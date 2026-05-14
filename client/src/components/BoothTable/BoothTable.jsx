@@ -4,6 +4,7 @@ import styles from './BoothTable.module.css';
 import TambahBoothModal from './TambahBoothModal';
 import EditBoothModal from './EditBoothModal';
 import toast from 'react-hot-toast';
+import { BASE_URL } from '../../config';
 
 function getInitials(name) {
     return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -33,7 +34,7 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
 
     // ── Handlers ──────────────────────────────────────────────
     async function handleTambahBooth(newBooth) {
-        const response = await fetch('http://localhost:3001/api/booth', {
+        const response = await fetch(`${BASE_URL}/booth`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newBooth),
@@ -55,7 +56,7 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
     }
 
     async function handleEditBooth(id, updatedData) {
-        const response = await fetch(`http://localhost:3000/api/booths/${id}`, {
+        const response = await fetch(`${BASE_URL}/booths/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedData),

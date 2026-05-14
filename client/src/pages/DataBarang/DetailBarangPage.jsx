@@ -40,9 +40,17 @@ const stokStatusVariant = {
     'Kritis': 'danger',
 };
 
-function getStokStatus(stok, min, max) {
-    if (stok <= min) return 'Kritis';
-    if (stok >= max) return 'Overstock';
+// function getStokStatus(stok, min, max) {
+//     if (stok <= min) return 'Kritis';
+//     if (stok >= max) return 'Overstock';
+//     return 'Aman';
+// }
+
+function getStokStatus(stok, min, max, safetyStock) {
+    if (stok <= 0) return 'Habis';
+    if (stok <= safetyStock) return 'Kritis';  // di bawah safety stock = darurat
+    if (stok <= min) return 'Menipis';          // sudah waktunya order
+    if (stok > max) return 'Overstock';         // terlalu banyak
     return 'Aman';
 }
 
@@ -88,6 +96,8 @@ export default function DetailBarangPage() {
         fetchAll();
     }, [id]);
 
+
+
     if (loading) return (
         <div className={styles.page}>
             <div className={styles.loadingWrap}>
@@ -112,7 +122,9 @@ export default function DetailBarangPage() {
     );
 
     const totalStok = stokLoks.reduce((s, l) => s + Number(l.current_stock ?? 0), 0);
-
+    console.log('Item data:', item);
+    const statusItem = getStokStatus(item.current_stock, item.min_qty, item.max_qty, item.safety_stock);
+    console.log(`Status item: ${statusItem} (stok: ${item.current_stock}, min: ${item.min_qty}, max: ${item.max_qty}, safety: ${item.safety_stock})`);
     return (
         <div className={styles.page}>
 
@@ -143,7 +155,7 @@ export default function DetailBarangPage() {
                         <div className={styles.itemMeta}>
                             <span className={`${styles.pill} ${styles.pillBrown}`}>{item.category}</span>
                             <span className={styles.metaDot}>·</span>
-                            <span className={styles.metaText}>Satuan: <strong>{item.unit}</strong></span>
+                            <span className={styles.metaText}>Status: <strong>{statusItem}</strong></span>
                             <span className={styles.metaDot}>·</span>
                             <span className={`${styles.pill} ${item.is_active ? styles.pillSuccess : styles.pillDanger}`}>
                                 {item.is_active ? 'Aktif' : 'Nonaktif'}
@@ -155,6 +167,11 @@ export default function DetailBarangPage() {
                     <div className={styles.heroStat}>
                         <span className={styles.heroStatLabel}>Total Stok</span>
                         <span className={styles.heroStatValue}>{totalStok} <small>{item.unit}</small></span>
+                    </div>
+                    <div className={styles.heroStatDivider} />
+                    <div className={styles.heroStat}>
+                        <span className={styles.heroStatLabel}>Stok di Lokasimu</span>
+                        <span className={styles.heroStatValue}>{parseFloat(item.current_stock)} <small>{item.unit}</small></span>
                     </div>
                     <div className={styles.heroStatDivider} />
                     <div className={styles.heroStat}>
@@ -182,7 +199,7 @@ export default function DetailBarangPage() {
                     ) : (
                         <div className={styles.lokList}>
                             {stokLoks.map(lok => {
-                                const stokStatus = getStokStatus(lok.current_stock, lok.min_qty, lok.max_qty);
+                                const stokStatus = getStokStatus(lok.current_stock, lok.min_qty, lok.max_qty, lok.safety_stock);
                                 return (
                                     <div key={lok.location_id} className={styles.lokRow}>
                                         <div className={styles.lokInfo}>
@@ -231,10 +248,13 @@ export default function DetailBarangPage() {
                     </div>
                     <div className={styles.infoList}>
                         {[
-                            { label: 'ID Barang', value: `#${String(item.id).padStart(3, '0')}` },
+                            { label: 'ID Barang', value: `#${String(item.id).padStart(3, '00')}` },
                             { label: 'Nama', value: item.name },
                             { label: 'Kategori', value: item.category },
                             { label: 'Satuan Dasar', value: item.unit },
+                            { label: 'Batas Stok Minimal', value: parseFloat(item.min_qty) },
+                            { label: 'Batas Stok Maksimal', value: parseFloat(item.max_qty) },
+                            { label: 'Batas Stok Cadangan', value: parseFloat(item.safety_stock) },
                             { label: 'Harga Terakhir', value: `${formatRp(item.last_price)} / ${item.unit}` },
                             { label: 'Rata-rata Harga', value: `${formatRp(item.avg_price)} / ${item.unit}` },
                             { label: 'Diupdate', value: formatTgl(item.updated_at) },

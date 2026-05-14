@@ -26,42 +26,87 @@
   --purplesoft: rgba(155, 114, 207, 0.15);
 }
 
+/* 
+html, */
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--text1);
+  background: #080604;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-body {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  color: var(--text1);
-  background: #f8f6f4;
-}
 
 /* ── APP WRAP ── */
-.app-wrap {
+.appWrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 14px 0 10px;
+  width: 100%;
+  height: 100svh;
+  padding: 0;
+  /* gap: 10px; */
+  /* padding: 14px 0 10px; */
 }
+
 
 /* ── PHONE ── */
 .phone {
-  width: 100vw;
+  width: 375px;
+  max-width: 430px;
+  /* batas di tablet/desktop */
+  flex: 1;
+  /* ambil sisa tinggi dari appWrap */
+  min-height: 0;
+  /* wajib agar flex child bisa shrink */
+  background: var(--bg1);
+  /* border-radius: 42px; */
+  border: 1.5px solid var(--border2);
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
+/* ── STATUS BAR ── */
+.statusbar {
+  height: 46px;
+  background: var(--bg0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.s-time {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text1);
+}
+
+.s-icons {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  color: var(--text1);
+  font-size: 12px;
+  font-weight: 600;
+}
 
 /* ── SCREEN ── */
 .screen {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  background: var(--bluesoft);
+  background: var(--bg1);
   scrollbar-width: none;
 }
 
@@ -72,7 +117,7 @@ body {
 /* ── BOTTOM NAV ── */
 .botnav {
   height: 74px;
-  background: var(--accentsoft);
+  background: var(--bg0);
   border-top: 1px solid var(--border2);
   display: flex;
   align-items: center;
@@ -149,7 +194,7 @@ body {
 /* ── PAGE HEADER ── */
 .phead {
   padding: 16px 20px 12px;
-  background: var(--accentsoft);
+  background: var(--bg0);
   position: sticky;
   top: 0;
   z-index: 10;

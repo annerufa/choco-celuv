@@ -2,7 +2,7 @@ require('dotenv').config(); // ← baris paling atas
 const express = require("express");
 const cors = require("cors"); // Tambahkan ini agar bisa diakses React
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
 const authenticate = require('./middleware/authenticate');
 
 

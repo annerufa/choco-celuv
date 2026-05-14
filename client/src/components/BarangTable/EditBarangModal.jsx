@@ -2,16 +2,16 @@
 import { useState, useEffect } from 'react';
 import styles from './TambahBarangModal.module.css'; // pakai CSS yang sama
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
+// const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 const KATEGORI = ['Bahan Baku', 'Hasil Mixing', 'Packaging', 'Lainnya'];
 const SATUAN = ['gram', 'ml', 'pcs', 'kg', 'L'];
 
-export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
+export default function EditBarangModal({ isOpen, onClose, onSubmit, item, loading, submitError }) {
     const [formData, setFormData] = useState({ name: '', category: '', unit: '', safety_stock: '', max: '', min: '', is_active: 1 });
     const [errors, setErrors] = useState({});
-    const [loading, setLoading] = useState(false);
+    // const [loading, setLoading] = useState(false);
 
-    // Isi form dengan data item yang dipilih
+    // Isi form dengan data item yang dipilih setiap dibuka
     useEffect(() => {
         if (isOpen && item) {
             setFormData({
@@ -19,8 +19,8 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
                 category: item.category ?? '',
                 unit: item.unit ?? '',
                 safety_stock: parseFloat(item.safety_stock ?? ''),
-                min: parseFloat(item.min ?? ''),
-                max: parseFloat(item.max ?? ''),
+                min: parseFloat(item.min_qty ?? item.min ?? ''),
+                max: parseFloat(item.max_qty ?? item.max ?? ''),
                 is_active: item.is_active ?? 1,
             });
             setErrors({});
@@ -53,40 +53,17 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
         const newErrors = validate();
         if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
 
-        setLoading(true);
-        try {
-            const res = await fetch(`${BASE_URL}/items/${item.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                },
-                body: JSON.stringify({
-                    name: formData.name,
-                    category: formData.category,
-                    unit: formData.unit,
-                    safety_stock: Number(formData.safety_stock) || 0,
-                    min_qty: Number(formData.min) || 0,
-                    max_qty: Number(formData.max) || 0,
-                    is_active: formData.is_active,
-                }),
-            });
-
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.payload?.message ?? 'Gagal mengupdate barang');
-
-            // const updatedItem = json.payload?.data ?? json;
-            onSubmit({ ...formData, id: item.id });
-            // onSubmit(updatedItem);
-            // console.log('Updated item:', updatedItem); // Debug log
-
-            onClose();
-        } catch (err) {
-            setErrors({ submit: err.message || 'Gagal menyimpan perubahan' });
-        } finally {
-            setLoading(false);
-        }
+        onSubmit({
+            name: formData.name,
+            category: formData.category,
+            unit: formData.unit,
+            safety_stock: Number(formData.safety_stock) || 0,
+            min_qty: Number(formData.min) || 0,
+            max_qty: Number(formData.max) || 0,
+            is_active: formData.is_active,
+        });
     }
+
 
     if (!isOpen) return null;
 
@@ -184,30 +161,42 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item }) {
                         {/* Min */}
                         <div className={`${styles.formGroup} ${styles.miniWidth}`}>
                             <label className={styles.label} htmlFor="edit-min">Stok Minimun</label>
-                            <input
-                                id="edit-min"
-                                name="min"
-                                type="number"
-                                className={`${styles.input} ${errors.min ? styles.inputError : ''}`}
-                                placeholder="0"
-                                value={formData.min}
-                                onChange={handleChange}
-                            />
+                            <div className={styles.inputWithSuffix}>
+                                <input
+                                    id="edit-min"
+                                    name="min"
+                                    type="text"
+                                    className={`${styles.input} ${errors.min ? styles.inputError : ''}`}
+                                    placeholder="0"
+                                    value={formData.min ? Number(formData.min).toLocaleString('id') : ''}
+                                    onChange={(e) => {
+                                        const raw = e.target.value.replace(/\D/g, '');
+                                        handleChange({ target: { name: 'min', value: raw } });
+                                    }}
+                                />
+                                <span className={styles.suffix}>{formData.unit}</span>
+                            </div>
                             {errors.min && <span className={styles.errorMsg}>{errors.min}</span>}
                         </div>
 
-                        {/* Satuan */}
+                        {/* Max */}
                         <div className={`${styles.formGroup} ${styles.miniWidth}`}>
-                            <label className={styles.label} htmlFor="edit-max">Stok Minimun</label>
-                            <input
-                                id="edit-max"
-                                name="max"
-                                type="number"
-                                className={`${styles.input} ${errors.max ? styles.inputError : ''}`}
-                                placeholder="0"
-                                value={formData.max}
-                                onChange={handleChange}
-                            />
+                            <label className={styles.label} htmlFor="edit-max">Stok Maksimum</label>
+                            <div className={styles.inputWithSuffix}>
+                                <input
+                                    id="edit-max"
+                                    name="max"
+                                    type="text"
+                                    className={`${styles.input} ${errors.max ? styles.inputError : ''}`}
+                                    placeholder="0"
+                                    value={formData.max ? Number(formData.max).toLocaleString('id') : ''}
+                                    onChange={(e) => {
+                                        const raw = e.target.value.replace(/\D/g, '');
+                                        handleChange({ target: { name: 'max', value: raw } });
+                                    }}
+                                />
+                                <span className={styles.suffix}>{formData.unit}</span>
+                            </div>
                             {errors.max && <span className={styles.errorMsg}>{errors.max}</span>}
                         </div>
 

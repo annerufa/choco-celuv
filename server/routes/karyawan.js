@@ -1,7 +1,8 @@
 const router = require('express').Router();
-const { getAllKaryawan, createKaryawan, updateKaryawan, getKurir, getPenjaga } = require('../controllers/karyawanController');
+const { getAllKaryawan, createKaryawan, updateKaryawan, getKurir, getPenjaga, getAllKaryawanwithJadwal } = require('../controllers/karyawanController');
 
 router.get('/', getAllKaryawan);
+router.get('/withJadwal', getAllKaryawanwithJadwal);
 router.post('/', createKaryawan);
 router.put('/:id', updateKaryawan);
 

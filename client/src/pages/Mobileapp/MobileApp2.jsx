@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import "./mobile.css";
 
 // icons
-import { IconHome, IconStok, IconKasir, IconAbsensi, IconProfil } from "./Icons";
+import { IconHome, IconStok, IconKasir, IconActivity, IconAbsensi, IconProfil } from "./Icons";
+import { ROLES } from "./roles";
 
 // kurir pages
 import KurirHome from "./KurirHome";
@@ -22,17 +23,54 @@ const NAV = {
   kurir: [
     { id: "home", label: "Beranda", Icon: IconHome },
     { id: "stok", label: "Stok", Icon: IconStok },
+    { id: "kasir", label: "Distribusi", Icon: IconKasir },
     { id: "absensi", label: "Absensi", Icon: IconAbsensi },
     { id: "profil", label: "Profil", Icon: IconProfil },
   ],
   kasir: [
     { id: "home", label: "Beranda", Icon: IconHome },
     { id: "stok", label: "Stok", Icon: IconStok },
-    { id: "kasir", label: "Kasir", Icon: IconKasir },
+    { id: "penjualan", label: "Penjualan", Icon: IconActivity },
     { id: "absensi", label: "Absensi", Icon: IconAbsensi },
     { id: "profil", label: "Profil", Icon: IconProfil },
   ],
 };
+
+// ── Page Header — di luar .screen supaya tidak ikut scroll ───────────────────
+function PageHeader({ role, page }) {
+  const r = ROLES[role];
+
+  // Profil punya header sendiri (phead-profil) yang lebih besar,
+  // jadi kita skip — KurirProfil/KasirProfil render sendiri di atas .pbody
+  if (page === "profil") return null;
+
+  const titles = {
+    home: { title: `Hai, ${r.name.split(" ")[0]} 👋`, sub: r.sub },
+    stok: { title: "Stok Barang", sub: "Kelola inventaris" },
+    absensi: { title: "Absensi", sub: "Kehadiran karyawan" },
+    kasir: { title: "Kasir", sub: "Transaksi penjualan" },
+  };
+
+  const h = titles[page];
+  if (!h) return null;
+
+  return (
+    <div className="phead">
+      <div className="phead-row">
+        <div>
+          <div className="ptitle">{h.title}</div>
+          <div className="psub">{h.sub}</div>
+        </div>
+        {/* Avatar hanya di halaman home */}
+        {page === "home" && (
+          <div className="ava" style={{ background: r.avaGrad, color: "#0e0a07" }}>
+            {r.init}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ── Page router ──────────────────────────────────────────────────────────────
 function PageRenderer({ role, page, setPage }) {
@@ -58,34 +96,25 @@ export default function MobileApp() {
   const [role, setRole] = useState("kurir");
   const [page, setPage] = useState("home");
 
-  // Jika role kurir & sedang di halaman kasir-only → redirect ke home
   useEffect(() => {
     if (role === "kurir" && page === "kasir") setPage("home");
   }, [role]);
 
-  const handleRoleChange = (r) => {
-    setRole(r);
-    setPage("home");
-  };
-
   return (
-    // <div className="app-wrap">
+    <div className="appWrap">
+      <div className="phone">
 
+        {/* HEADER — fixed di atas, tidak ikut scroll */}
+        {/* <PageHeader role={role} page={page} /> */}
 
-    // {/* ── PHONE FRAME ── */ }
-    < div className="phone" >
+        {/* SCREEN — hanya konten yang scroll */}
+        <div className="screen" key={`${role}-${page}`}>
+          <PageRenderer role={role} page={page} setPage={setPage} />
+        </div>
 
-
-      {/* SCREEN */}
-      < div className="screen" key={`${role}-${page}`
-      }>
-        <PageRenderer role={role} page={page} setPage={setPage} />
-      </div >
-
-      {/* BOTTOM NAV */}
-      < nav className="botnav" >
-        {
-          NAV[role].map(({ id, label, Icon }) => (
+        {/* BOTTOM NAV — fixed di bawah, tidak ikut scroll */}
+        <nav className="botnav">
+          {NAV[role].map(({ id, label, Icon }) => (
             <div
               key={id}
               className={`ni${page === id ? " active" : ""}`}
@@ -95,10 +124,10 @@ export default function MobileApp() {
               <span>{label}</span>
               <div className="ni-pip" />
             </div>
-          ))
-        }
-      </nav >
-    </div >
-    /* </div> */
+          ))}
+        </nav>
+
+      </div>
+    </div>
   );
 }

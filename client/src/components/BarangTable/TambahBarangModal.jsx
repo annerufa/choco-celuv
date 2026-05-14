@@ -1,9 +1,9 @@
 // src/components/BarangTable/TambahBarangModal.jsx
 import { useState, useEffect } from 'react';
 import styles from './TambahBarangModal.module.css';
+// import { BASE_URL } from '../../config';
 
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
+// const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 const KATEGORI = ['Bahan Baku', 'Hasil Mixing', 'Packaging', 'Lainnya'];
 const SATUAN = ['gram', 'ml', 'pcs', 'liter', 'kg', 'pak'];
 
@@ -11,14 +11,14 @@ const initialForm = {
     nama: '',
     kategori: '',
     satuan: '',
+    safety_stock: '',
     min: '',
     max: '',
 };
 
-export default function TambahBarangModal({ isOpen, onClose, onSubmit }) {
+export default function TambahBarangModal({ isOpen, onClose, onSubmit, loading, submutError }) {
     const [formData, setFormData] = useState(initialForm);
     const [errors, setErrors] = useState({});
-    const [loading, setLoading] = useState(false);
 
     // Reset form setiap kali modal dibuka
     useEffect(() => {
@@ -59,42 +59,15 @@ export default function TambahBarangModal({ isOpen, onClose, onSubmit }) {
         const newErrors = validate();
         if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
 
-        setLoading(true);
-        try {
-            const res = await fetch(`${BASE_URL}/items`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                },
-                body: JSON.stringify({
-                    name: formData.nama,
-                    category: formData.kategori,
-                    unit: formData.satuan,
-                    safety_stock: Number(formData.safety_stock) || 0,
-                    min_qty: Number(formData.min) || 0,
-                    max_qty: Number(formData.max) || 0,
-                    is_active: 1,
-                    // avg_cost & last_cost tidak dikirim — backend default 0
-                }),
-            });
-
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.payload?.message ?? json.message ?? 'Gagal menambah barang');
-
-            // Kasih data hasil API ke parent (BarangTable) biar state-nya update
-            const newItem = json.payload?.data ?? json;
-            console.log('newItem:', newItem);
-            onSubmit(newItem);
-            console.log('after onSubmit');
-            onClose();
-            console.log('after onClose');
-        } catch (err) {
-            console.log('ERROR:', err);
-            setErrors({ submit: err.message });
-        } finally {
-            setLoading(false);
-        }
+        onSubmit({
+            name: formData.nama,
+            category: formData.kategori,
+            unit: formData.satuan,
+            safety_stock: formData.safety_stock ? Number(formData.safety_stock) : null,
+            min_qty: Number(formData.min) || 0,
+            max_qty: Number(formData.max) || 0,
+            is_active: 1,
+        })
     }
 
     if (!isOpen) return null;

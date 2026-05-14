@@ -1,16 +1,8 @@
-// import axios from 'axios';
-
-// const BASE = 'http://localhost:3001/api/items';
-
-// export const getAllItems = () => axios.get(BASE);
-// export const createItems = (data) => axios.post(BASE, data);
-// export const updateItems = (id, data) => axios.put(`${BASE}/${id}`, data);
-// export const deleteItems = (id) => axios.delete(`${BASE}/${id}`);
 
 
 import axios from 'axios';
 
-const BASE = 'http://localhost:3001/api/items';
+const BASE = `${import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'}/items`;
 
 // Ambil semua produk, return payload.data langsung
 export const getAllItems = async () => {

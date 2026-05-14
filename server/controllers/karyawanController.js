@@ -11,6 +11,15 @@ const getAllKaryawan = async (req, res) => {
     }
 };
 
+const getAllKaryawanwithJadwal = async (req, res) => {
+    try {
+        const data = await Karyawan.getAllwithJadwal();
+        response(200, data, 'Berhasil mengambil data Karyawan', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
 const getKurir = async (req, res) => {
     try {
         const data = await Karyawan.getKurir();
@@ -83,4 +92,4 @@ const deleteKaryawan = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
-module.exports = { getAllKaryawan, createKaryawan, updateKaryawan, deleteKaryawan, getKurir, getPenjaga };
+module.exports = { getAllKaryawan, createKaryawan, updateKaryawan, deleteKaryawan, getKurir, getPenjaga, getAllKaryawanwithJadwal };

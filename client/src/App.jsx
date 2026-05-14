@@ -25,15 +25,19 @@ import ResepPage from './pages/Resep/ResepPage';
 import ProtectedRoute from './routes/ProtectedRoute';
 
 // import HomePenjaga from './pages/Penjaga/Home';
-import HomePenjaga from './pages/Mobileapp/MobileApp';
-
+import HomeKurir from './pages/Mobileapp/MobileApp3';
 export default function App() {
+  console.log(import.meta.env.VITE_API_URL)
   return (
     <Routes>
       <Route path="/" element={<LoginPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/tes" element={<HomePenjaga />} />
-
+      {/* <Route path="/tes" element={<HomePenjaga />} /> */}
+      <Route path="/dashboard/kurir/*" element={
+        <ProtectedRoute allowedRoles={['kurir']}>
+          <HomeKurir />
+        </ProtectedRoute>
+      } />
       <Route element={<MainLayout />}>
         {/* Pemilik — desktop layout */}
         <Route path="/dashboard/pemilik/*" element={
@@ -43,11 +47,7 @@ export default function App() {
         } />
 
         {/* Kurir — mobile layout */}
-        <Route path="/dashboard/kurir/*" element={
-          <ProtectedRoute allowedRoles={['kurir']}>
-            <KurirDashboard />
-          </ProtectedRoute>
-        } />
+
 
         {/* Penjaga booth — mobile layout */}
         <Route path="/dashboard/penjaga_booth/*" element={

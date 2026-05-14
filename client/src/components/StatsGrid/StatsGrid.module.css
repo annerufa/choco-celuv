@@ -92,6 +92,14 @@
     color: var(--danger);
 }
 
+.emojiIcon {
+    font-size: 1.5rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 @media (max-width: 480px) {
     .statsGrid {
         grid-template-columns: 1fr 1fr;

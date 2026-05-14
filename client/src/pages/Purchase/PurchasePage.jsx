@@ -18,7 +18,7 @@ export default function PurchasePage() {
 
     // Fetch items untuk dropdown
     async function fetchItems() {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/items`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/items`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const data = await res.json();
