@@ -1,0 +1,521 @@
+/* ── MODAL ────────────────────────────────────────────────── */
+/* ===== MODAL KONFIRMASI GANTI JADWAL ===== */
+
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.backdrop.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.modal {
+    background: var(--bg0);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    transform: translateY(8px) scale(0.98);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0;
+}
+
+.backdrop.show .modal {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+/* HEAD */
+.modalHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.modalTitle {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--brown-900);
+    margin: 0;
+}
+
+.modalClose {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text3);
+    font-size: 14px;
+    transition: background 0.15s, color 0.15s;
+    line-height: 1;
+}
+
+.modalClose:hover {
+    background: var(--bg2);
+    color: var(--brown-800);
+}
+
+/* BODY */
+.modalBody {
+    padding: 20px 24px;
+    flex: 1;
+}
+
+/* JADWAL COMPARE */
+.jadwalCompare {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.jadwalCompareItem {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text1);
+}
+
+.jadwalCompareLabel {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    width: 100%;
+    margin-bottom: 2px;
+}
+
+.jadwalCompareBooth {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brown-800);
+}
+
+.jadwalCompareShift {
+    font-size: 12px;
+    color: var(--text2);
+    background: var(--bg2);
+    border-radius: 5px;
+    padding: 2px 7px;
+}
+
+.jadwalCompareJam {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    font-variant-numeric: tabular-nums;
+}
+
+.jadwalCompareTag {
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-left: auto;
+}
+
+.jadwalArrow {
+    text-align: center;
+    font-size: 16px;
+    color: var(--text3);
+    line-height: 1;
+    padding: 0 4px;
+}
+
+/* FOOT */
+.modalFoot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.btnGhost {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: var(--bg0);
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.btnGhost:hover:not(:disabled) {
+    background: var(--bg1);
+    border-color: var(--border2);
+}
+
+.btnGhost:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btnPrimary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(196, 123, 16, 0.28);
+    transition: background 0.15s, box-shadow 0.15s;
+}
+
+.btnPrimary:hover:not(:disabled) {
+    background: var(--accent2);
+    box-shadow: 0 4px 14px rgba(196, 123, 16, 0.38);
+}
+
+.btnPrimary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+
+    .modalHead,
+    .modalBody,
+    .modalFoot {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .modalFoot {
+        flex-direction: column-reverse;
+    }
+
+    .btnGhost,
+    .btnPrimary {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* 
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 14, 6, .5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s cubic-bezier(.4, 0, .2, 1);
+    backdrop-filter: blur(3px);
+}
+
+.backdrop.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 16px 40px rgba(45, 26, 14, .16), 0 4px 12px rgba(45, 26, 14, .08);
+    transform: translateY(12px) scale(.98);
+    transition: transform .22s cubic-bezier(.4, 0, .2, 1);
+    overflow: hidden;
+}
+
+.backdrop.show .modal {
+    transform: none;
+}
+
+.modalHead {
+    padding: 20px 24px 18px;
+    border-bottom: 1px solid var(--brown-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modalTitle {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--brown-900);
+}
+
+.modalClose {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: var(--brown-50);
+    color: var(--brown-600);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: background .22s;
+}
+
+.modalClose:hover {
+    background: var(--brown-100);
+}
+
+.modalBody {
+    padding: 20px 24px;
+}
+
+.modalFoot {
+    padding: 16px 24px;
+    border-top: 1px solid var(--brown-100);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    background: var(--brown-50);
+} */
+
+/* ── FORM ─────────────────────────────────────────────────── */
+.formGroup {
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.formLabel {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brown-800);
+    margin-bottom: 6px;
+}
+
+.formLabel span {
+    color: #b91c1c;
+    margin-left: 2px;
+}
+
+.formInput {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--brown-200);
+    background: var(--brown-50);
+    font-size: 13px;
+    font-family: var(--font);
+    color: var(--brown-900);
+    outline: none;
+    transition: border-color .22s, background .22s, box-shadow .22s;
+}
+
+.formSelect {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--brown-200);
+    background: var(--brown-50);
+    font-size: 13px;
+    font-family: var(--font);
+    color: var(--brown-900);
+    outline: none;
+    transition: border-color .22s, background .22s, box-shadow .22s;
+}
+
+.formInput:focus {
+    border-color: var(--accent);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(212, 96, 26, .1);
+}
+
+.formInput.error {
+    border-color: #f87171;
+    background: #fff5f5;
+}
+
+.formHint {
+    font-size: 12px;
+    color: var(--brown-400);
+    margin-top: 4px;
+}
+
+.formError {
+    font-size: 12px;
+    color: #b91c1c;
+    margin-top: 4px;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+    gap: 14px;
+}
+
+
+.miniWidth {
+    grid-column: span 2;
+}
+
+.halfWidth {
+    grid-column: span 3;
+}
+
+.fullWidth {
+    grid-column: 1 / -1;
+}
+
+.formSwitch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--brown-50);
+    border-radius: 8px;
+    border: 1px solid var(--brown-100);
+    cursor: pointer;
+    user-select: none;
+}
+
+.switchTrack {
+    position: relative;
+    width: 38px;
+    height: 22px;
+    border-radius: 11px;
+    background: var(--brown-300);
+    transition: background .22s;
+    flex-shrink: 0;
+}
+
+.switchTrack.on {
+    background: var(--accent);
+}
+
+.switchThumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform .22s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
+}
+
+.switchTrack.on .switchThumb {
+    transform: translateX(16px);
+}
+
+.switchLbl {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--brown-700);
+}
+
+.textWarning {
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: #52011c;
+    line-height: 1;
+}
+
+.errorMsg {
+    font-size: 11px;
+    color: #EF4444;
+    margin-top: 2px;
+}
+
+/* ── BUTTONS ──────────────────────────────────────────────── */
+.btnPrimary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(212, 96, 26, .3);
+    transition: background .22s, box-shadow .22s;
+}
+
+.btnPrimary:hover:not(:disabled) {
+    background: #bf5516;
+    box-shadow: 0 4px 12px rgba(212, 96, 26, .4);
+}
+
+.btnPrimary:disabled {
+    opacity: .65;
+    cursor: not-allowed;
+}
+
+.btnGhost {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    color: var(--brown-700);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .22s, border-color .22s;
+}
+
+.btnGhost:hover {
+    background: var(--brown-50);
+    border-color: var(--brown-300);
+}
+
+@media (max-width: 480px) {
+    .formRow {
+        grid-template-columns: 1fr;
+    }
+}

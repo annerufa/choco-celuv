@@ -1,30 +1,32 @@
-// src/components/BoothTable/TambahBoothModal.jsx
-import { useState, lazy, Suspense } from 'react';
+// src/components/BoothTable/EditBoothModal.jsx
+import { useState, useEffect, Suspense } from 'react';
 import styles from './BoothModal.module.css';
+import MapPicker from './MapPicker';
 
-// Lazy load MapPicker — Leaflet tidak support SSR (penting untuk Next.js)
-// Kalau pakai Vite/CRA, bisa import biasa: 
-import MapPicker from './MapPicker'
-// const MapPicker = lazy(() => import('./MapPicker'));
-
-const INITIAL_FORM = {
-    name: '',
-    penyewa: '',
-    address: '',
-    cp_penyewa: '',
-    harga: '',
-    latitude: '',
-    longitude: '',
-    is_active: 1,
-    is_open: 0,
-};
-
-export default function TambahBoothModal({ isOpen, onClose, onSubmit }) {
-    const [form, setForm] = useState(INITIAL_FORM);
+export default function EditBoothModal({ isOpen, onClose, onSubmit, booth }) {
+    const [form, setForm] = useState(null);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
-    if (!isOpen) return null;
+    // Pre-fill form setiap kali booth berubah
+    useEffect(() => {
+        if (booth) {
+            setForm({
+                name: booth.name || '',
+                penyewa: booth.penyewa || '',
+                address: booth.address || '',
+                cp_penyewa: booth.cp_penyewa || '',
+                harga: booth.harga ? String(booth.harga) : '',
+                latitude: booth.latitude ? String(booth.latitude) : '',
+                longitude: booth.longitude ? String(booth.longitude) : '',
+                is_active: booth.is_active ?? 1,
+                is_open: booth.is_open ?? 0,
+            });
+            setErrors({});
+        }
+    }, [booth]);
+
+    if (!isOpen || !booth || !form) return null;
 
     function validate() {
         const errs = {};
@@ -38,22 +40,21 @@ export default function TambahBoothModal({ isOpen, onClose, onSubmit }) {
     }
 
     async function handleSubmit() {
-        const errs = validate(); // ✅ fix: deklarasi sebelum dipakai
+        const errs = validate();
         if (Object.keys(errs).length) { setErrors(errs); return; }
 
         setLoading(true);
         try {
-            await onSubmit({
+            await onSubmit(booth.id, {
                 ...form,
                 latitude: parseFloat(form.latitude),
                 longitude: parseFloat(form.longitude),
                 harga: parseInt(form.harga, 10),
             });
-            setForm(INITIAL_FORM);
             setErrors({});
             onClose();
         } catch (err) {
-            // Biarkan parent (handleTambahBooth) yang handle toast error
+            // Biarkan parent yang handle toast error
         } finally {
             setLoading(false);
         }
@@ -61,7 +62,6 @@ export default function TambahBoothModal({ isOpen, onClose, onSubmit }) {
 
     function handleMapChange({ latitude, longitude }) {
         setForm(f => ({ ...f, latitude, longitude }));
-        // Hapus error lokasi begitu user sudah pin
         if (latitude) setErrors(prev => ({ ...prev, location: undefined }));
     }
 
@@ -72,7 +72,7 @@ export default function TambahBoothModal({ isOpen, onClose, onSubmit }) {
         >
             <div className={styles.modal}>
                 <div className={styles.modalHead}>
-                    <span className={styles.modalTitle}>Tambah Booth Baru</span>
+                    <span className={styles.modalTitle}>Edit Booth — {booth.name}</span>
                     <button className={styles.modalClose} onClick={onClose}>✕</button>
                 </div>
 
@@ -93,12 +93,13 @@ export default function TambahBoothModal({ isOpen, onClose, onSubmit }) {
                         <div className={styles.formGroup}>
                             <label className={styles.formLabel}>Penyewa</label>
                             <input
-                                className={styles.formInput}
+                                className={`${styles.formInput} ${errors.penyewa ? styles.error : ''}`}
                                 type="text"
                                 placeholder="Bapak Joko"
                                 value={form.penyewa}
                                 onChange={e => setForm(f => ({ ...f, penyewa: e.target.value }))}
                             />
+                            {errors.penyewa && <div className={styles.formError}>{errors.penyewa}</div>}
                         </div>
                     </div>
 
@@ -124,12 +125,13 @@ export default function TambahBoothModal({ isOpen, onClose, onSubmit }) {
                         <div className={styles.formGroup}>
                             <label className={styles.formLabel}>Contact Penyewa</label>
                             <input
-                                className={styles.formInput}
+                                className={`${styles.formInput} ${errors.cp_penyewa ? styles.error : ''}`}
                                 type="text"
                                 placeholder="0892-xxxx-xxxx"
                                 value={form.cp_penyewa}
                                 onChange={e => setForm(f => ({ ...f, cp_penyewa: e.target.value }))}
                             />
+                            {errors.cp_penyewa && <div className={styles.formError}>{errors.cp_penyewa}</div>}
                         </div>
                     </div>
 
@@ -147,12 +149,12 @@ export default function TambahBoothModal({ isOpen, onClose, onSubmit }) {
                         {errors.address && <div className={styles.formError}>{errors.address}</div>}
                     </div>
 
-                    {/* Map Picker — gantikan input lat/lng manual */}
+                    {/* Map Picker */}
                     <div className={styles.formGroup}>
                         <label className={styles.formLabel}>
                             Lokasi Booth<span>*</span>
                             <span style={{ fontWeight: 400, fontSize: '11px', color: '#999', marginLeft: '6px' }}>
-                                (klik peta untuk pin lokasi)
+                                (klik peta untuk pindah pin)
                             </span>
                         </label>
                         <Suspense fallback={
@@ -169,11 +171,11 @@ export default function TambahBoothModal({ isOpen, onClose, onSubmit }) {
                         {errors.location && <div className={styles.formError}>{errors.location}</div>}
                     </div>
 
-                    {/* Status Booth */}
+                    {/* Status Toggle */}
                     <div className={styles.formGroup}>
                         <div
                             className={styles.formSwitch}
-                            onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))}
+                            onClick={() => setForm(f => ({ ...f, is_active: f.is_active ? 0 : 1 }))}
                         >
                             <div className={`${styles.switchTrack} ${form.is_active ? styles.on : ''}`}>
                                 <div className={styles.switchThumb} />
@@ -196,7 +198,7 @@ export default function TambahBoothModal({ isOpen, onClose, onSubmit }) {
                         disabled={loading}
                     >
                         <span>{loading ? '⏳' : '💾'}</span>
-                        <span>{loading ? 'Menyimpan...' : 'Simpan Booth'}</span>
+                        <span>{loading ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
                     </button>
                 </div>
             </div>

@@ -65,17 +65,18 @@ export function useApi(endpoint) {
         }
     }, [endpoint]);
 
+
     const createData = async (newData) => {
         try {
             const response = await axios.post(`${API_BASE_URL}${endpoint}`, newData);
             const { payload } = response.data;
             if (payload.data) {
-                setData(prev => [...prev, payload.data]);
-                setMessage(payload.message);
+                dispatch({ type: 'SUCCESS', data: [...state.data, payload.data], message: payload.message, metadata: state.metadata });
+                await fetchData();
                 return payload.data;
             }
         } catch (err) {
-            setError(err.response?.data?.payload?.message || err.message);
+            dispatch({ type: 'ERROR', error: err.response?.data?.payload?.message || err.message });
             throw err;
         }
     };
@@ -84,13 +85,10 @@ export function useApi(endpoint) {
         try {
             const response = await axios.put(`${API_BASE_URL}${endpoint}/${id}`, updatedData);
             const { payload } = response.data;
-            if (payload.data) {
-                setData(prev => prev.map(item => item.id === id ? payload.data : item));
-                setMessage(payload.message);
-                return payload.data;
-            }
+            await fetchData(); // ← re-fetch
+            return payload.data;
         } catch (err) {
-            setError(err.response?.data?.payload?.message || err.message);
+            dispatch({ type: 'ERROR', error: err.response?.data?.payload?.message || err.message });
             throw err;
         }
     };
@@ -98,13 +96,24 @@ export function useApi(endpoint) {
     const deleteData = async (id) => {
         try {
             await axios.delete(`${API_BASE_URL}${endpoint}/${id}`);
-            setData(prev => prev.filter(item => item.id !== id));
-            setMessage('Data berhasil dihapus');
+            await fetchData(); // ← re-fetch
         } catch (err) {
-            setError(err.response?.data?.payload?.message || err.message);
+            dispatch({ type: 'ERROR', error: err.response?.data?.payload?.message || err.message });
             throw err;
         }
     };
+    const customUpdate = async (subPath, data) => {
+        try {
+            const response = await axios.patch(`${API_BASE_URL}${endpoint}${subPath}`, data);
+            const { payload } = response.data;
+            await fetchData();
+            return payload.data;
+        } catch (err) {
+            dispatch({ type: 'ERROR', error: err.response?.data?.payload?.message || err.message });
+            throw err;
+        }
+    };
+
     const hasFetched = useRef(false);
 
 
@@ -118,6 +127,7 @@ export function useApi(endpoint) {
         fetchData,
         createData,  // fungsi lainnya tetap sama
         updateData,
+        customUpdate,
         deleteData
     };
 }

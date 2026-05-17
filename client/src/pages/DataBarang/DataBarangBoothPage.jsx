@@ -4,21 +4,24 @@ import { useNavigate } from 'react-router-dom';
 import { useApi } from '../../hooks/useApi';
 import styles from './DataBarangBooth.module.css';
 import SetupBarangBoothModal from '../../components/BoothTable/SetupBarangBoothModal';
+import toast from 'react-hot-toast';
+
+import StatsGrid from '../../components/StatsGrid/StatsGrid';
+import { getStatsStokBooth } from '../../components/StatsGrid/statsConfig';
+
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function getStokStatus(stok, min, max) {
+function getStokStatus(stok, min, max, safetyStock) {
     if (stok <= 0) return 'Habis';
-    if (stok <= min * 0.4) return 'Kritis';
-    if (stok <= min) return 'Menipis';
-    if (stok > max) return 'Overstock';
+    if (stok <= safetyStock) return 'Kritis';  // di bawah safety stock = darurat
+    if (stok <= min) return 'Menipis';          // sudah waktunya order
+    if (stok > max) return 'Overstock';         // terlalu banyak
     return 'Aman';
 }
 
-/**
- * Transform flat API rows → matrix structure
- * rows: [{ item_id, item_name, category, location_id, booth_name,
- *           current_stock, min_qty, max_qty, unit, is_active }]
- */
+
 function buildMatrix(rows) {
     const itemMap = {};
     const boothMap = {};
@@ -43,9 +46,10 @@ function buildMatrix(rows) {
             const stok = parseFloat(row.current_stock ?? 0);
             const min = row.min_qty ?? 0;
             const max = row.max_qty ?? 0;
+            const safety_stock = row.safety_stock ?? 0;
             itemMap[row.item_id].booths[row.location_id] = {
-                status: getStokStatus(stok, min, max),
-                stok, min, max,
+                status: getStokStatus(stok, min, max, safety_stock),
+                stok, min, max, safety_stock,
                 unit: row.unit ?? '',
             };
         }
@@ -108,39 +112,62 @@ function SummaryCard({ label, value, color }) {
         </div>
     );
 }
+function getToken() {
+    return localStorage.getItem('token');
+}
 
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function DataBarangBoothPage() {
     const navigate = useNavigate();
-    const { data: rawData, loading, error } = useApi('/items/matrix');
+    const { data: rawData, loading, error, fetchData } = useApi('/items/matrix');
 
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
     const [filterBooth, setFilterBooth] = useState('');
     const [setupModal, setSetupModal] = useState({ open: false, item: null, settings: [] });
 
+
+
+    async function handleSetupSubmit(itemId, changedBooths) {
+        try {
+            const res = await fetch(`${BASE_URL}/items/${itemId}/booth-settings`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`,
+                },
+                body: JSON.stringify({ booths: changedBooths }),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.payload?.message ?? json.message ?? 'Gagal menambahkan barang');
+
+            const itemName = setupModal.item.name; // simpan dulu sebelum di-reset
+            toast.success(`${itemName} berhasil di set up!`);
+
+            setSetupModal({ open: false, item: null, settings: [] });
+            fetchData(); // refresh tabel utama
+        } catch (err) {
+            console.error('Gagal menyimpan:', err);
+        }
+    }
+
+
+    const { items, booths } = rawData?.length
+        ? buildMatrix(rawData)
+        : { items: [], booths: [] };
+
     function openSetup(item) {
         const settings = booths.map(booth => ({
             booth_id: booth.id,
             booth_name: booth.name,
+            safety_stock: item.booths[booth.id]?.safety_stock ?? 0,
             min: item.booths[booth.id]?.min ?? 0,
             max: item.booths[booth.id]?.max ?? 0,
             is_active: item.booths[booth.id] !== null,
         }));
         setSetupModal({ open: true, item, settings });
     }
-
-    function handleSetupSubmit(itemId, updatedBooths) {
-        // TODO: panggil API patch/put ke endpoint stok per booth
-        // updatedBooths = [{ booth_id, min, max, is_active }, ...]
-        console.log('Update stok booth:', itemId, updatedBooths);
-        setSetupModal({ open: false, item: null, settings: [] });
-    }
-
-    const { items, booths } = rawData?.length
-        ? buildMatrix(rawData)
-        : { items: [], booths: [] };
 
     // ── Filter ────────────────────────────────────────────────────────────────
     const visibleBooths = filterBooth
@@ -159,6 +186,14 @@ export default function DataBarangBoothPage() {
     // ── Summary counts ────────────────────────────────────────────────────────
     const allEntries = items.flatMap(i => Object.values(i.booths)).filter(Boolean);
     const count = s => allEntries.filter(e => e?.status === s).length;
+    const statsStok = {
+        // aman: count('Aman'),
+        menipis: count('Menipis'),
+        kritis: count('Kritis'),
+        habis: count('Habis'),
+        overstock: count('Overstock'),
+    };
+    const stats = getStatsStokBooth(statsStok);
 
     return (
         <div className={styles.page}>
@@ -175,22 +210,15 @@ export default function DataBarangBoothPage() {
             </div>
 
             {/* Summary */}
-            <div className={styles.summary}>
-                <SummaryCard label="Total item" value={items.length} />
-                <SummaryCard label="Kritis" value={count('Kritis')} color="var(--danger)" />
-                <SummaryCard label="Menipis" value={count('Menipis')} color="#BA7517" />
-                <SummaryCard label="Habis" value={count('Habis')} color="#A32D2D" />
-                <SummaryCard label="Aman" value={count('Aman')} color="#3B6D11" />
-            </div>
+            <StatsGrid stats={stats} />
 
 
 
             {/* Table */}
             <div className={styles.card}>
-                <span className={styles.cardTitle}>Daftar Barang — Booth</span>
-                <hr />
                 {/* Toolbar */}
                 <div className={styles.toolbar}>
+                    <span className={styles.cardTitle}>Daftar Barang — Booth</span>
                     <div className={styles.searchBox}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                             <circle cx="11" cy="11" r="8" />
@@ -221,6 +249,7 @@ export default function DataBarangBoothPage() {
                             <option key={b.id} value={String(b.id)}>{b.name}</option>
                         ))}
                     </select>
+                    <hr />
                 </div>
                 <div className={styles.tableWrap}>
                     {loading ? (
@@ -266,7 +295,7 @@ export default function DataBarangBoothPage() {
                                                 </button>
                                                 <button
                                                     className={styles.detailBtn}
-                                                    onClick={() => navigate(`/barang/${item.id}`)}
+                                                    onClick={() => navigate(`/barang-booth/${item.id}`)}
                                                     aria-label={`Detail ${item.name}`}
                                                     title="Lihat detail"
                                                 >

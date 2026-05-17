@@ -3,17 +3,72 @@ const response = require('../helpers/response');
 
 const getAllItems = async (req, res) => {
     try {
-        const { location_id } = req.query;
+        const { location_id, role } = req.user;
+        if (!role) return response(403, null, 'Tidak memiliki akses', res);
+        const data = await Items.getAll();
+        response(200, data, 'Berhasil mengambil semua barang', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
 
-        const data = location_id
-            ? await Items.getAllPerLoc(location_id)
-            : await Items.getAll();
-        // console.log('Data items:', data); // Debug log
+const getMyItems = async (req, res) => {
+    try {
+        const { location_id, role } = req.user;
+        if (!location_id) return response(403, null, 'Tidak memiliki akses', res);
+        data = await Items.getAllPerLoc(location_id);
         response(200, data, 'Berhasil mengambil data semua barang', res);
     } catch (err) {
         response(500, null, err.message, res);
     }
 };
+
+const createItems = async (req, res) => {
+    try {
+        const { location_id, role } = req.user;
+        if (role != "pemilik") return response(403, null, 'Tidak memiliki akses', res);
+
+        // validasi field wajib
+        const { name, category, unit } = req.body;
+        if (!name || !category || !unit) {
+            return response(400, null, 'Nama, kategori, dan satuan wajib diisi', res);
+        }
+
+        const result = await Items.create(req.body);
+        response(201, result, 'Barang berhasil ditambahkan', res);
+    } catch (err) {
+        if (err.message.includes('Belum ada lokasi')) {
+            return response(400, null, err.message, res);
+        }
+        response(500, null, err.message, res);
+    }
+};
+
+const updateItems = async (req, res) => {
+    try {
+        const locationId = req.user.location_id;
+        await Items.update(req.params.id, req.body, locationId);
+        response(200, null, 'Barang berhasil diupdate', res);
+    } catch (err) {
+        console.error('Update error:', err); // ← tambah logging
+        response(500, null, err.message, res);
+    }
+};
+const statusItem = async (req, res) => {
+    try {
+        const locationId = req.user.location_id ?? null;
+        const isActive = req.body.is_active ?? 0; // 0 = nonaktif, 1 = aktifkan
+
+        await Items.statusChange(req.params.id, isActive, locationId);
+
+        const msg = isActive ? 'Barang berhasil diaktifkan' : 'Barang berhasil dinonaktifkan';
+        response(200, null, msg, res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+
 
 const getItem = async (req, res) => {
     try {
@@ -52,45 +107,7 @@ const getItemsPerLoc = async (req, res) => {
     }
 };
 
-const createItems = async (req, res) => {
-    try {
-        const result = await Items.create(req.body);
-        // Sebelum: const data = { id: result.insertId, ...req.body };
-        // Sekarang model sudah return object lengkap langsung
-        response(201, result, 'Barang berhasil ditambahkan', res);
-    } catch (err) {
-        if (err.message.includes('Belum ada lokasi')) {
-            return response(400, null, err.message, res);
-        }
-        response(500, null, err.message, res);
-    }
-};
 
-const updateItems = async (req, res) => {
-
-    try {
-        const locationId = req.user.location_id ?? null;
-        console.log('locationId:', locationId); // Debug log
-        await Items.update(req.params.id, req.body, locationId);
-        response(200, null, 'Barang berhasil diupdate', res);
-    } catch (err) {
-        console.error('Update error:', err); // ← tambah logging
-        response(500, null, err.message, res);
-    }
-};
-const statusItem = async (req, res) => {
-    try {
-        const locationId = req.user.location_id ?? null;
-        const isActive = req.body.is_active ?? 0; // 0 = nonaktif, 1 = aktifkan
-
-        await Items.statusChange(req.params.id, isActive, locationId);
-
-        const msg = isActive ? 'Barang berhasil diaktifkan' : 'Barang berhasil dinonaktifkan';
-        response(200, null, msg, res);
-    } catch (err) {
-        response(500, null, err.message, res);
-    }
-};
 const deleteItems = async (req, res) => {
     try {
         const locationId = req.user.location_id ?? null;
@@ -118,4 +135,49 @@ const getConversions = async (req, res) => {
     }
 };
 
-module.exports = { getAllItems, statusItem, createItems, getConversions, updateItems, deleteItems, getItem, getItemsPerLoc, getByItemOrLocation };
+
+// GET /items/:id/booth-settings
+const getBoothSettings = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await Items.getBoothSettingsByItemId(id);
+        response(200, result, 'Berhasil mengambil data booth settings', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+// PATCH /items/:id/booth-settings
+const updateBoothSettings = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { booths } = req.body;
+
+        // Validasi basic
+        if (!Array.isArray(booths) || booths.length === 0) {
+            return response(400, null, 'Data booth tidak boleh kosong', res);
+        }
+
+        for (const b of booths) {
+            if (b.booth_id === undefined || b.booth_id === null) {
+                return response(400, null, 'booth_id wajib ada di setiap item', res);
+            }
+            if (b.is_active) {
+                // hanya validasi angka jika booth aktif
+                if (b.min > b.max) {
+                    return response(400, null, `Min tidak boleh lebih besar dari maks (booth_id: ${b.booth_id})`, res);
+                }
+                if (b.safety_stock < 0 || b.min < 0 || b.max < 0) {
+                    return response(400, null, `Nilai tidak boleh negatif (booth_id: ${b.booth_id})`, res);
+                }
+            }
+        }
+
+        const result = await Items.updateBoothSettings(id, booths);
+        response(200, result, 'Pengaturan booth berhasil disimpan', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+module.exports = { getAllItems, getMyItems, createItems, statusItem, getConversions, getBoothSettings, updateBoothSettings, updateItems, deleteItems, getItem, getItemsPerLoc, getByItemOrLocation };

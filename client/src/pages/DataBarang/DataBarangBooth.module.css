@@ -5,15 +5,25 @@
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
-    padding: 1.5rem;
+    /* padding: 1.5rem; */
     min-height: 100%;
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
 .pageHeader {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.pageTitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--brown-900);
+    margin-bottom: 4px;
+}
+
+.pageSubtitle {
+    font-size: 13px;
+    color: var(--brown-500);
 }
 
 .breadcrumb {
@@ -21,24 +31,12 @@
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: var(--brown-400, #a08060);
+    color: var(--brown-400);
+    margin-bottom: 8px;
 }
 
-.breadcrumbSep {
-    opacity: 0.5;
-}
-
-.pageTitle {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: var(--brown-900, #2c1a0e);
-    margin: 0;
-}
-
-.pageSubtitle {
-    font-size: 13px;
-    color: var(--brown-400, #a08060);
-    margin: 0;
+.breadcrumb span {
+    color: var(--brown-600);
 }
 
 /* ── Summary cards ────────────────────────────────────────────────────────── */
@@ -77,7 +75,9 @@
     gap: 8px;
     flex-wrap: wrap;
     align-items: center;
-    margin: 10px 0 20px 30px;
+    margin: 10px 0 20px 5px;
+    justify-content: space-between;
+    padding: 0 50px;
 }
 
 .searchBox {
@@ -160,9 +160,9 @@
 }
 
 .cardTitle {
-    margin-bottom: 20px;
+    /* margin-bottom: 20px; */
     padding-top: 15px;
-    padding-left: 50px;
+    padding-right: 50px;
     font-size: 14px;
     font-weight: 700;
     color: var(--brown-900);

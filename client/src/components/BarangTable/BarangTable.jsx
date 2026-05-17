@@ -31,18 +31,7 @@ const stokStatusVariant = {
     'Nonaktif': 'grey',
 };
 
-// function getStokStatus(stok, min, max) {
-//     if (stok <= 0) return 'Habis';
 
-//     // Threshold kritis: 40% dari batas min (sensitif visit rutin)
-//     const criticalThreshold = min * 0.4;
-
-//     if (stok <= criticalThreshold) return 'Kritis';
-//     if (stok <= min) return 'Menipis';
-//     if (stok > max) return 'Overstock';
-
-//     return 'Aman';
-// }
 function getToken() {
     return localStorage.getItem('token');
 }
@@ -71,44 +60,6 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
     const [modalError, setModalError] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
-    // const [actionLoading, setActionLoading] = useState(null); // item id yang sedang diproses
-
-    /// Proses data item + stok (tanpa merge manual)
-    // useEffect(() => {
-    //     if (!stokData) return;
-
-    //     // Langsung ambil array dari response API
-    //     const itemsWithStock = Array.isArray(stokData) ? stokData : (stokData.payload?.data ?? []);
-    //     // Buat kamus konversi (bisa ditaruh di luar map agar lebih efisien)
-    //     const unitMap = { ml: 'L', gram: 'kg' };
-
-    //     const processed = itemsWithStock.map(item => {
-    //         // Karena data sudah digabung dari backend, langsung ambil property-nya
-    //         const stok_sekarang = parseFloat(item.current_stock ?? 0);
-    //         const min = item.min_qty ?? 0;
-    //         const max = item.max_qty ?? 0;
-
-    //         return {
-    //             ...item,
-    //             // --- LOGIKA KONVERSI RINGKAS ---
-    //             // Jika satuan ada di unitMap (ml/gram), bagi 1000. Jika tidak, biarkan.
-    //             display_stok: unitMap[item.unit] ? stok_sekarang / 1000 : stok_sekarang,
-    //             // Jika satuan ada di unitMap, ubah namanya (L/kg). Jika tidak, pakai aslinya.
-    //             display_unit: unitMap[item.unit] || item.unit,
-    //             // -------------------------------
-    //             min,
-    //             max,
-    //             // Gunakan fungsi getStokStatus yang sudah kita buat
-    //             stok_status: getStokStatus(stok_sekarang, min, max),
-    //             status_label: item.is_active ? 'Aktif' : 'Nonaktif',
-    //         };
-    //     });
-
-    //     setBarangList(processed);
-    // }, [stokData]); // Hapus 'items' dari sini karena sudah tidak dipakai
-
-    // Reset halaman saat search berubah
-    // useEffect(() => { setCurrentPage(1); }, [searchQuery]);
 
     // Reset halaman saat search atau filter berubah
     useEffect(() => { setCurrentPage(1); }, [searchQuery, filterStokStatus]);
@@ -171,6 +122,7 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                 current_stock: 0,
                 display_stok: 0,
                 display_unit: unitMap[newItem.unit] || newItem.unit,
+                display_last_price: 0,
                 min: 0,
                 max: 0,
                 stock_active: true,
@@ -293,13 +245,6 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        {/* 
-                        <button className={styles.btnGhost}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                            </svg>
-                            Filter
-                        </button> */}
                         <div style={{ position: 'relative' }}>
                             <button
                                 className={styles.btnGhost}
@@ -454,7 +399,7 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                                                         </svg>
                                                     </button>
 
-                                                    {/* Nonaktifkan — sembunyikan kalau sudah nonaktif */}
+                                                    {/* Nonaktifkan */}
 
                                                     <button
                                                         className={`${styles.iconBtn} ${item.is_active ? styles.btnNonaktif : styles.btnAktifkan}`}

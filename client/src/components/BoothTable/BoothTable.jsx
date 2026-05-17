@@ -5,9 +5,14 @@ import TambahBoothModal from './TambahBoothModal';
 import EditBoothModal from './EditBoothModal';
 import toast from 'react-hot-toast';
 import { BASE_URL } from '../../config';
+import ConfirmModal from '../Shared/ConfirmModal';
 
 function getInitials(name) {
     return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function getToken() {
+    return localStorage.getItem('token');
 }
 
 export default function BoothTable({ boothList, setBoothList, loading, error }) {
@@ -18,6 +23,8 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'active' | 'inactive'
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
+    const [actionLoading, setActionLoading] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
     // ── Filter ────────────────────────────────────────────────
     const filtered = boothList.filter(b => {
@@ -36,7 +43,10 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
     async function handleTambahBooth(newBooth) {
         const response = await fetch(`${BASE_URL}/booth`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`,
+            },
             body: JSON.stringify(newBooth),
         });
 
@@ -56,19 +66,65 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
     }
 
     async function handleEditBooth(id, updatedData) {
-        const response = await fetch(`${BASE_URL}/booths/${id}`, {
+        const response = await fetch(`${BASE_URL}/booth/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`,
+            },
             body: JSON.stringify(updatedData),
         });
-
         const json = await response.json();
+        console.log('Response status:', response.status);
+        console.log('Response body:', json); // ← cek ini dulu di console
+
         if (!response.ok) throw new Error(json.payload.message || 'Gagal update booth');
+
+        // const json = await response.json();
+        // if (!response.ok) throw new Error(json.payload.message || 'Gagal update booth');
 
         const saved = json.payload.data;
         setBoothList(prev => prev.map(b => b.id === id ? saved : b)); // update list tanpa refetch
+        setDrawerBooth(prev => prev?.id === id ? saved : prev);
         toast.success(`Booth ${saved.name} berhasil diupdate!`);
     }
+    // Nonaktifkan — hit API DELETE (soft delete)
+    function handleToggleStatus(booth) {
+        setConfirmModal({ isOpen: true, booth });
+    }
+
+    async function handleConfirmToggle() {
+        const booth = confirmModal.booth;
+        const newStatus = booth.is_active ? 0 : 1;
+
+        setActionLoading(booth.id);
+        try {
+            const res = await fetch(`${BASE_URL}/booth/${booth.id}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`,
+                },
+                body: JSON.stringify({ is_active: newStatus }),
+            });
+
+            if (!res.ok) throw new Error('Gagal mengupdate status');
+
+            setBoothList(prev => prev.map(k =>
+                k.id === booth.id
+                    ? { ...k, is_active: newStatus, status_label: newStatus ? 'Aktif' : 'Nonaktif' }
+                    : k
+            ));
+            setDrawerBooth(prev => prev ? { ...prev, is_active: newStatus } : null);
+            toast.success(`${booth.name} berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}!`);
+            setConfirmModal({ isOpen: false, booth: null });
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setActionLoading(null);
+        }
+    }
+
 
     function handleNonaktifkan(booth) {
         if (!window.confirm(`Nonaktifkan booth "${booth.name}"?`)) return;
@@ -81,11 +137,7 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
     function openDrawer(booth) { setDrawerBooth(booth); }
     function closeDrawer() { setDrawerBooth(null); }
 
-    function openEditFromDrawer() {
-        const booth = drawerBooth;
-        closeDrawer();
-        setTimeout(() => handleOpenEdit(booth), 200);
-    }
+
 
     // ── Render ────────────────────────────────────────────────
     return (
@@ -189,28 +241,28 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
                                             <div className={styles.bcStatLbl}>Transaksi bulan ini</div>
                                         </div>
                                         <div className={styles.bcStat}>
-                                            {/* <div className={styles.bcStatVal}>{b.staff?.length ?? 0}</div> */}
-                                            <div className={styles.bcStatLbl}>1</div>
+                                            <div className={styles.bcStatVal}>{b.jumlah_pegawai ?? 0}</div>
+                                            {/* <div className={styles.bcStatLbl}>1</div> */}
                                             <div className={styles.bcStatLbl}>Pegawai bertugas</div>
                                         </div>
                                         <div className={styles.bcStat}>
-                                            <div className={styles.bcStatVal}>{b.is_active ? '✓' : '✗'}</div>
+                                            <div className={styles.bcStatVal}>{b.is_open ? 'Buka' : 'Tutup'}</div>
                                             <div className={styles.bcStatLbl}>Status operasi</div>
                                         </div>
                                     </div>
 
                                     <div className={styles.bcFooter}>
                                         <div className={styles.bcKeeper}>
-                                            {b.staff?.length ? (
-                                                <>
-                                                    <div className={styles.keeperAvatar}>{b.staff[0].initials}</div>
-                                                    <span className={styles.keeperName}>
-                                                        {b.staff[0].name}{b.staff.length > 1 ? ` +${b.staff.length - 1}` : ''}
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                <span className={styles.keeperEmpty}>Belum ada pegawai</span>
-                                            )}
+                                            <div className={styles.bcKeeper}>
+                                                {b.pegawai ? (
+                                                    <>
+                                                        <div className={styles.keeperAvatar}>{b.pegawai[0]}</div>
+                                                        <span className={styles.keeperName}>{b.pegawai}</span>
+                                                    </>
+                                                ) : (
+                                                    <span className={styles.keeperEmpty}>Belum ada pegawai</span>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div className={styles.bcActions} onClick={e => e.stopPropagation()}>
@@ -219,13 +271,25 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
                                                 onClick={() => handleOpenEdit(b)}
                                                 title="Edit"
                                             >✏️</button>
-                                            {b.active && (
-                                                <button
-                                                    className={`${styles.icBtn} ${styles.del}`}
-                                                    onClick={() => handleNonaktifkan(b)}
-                                                    title="Nonaktifkan"
-                                                >🗑</button>
-                                            )}
+                                            <button
+                                                className={`${styles.icBtn} ${b.is_active ? styles.btnNonaktif : styles.btnAktifkan}`}
+                                                aria-label={b.is_active ? "Nonaktifkan booth" : "Aktifkan booth"}
+                                                onClick={() => handleToggleStatus(b)}
+                                                disabled={actionLoading === b.id}
+                                            >
+                                                {b.is_active ? (
+                                                    // ikon slash/ban
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                        <circle cx="12" cy="12" r="10" />
+                                                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                                                    </svg>
+                                                ) : (
+                                                    // ikon centang/check
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                        <polyline points="20 6 9 17 4 12" />
+                                                    </svg>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -267,9 +331,10 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
                                         <div style={{ fontSize: 13, color: 'var(--brown-600)' }}>{b.address}</div>
                                     </td>
                                     <td>
-                                        {b.staff?.length ? b.staff.map(s => (
-                                            <div key={s.name} style={{ fontSize: 12, color: 'var(--brown-700)' }}>{s.name}</div>
-                                        )) : <span style={{ color: 'var(--brown-300)' }}>—</span>}
+                                        {b.pegawai
+                                            ? <div style={{ fontSize: 12, color: 'var(--brown-700)' }}>{b.pegawai}</div>
+                                            : <span style={{ color: 'var(--brown-300)' }}>—</span>
+                                        }
                                     </td>
                                     <td>
                                         <span className={`${styles.badge} ${b.is_active ? styles.badgeOn : styles.badgeOff}`}>
@@ -280,9 +345,25 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
                                         <div className={styles.actBtns}>
                                             <button className={styles.icBtn} onClick={() => openDrawer(b)} title="Detail">👁</button>
                                             <button className={styles.icBtn} onClick={() => handleOpenEdit(b)} title="Edit">✏️</button>
-                                            {b.is_active && (
-                                                <button className={`${styles.icBtn} ${styles.del}`} onClick={() => handleNonaktifkan(b)} title="Nonaktifkan">🗑</button>
-                                            )}
+                                            <button
+                                                className={`${styles.icBtn} ${b.is_active ? styles.btnNonaktif : styles.btnAktifkan}`}
+                                                aria-label={b.is_active ? "Nonaktifkan karyawan" : "Aktifkan karyawan"}
+                                                onClick={() => handleToggleStatus(b)}
+                                                disabled={actionLoading === b.id}
+                                            >
+                                                {b.is_active ? (
+                                                    // ikon slash/ban
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                        <circle cx="12" cy="12" r="10" />
+                                                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                                                    </svg>
+                                                ) : (
+                                                    // ikon centang/check
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                        <polyline points="20 6 9 17 4 12" />
+                                                    </svg>
+                                                )}
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -373,15 +454,14 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
                             {/* Seksi: Pegawai */}
                             <div className={styles.detailSection}>
                                 <div className={styles.detailSectionTitle}>Pegawai Bertugas</div>
-                                {drawerBooth.staff?.length ? drawerBooth.staff.map(s => (
-                                    <div key={s.name} className={styles.miniStaff}>
-                                        <div className={styles.staffAv}>{s.initials}</div>
+                                {drawerBooth.pegawai ? (
+                                    <div className={styles.miniStaff}>
+                                        <div className={styles.staffAv}>{drawerBooth.pegawai[0]}</div>
                                         <div className={styles.staffInfo}>
-                                            <div className={styles.staffName}>{s.name}</div>
-                                            <div className={styles.staffRole}>{s.role}</div>
+                                            <div className={styles.staffName}>{drawerBooth.pegawai}</div>
                                         </div>
                                     </div>
-                                )) : (
+                                ) : (
                                     <div style={{ fontSize: 13, color: 'var(--brown-300)', padding: '8px 0' }}>
                                         Belum ada pegawai ditugaskan
                                     </div>
@@ -390,14 +470,16 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
                         </div>
 
                         <div className={styles.drawerFoot}>
-                            <button className={`${styles.btnGhost} ${styles.btnSm}`} style={{ flex: 1 }} onClick={openEditFromDrawer}>
+                            <button className={`${styles.btnGhost} ${styles.btnSm}`} style={{ flex: 1 }} onClick={() => handleOpenEdit(drawerBooth)}>
                                 ✏️ Edit Booth
                             </button>
-                            {drawerBooth.is_active && (
-                                <button className={`${styles.btnDanger} ${styles.btnSm}`} onClick={() => handleNonaktifkan(drawerBooth)}>
-                                    🔒 Nonaktifkan
-                                </button>
-                            )}
+                            <button
+                                className={`${styles.btnSm} ${drawerBooth.is_active ? styles.btnPrimary : styles.btnDanger}`}
+                                onClick={() => handleToggleStatus(drawerBooth)}
+                            >
+                                {drawerBooth.is_active ? '🔒 Nonaktifkan' : '🔓 Aktifkan'}
+                            </button>
+
                         </div>
                     </div>
                 </>
@@ -416,6 +498,23 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
                 onClose={() => setIsEditOpen(false)}
                 onSubmit={handleEditBooth}
                 booth={selectedBooth}
+            />
+
+
+            {/* Confirm Modal */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, booth: null })}
+                onConfirm={handleConfirmToggle}
+                variant={confirmModal.booth?.is_active ? 'danger' : 'success'}
+                title={confirmModal.booth?.is_active ? 'Nonaktifkan booth?' : 'Aktifkan booth?'}
+                message={
+                    confirmModal.booth?.is_active
+                        ? `Booth "${confirmModal.booth?.name}" tidak akan muncul dalam operasi manapun. Anda dapat mengaktifkannya kembali kapan saja.`
+                        : `"${confirmModal.booth?.name}" akan aktif dan dapat dioperasikan kembali .`
+                }
+                confirmLabel={confirmModal.booth?.is_active ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan'}
+                loading={actionLoading === confirmModal.booth?.id}
             />
         </>
     );

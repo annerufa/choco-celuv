@@ -1,0 +1,321 @@
+// src/pages/DataBarang/DetailBarangBoothPage.jsx
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import styles from './DetailBarangBoothPage.module.css';
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
+
+function getToken() {
+    return localStorage.getItem('token');
+}
+
+function formatRp(val) {
+    if (!val && val !== 0) return '-';
+    return `Rp ${Number(val).toLocaleString('id')}`;
+}
+
+function formatTgl(val) {
+    if (!val) return '-';
+    return new Date(val).toLocaleDateString('id-ID', {
+        day: '2-digit', month: 'short', year: 'numeric'
+    });
+}
+
+const movementVariant = {
+    'IN': { label: 'Masuk', cls: 'in' },
+    'OUT': { label: 'Keluar', cls: 'out' },
+};
+
+const sourceLabel = {
+    'purchase': 'Pembelian',
+    'purchase_cancel': 'Batal Beli',
+    'production': 'Produksi',
+    'distribution': 'Distribusi',
+    'adjustment': 'Penyesuaian',
+};
+
+const stokStatusVariant = {
+    'Aman': 'success',
+    'Overstock': 'warning',
+    'Kritis': 'danger',
+};
+
+function getStokStatus(stok, min, max, safetyStock) {
+    if (stok <= 0) return 'Habis';
+    if (stok <= safetyStock) return 'Kritis';  // di bawah safety stock = darurat
+    if (stok <= min) return 'Menipis';          // sudah waktunya order
+    if (stok > max) return 'Overstock';         // terlalu banyak
+    return 'Aman';
+}
+
+export default function DetailBarangBoothPage() {
+    const { id } = useParams();
+    const navigate = useNavigate();
+
+    const [item, setItem] = useState(null);
+    const [stokLoks, setStokLoks] = useState([]);
+    const [movements, setMovements] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        async function fetchAll() {
+            setLoading(true);
+            setError(null);
+            try {
+                const headers = { Authorization: `Bearer ${getToken()}` };
+
+                const [resItem, resStok, resMov] = await Promise.all([
+                    fetch(`${BASE_URL}/items/${id}`, { headers }),
+                    fetch(`${BASE_URL}/items/stockPer?item_id=${id}`, { headers }),
+                    fetch(`${BASE_URL}/items/trackItem?item_id=${id}&limit=20`, { headers }),
+                ]);
+
+                const [jItem, jStok, jMov] = await Promise.all([
+                    resItem.json(), resStok.json(), resMov.json()
+                ]);
+
+                if (!resItem.ok) throw new Error(jItem.payload?.message ?? 'Barang tidak ditemukan');
+
+                setItem(jItem.payload?.data ?? jItem);
+                setStokLoks(Array.isArray(jStok.payload?.data) ? jStok.payload.data : (Array.isArray(jStok) ? jStok : []));
+                setMovements(Array.isArray(jMov.payload?.data) ? jMov.payload.data : (Array.isArray(jMov) ? jMov : []));
+
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchAll();
+    }, [id]);
+
+
+
+    if (loading) return (
+        <div className={styles.page}>
+            <div className={styles.loadingWrap}>
+                <div className={styles.spinner} />
+                <span>Memuat data barang...</span>
+            </div>
+        </div>
+    );
+
+    if (error) return (
+        <div className={styles.page}>
+            <div className={styles.errorWrap}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="40" height="40">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <p>{error}</p>
+                <button className={styles.btnGhost} onClick={() => navigate('/barang-booth')}>Kembali</button>
+            </div>
+        </div>
+    );
+
+    const totalStok = stokLoks.reduce((s, l) => s + Number(l.current_stock ?? 0), 0);
+    console.log('Item data:', item);
+    const statusItem = getStokStatus(item.current_stock, item.min_qty, item.max_qty, item.safety_stock);
+    console.log(`Status item: ${statusItem} (stok: ${item.current_stock}, min: ${item.min_qty}, max: ${item.max_qty}, safety: ${item.safety_stock})`);
+    return (
+        <div className={styles.page}>
+
+            {/* ── Breadcrumb & Back ─────────────────────── */}
+            <div className={styles.pageHeader}>
+                <button className={styles.backBtn} onClick={() => navigate('/barang-booth')}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    Kembali
+                </button>
+                <div className={styles.breadcrumb}>
+                    <span onClick={() => navigate('/barang-booth')} className={styles.breadcrumbLink}>Data Barang Booth</span>
+                    › Detail Barang
+                </div>
+            </div>
+
+            {/* ── Hero card ────────────────────────────── */}
+            <div className={styles.heroCard}>
+                <div className={styles.heroLeft}>
+                    <div className={styles.itemIcon}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="32" height="32">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 className={styles.itemName}>{item.name}</h1>
+                        <div className={styles.itemMeta}>
+                            <span className={`${styles.pill} ${styles.pillBrown}`}>{item.category}</span>
+                            <span className={styles.metaDot}>·</span>
+                            <span className={styles.metaText}>Status: <strong>{statusItem}</strong></span>
+                            <span className={styles.metaDot}>·</span>
+                            <span className={`${styles.pill} ${item.is_active ? styles.pillSuccess : styles.pillDanger}`}>
+                                {item.is_active ? 'Aktif' : 'Nonaktif'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div className={styles.heroStats}>
+                    <div className={styles.heroStat}>
+                        <span className={styles.heroStatLabel}>Total Stok</span>
+                        <span className={styles.heroStatValue}>{totalStok} <small>{item.unit}</small></span>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Grid bawah ───────────────────────────── */}
+            <div className={styles.grid}>
+
+                {/* Stok per Lokasi */}
+                <div className={styles.card}>
+                    <div className={styles.cardHeader}>
+                        <span className={styles.cardTitle}>Stok per Lokasi</span>
+                    </div>
+                    {stokLoks.length === 0 ? (
+                        <div className={styles.emptyState}>Belum ada data stok</div>
+                    ) : (
+                        <div className={styles.lokList}>
+                            {stokLoks.map(lok => {
+                                const stokStatus = getStokStatus(lok.current_stock, lok.min_qty, lok.max_qty, lok.safety_stock);
+                                return (
+                                    <div key={lok.location_id} className={styles.lokRow}>
+                                        <div className={styles.lokInfo}>
+                                            <span className={styles.lokName}>{lok.location_name ?? `Lokasi ${lok.location_id}`}</span>
+                                            <span className={styles.lokType}>{lok.location_type ?? ''}</span>
+                                        </div>
+                                        <div className={styles.lokRight}>
+                                            <span className={styles.lokStok}>
+                                                {lok.current_stock} <small>{item.unit}</small>
+                                            </span>
+                                            <span className={`${styles.pill} ${styles[stokStatusVariant[stokStatus]]}`}>
+                                                {stokStatus}
+                                            </span>
+                                        </div>
+                                        {/* Progress bar min-max */}
+                                        <div className={styles.lokProgress}>
+                                            <div
+                                                className={styles.lokProgressBar}
+                                                style={{
+                                                    width: lok.max_qty > 0
+                                                        ? `${Math.min(100, (lok.current_stock / lok.max_qty) * 100)}%`
+                                                        : '0%',
+                                                    background: stokStatus === 'Kritis'
+                                                        ? 'var(--danger)'
+                                                        : stokStatus === 'Overstock'
+                                                            ? 'var(--warning)'
+                                                            : 'var(--success)',
+                                                }}
+                                            />
+                                        </div>
+                                        <div className={styles.lokMinMax}>
+                                            <span>Min: {parseFloat(lok.min_qty)} {item.unit}</span>
+                                            <span>Max: {parseFloat(lok.max_qty)} {item.unit}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* Info tambahan */}
+                {/* Riwayat Pergerakan Stok - ganti card Informasi */}
+                <div className={styles.card}>
+                    <div className={styles.cardHeader}>
+                        <span className={styles.cardTitle}>Riwayat Pergerakan Stok</span>
+                        <span className={styles.cardSubtitle}>20 transaksi terakhir</span>
+                    </div>
+                    {movements.length === 0 ? (
+                        <div className={styles.emptyState}>Belum ada pergerakan stok</div>
+                    ) : (
+                        <div className={styles.tableWrap}>
+                            <table className={styles.table}>
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Tipe</th>
+                                        <th>Sumber</th>
+                                        <th>Lokasi</th>
+                                        <th>Qty</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {movements.map(mov => {
+                                        const mv = movementVariant[mov.movement_type] ?? { label: mov.movement_type, cls: '' };
+                                        return (
+                                            <tr key={mov.id}>
+                                                <td>{formatTgl(mov.created_at)}</td>
+                                                <td>
+                                                    <span className={`${styles.movPill} ${styles[mv.cls]}`}>
+                                                        {mv.label}
+                                                    </span>
+                                                </td>
+                                                <td>{sourceLabel[mov.source_type] ?? mov.source_type}</td>
+                                                <td>{mov.location_name ?? `Lokasi ${mov.location_id}`}</td>
+                                                <td className={styles.monoCell}>
+                                                    <span className={mov.movement_type === 'IN' ? styles.qtyIn : styles.qtyOut}>
+                                                        {mov.movement_type === 'IN' ? '+' : '-'}{mov.qty} {item.unit}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+
+                {/* Riwayat Pergerakan Stok */}
+                <div className={`${styles.card} ${styles.fullWidth}`}>
+                    <div className={styles.cardHeader}>
+                        <span className={styles.cardTitle}>Riwayat Pergerakan Stok</span>
+                        <span className={styles.cardSubtitle}>20 transaksi terakhir</span>
+                    </div>
+                    {movements.length === 0 ? (
+                        <div className={styles.emptyState}>Belum ada pergerakan stok</div>
+                    ) : (
+                        <div className={styles.tableWrap}>
+                            <table className={styles.table}>
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Tipe</th>
+                                        <th>Sumber</th>
+                                        <th>Lokasi</th>
+                                        <th>Qty</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {movements.map(mov => {
+                                        const mv = movementVariant[mov.movement_type] ?? { label: mov.movement_type, cls: '' };
+                                        return (
+                                            <tr key={mov.id}>
+                                                <td>{formatTgl(mov.created_at)}</td>
+                                                <td>
+                                                    <span className={`${styles.movPill} ${styles[mv.cls]}`}>
+                                                        {mv.label}
+                                                    </span>
+                                                </td>
+                                                <td>{sourceLabel[mov.source_type] ?? mov.source_type}</td>
+                                                <td>{mov.location_name ?? `Lokasi ${mov.location_id}`}</td>
+                                                <td className={styles.monoCell}>
+                                                    <span className={mov.movement_type === 'IN' ? styles.qtyIn : styles.qtyOut}>
+                                                        {mov.movement_type === 'IN' ? '+' : '-'}{mov.qty} {item.unit}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+
+            </div>
+        </div>
+    );
+}

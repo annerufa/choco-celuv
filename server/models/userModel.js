@@ -1,11 +1,5 @@
 const db = require('../connection');
 
-const findByEmail = (email) => new Promise((resolve, reject) => {
-    db.query('SELECT * FROM users WHERE email = ?', [email], (err, res) => {
-        err ? reject(err) : resolve(res[0]);
-    });
-});
-
 const findUsername = async (username) => {
     const [rows] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
     return rows[0] || null;
@@ -44,4 +38,4 @@ const findByUsername = async (username) => {
 };
 
 
-module.exports = { findByEmail, findByUsername, findUsername, getLocationId };
+module.exports = { findByUsername, findUsername, getLocationId };

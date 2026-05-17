@@ -67,9 +67,12 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
     }
 
     function isMenuActive(item) {
-        if (item.path) return location.pathname === item.path;
-        if (item.submenu) return item.submenu.some(s => location.pathname.startsWith(s.path));
+        if (item.path) return location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+        if (item.submenu) return item.submenu.some(s => isSubActive(s.path));
         return false;
+    }
+    function isSubActive(subPath) {
+        return location.pathname === subPath || location.pathname.startsWith(subPath + '/');
     }
 
     const sidebarClass = [
@@ -139,7 +142,9 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
                                                     <Link
                                                         key={sub.path}
                                                         to={sub.path}
-                                                        className={`${styles.submenuBtn} ${location.pathname === sub.path ? styles.active : ''}`}
+                                                        className={`${styles.submenuBtn} ${isSubActive(sub.path) ? styles.active : ''}`}
+                                                        // className={`${styles.submenuBtn} ${location.pathname.startsWith(sub.path) ? styles.active : ''}`}
+                                                        // className={`${styles.submenuBtn} ${location.pathname === sub.path ? styles.active : ''}`}
                                                         onClick={() => mobileOpen && onCloseMobile()}
                                                     >
                                                         {sub.label}

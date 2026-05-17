@@ -15,14 +15,15 @@ async function getStockMatrix() {
             i.category,
             i.unit,
             sl.id           AS location_id,
-            sl.name         AS booth_name,
+            b.name          AS booth_name,
             spl.current_stock,
             spl.min_qty,
             spl.max_qty,
+            spl.safety_stock,
             spl.is_active
         FROM items i
-        -- cross join semua booth agar item yang belum ada di booth tetap muncul
         CROSS JOIN stock_locations sl
+        JOIN booth b ON b.id = sl.booth_id
         LEFT JOIN stock_per_location spl
             ON spl.item_id = i.id
             AND spl.location_id = sl.id
@@ -54,6 +55,7 @@ async function getStockMatrixByBooth(locationId) {
             spl.current_stock,
             spl.min_qty,
             spl.max_qty,
+            spl.safety_stock,
             spl.is_active
         FROM items i
         JOIN stock_locations sl ON sl.id = ?

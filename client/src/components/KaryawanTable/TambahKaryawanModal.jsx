@@ -2,8 +2,17 @@
 import { useState } from 'react';
 import styles from './KaryawanModal.module.css';
 
+const INITIAL_FORM = {
+    name: '',
+    no_hp: '',
+    alamat: '',
+    role: '',
+    entry_date: new Date().toISOString().split('T')[0],
+    is_active: 1
+};
+
 export default function TambahKaryawanModal({ isOpen, onClose, onSubmit }) {
-    const [form, setForm] = useState({ name: '', no_hp: '', alamat: '', role: '', entry_date: new Date().toISOString().split('T')[0], is_active: true });
+    const [form, setForm] = useState(INITIAL_FORM);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
@@ -33,9 +42,12 @@ export default function TambahKaryawanModal({ isOpen, onClose, onSubmit }) {
                 ...form,
                 no_hp: form.no_hp.replace(/\D/g, ''),
             });
+            console.log('onSubmit selesai'); // ← sampai sini?
             setForm(INITIAL_FORM);
             setErrors({});
+            console.log('mau onClose'); // ← sampai sini?
             onClose();
+            console.log('onClose dipanggil'); // ← sampai sini?
         } catch (err) {
             // Biarkan parent (handleTambahBooth) yang handle toast error
         } finally {

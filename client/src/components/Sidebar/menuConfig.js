@@ -22,7 +22,7 @@ export const menuConfig = [
                 icon: 'barang',
                 submenu: [
                     { label: 'Barang Pusat', path: '/barang' },
-                    { label: 'Barang Booth', path: '/barang/booth' },
+                    { label: 'Barang Booth', path: '/barang-booth' },
                 ],
             },
             {
@@ -42,8 +42,8 @@ export const menuConfig = [
                 icon: 'karyawan',
                 submenu: [
                     { label: 'Daftar karyawan', path: '/karyawan' },
-                    { label: 'Jadwal jaga', path: '/karyawan/jadwal' },
-                    { label: 'Absensi', path: '/karyawan/absen' },
+                    { label: 'Jadwal jaga', path: '/karyawan-jadwal' },
+                    { label: 'Absensi', path: '/karyawan-absen' },
                 ],
             },
             {

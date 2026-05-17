@@ -3,13 +3,13 @@ const db = require('../connection');
 
 const getAll = async () => {
     const [rows] = await db.query(
-        "SELECT * FROM users WHERE role = 'kurir' OR role = 'penjaga_booth' ORDER BY id DESC;",
+        "SELECT * FROM users WHERE role = 'kurir' OR role = 'penjaga_booth' ORDER BY created_at DESC;",
     );
     return rows;
 };
 const getAllwithJadwal = async () => {
     const [rows] = await db.query(
-        "SELECT k.id, k.name, k.role, j.booth_id, b.name AS nama_booth, b.longitude, b.latitude, j.shift, j.expected_clock_in AS jam_masuk, j.expected_clock_out AS jam_pulang, k.is_active FROM users k LEFT JOIN ( SELECT s1.* FROM employee_schedules s1 WHERE s1.created_at = ( SELECT MAX(s2.created_at) FROM employee_schedules s2 WHERE s2.employee_id = s1.employee_id AND s2.is_active = 1 ) AND s1.employee_id IN ( SELECT id FROM users WHERE role != 'kurir' ) ) j ON k.id = j.employee_id LEFT JOIN booth b ON j.booth_id = b.id WHERE k.role != 'pemilik'",
+        "SELECT k.id, k.name, k.no_hp, k.alamat, k.entry_date, k.role, j.booth_id, b.name AS nama_booth, b.longitude, b.latitude, j.shift, j.expected_clock_in AS jam_masuk, j.expected_clock_out AS jam_pulang, k.is_active FROM users k LEFT JOIN ( SELECT s1.* FROM employee_schedules s1 WHERE s1.created_at = ( SELECT MAX(s2.created_at) FROM employee_schedules s2 WHERE s2.employee_id = s1.employee_id AND s2.is_active = 1 ) AND s1.employee_id IN ( SELECT id FROM users WHERE role != 'kurir' ) ) j ON k.id = j.employee_id LEFT JOIN booth b ON j.booth_id = b.id WHERE k.role != 'pemilik' ORDER BY k.created_at DESC",
     );
     return rows;
 };
@@ -21,36 +21,21 @@ const getKurir = async () => {
 };
 const getPenjaga = async () => {
     const [rows] = await db.query(
-        "SELECT * FROM users WHERE role = 'penjaga_booth' ORDER BY id DESC;",
+        "SELECT * FROM users WHERE role = 'penjaga_booth' ORDER BY created_at DESC;",
     );
     return rows;
 };
 const create = async (data) => {
     const { name, no_hp, alamat, role, entry_date, username, password } = data;
+    const is_active = 1; // Set default is_active ke 1 (aktif)
+    // console.log("data d model:", name, no_hp, alamat, role, entry_date, username, password);
 
-    // console.log("data d model:", name, no_hp, alamat, role, entry_date, username, password, is_active);
-    const conn = await db.getConnection();
-
-    try {
-        // await conn.beginTransaction();
-
-        // 1. Insert item baru
-        const [result] = await conn.execute(
-            `INSERT INTO users (name,no_hp,alamat,  role, entry_date, username, password,  is_active )
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [name, no_hp, alamat, role, entry_date, username, password, is_active ?? 1]
-        );
-
-
-        await conn.commit();
-        return { id: result.insertId, ...data };
-
-    } catch (err) {
-        await conn.rollback();
-        throw err;
-    } finally {
-        conn.release();
-    }
+    const [result] = await db.execute(
+        `INSERT INTO users (name, username, password, no_hp,  role,  alamat,entry_date,  is_active )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, username, password, no_hp, role, alamat, entry_date, is_active ?? 1]
+    );
+    return { id: result.insertId, ...data };
 };
 const findById = async (id) => {
     const [rows] = await db.execute('SELECT * FROM users WHERE id=?', [id]);
@@ -136,15 +121,12 @@ const update = async (id, data) => {
     }
 };
 
-// const create = (data) => new Promise((resolve, reject) => {
-//     const { nama, username, no_hp, role, password_hash, is_active } = data;
-//     db.query(
-//         'INSERT INTO users (nama, username, no_hp, role, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-//         [nama, username, no_hp, role, password_hash, is_active],
-//         (err, res) => err ? reject(err) : resolve(res)
-//     );
-// });
+const statusChange = async (id, isActive) => {
+    const [row] = await db.execute(
+        `UPDATE users SET is_active=? WHERE id=?`,
+        [isActive, id]
+    );
+    return row[0];
+};
 
-// update, remove, getById, dll...
-
-module.exports = { getAll, create, update, getKurir, getPenjaga, getAllwithJadwal };
+module.exports = { getAll, create, update, statusChange, getKurir, getPenjaga, getAllwithJadwal };

@@ -40,8 +40,9 @@ const getPenjaga = async (req, res) => {
 const createKaryawan = async (req, res) => {
     try {
         // hashing password sebelum disimpan ke database
-
-        const hashedPassword = await bcrypt.hash("passwordkamu123", 10);
+        const passwordd = req.body.no_hp;
+        // passwordkamu123
+        const hashedPassword = await bcrypt.hash(passwordd, 10);
         const karyawanData = { ...req.body, password: hashedPassword, username: req.body.no_hp, is_active: 1 };
         console.log(karyawanData);
 
@@ -92,4 +93,18 @@ const deleteKaryawan = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
-module.exports = { getAllKaryawan, createKaryawan, updateKaryawan, deleteKaryawan, getKurir, getPenjaga, getAllKaryawanwithJadwal };
+
+const statusKaryawan = async (req, res) => {
+    try {
+        // const locationId = req.user.location_id ?? null;
+        const isActive = req.body.is_active ?? 0; // 0 = nonaktif, 1 = aktifkan
+
+        await Karyawan.statusChange(req.params.id, isActive);
+
+        const msg = isActive ? 'Karyawan berhasil diaktifkan' : 'Karyawan berhasil dinonaktifkan';
+        response(200, null, msg, res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+module.exports = { getAllKaryawan, createKaryawan, updateKaryawan, deleteKaryawan, statusKaryawan, getKurir, getPenjaga, getAllKaryawanwithJadwal };

@@ -13,12 +13,13 @@ import DetailPembelianPage from './pages/Pembelian/DetailPembelianPage';
 import DataBarangPage from './pages/DataBarang/DataBarangPage';
 import DataBarangBoothPage from './pages/DataBarang/DataBarangBoothPage';
 import DetailBarangPage from './pages/DataBarang/DetailBarangPage';
+import DetailBarangBoothPage from './pages/DataBarang/DetailBarangBoothPage';
 
 import DataBoothPage from './pages/DataBooth/DataBoothPage';
 import DistribusiPage from './pages/Distribusi/DistribusiPage';
 
 import DataKaryawanPage from './pages/DataKaryawan/DataKaryawanPage';
-import JadwalPage from './pages/DataKaryawan/JadwalPage';
+import JadwalPage from './pages/Jadwal/JadwalPage';
 
 import ResepPage from './pages/Resep/ResepPage';
 
@@ -26,18 +27,29 @@ import ProtectedRoute from './routes/ProtectedRoute';
 
 // import HomePenjaga from './pages/Penjaga/Home';
 import HomeKurir from './pages/Mobileapp/MobileApp3';
+
+import HomePenjaga from './pages/PenjagaBooth/MobilePenjaga';
 export default function App() {
-  console.log(import.meta.env.VITE_API_URL)
+  // console.log(import.meta.env.VITE_API_URL)
   return (
     <Routes>
       <Route path="/" element={<LoginPage />} />
       <Route path="/login" element={<LoginPage />} />
       {/* <Route path="/tes" element={<HomePenjaga />} /> */}
+
       <Route path="/dashboard/kurir/*" element={
         <ProtectedRoute allowedRoles={['kurir']}>
           <HomeKurir />
         </ProtectedRoute>
       } />
+
+      <Route path="/dashboard/penjaga_booth/*" element={
+        <ProtectedRoute allowedRoles={['penjaga_booth']}>
+          <HomePenjaga />
+        </ProtectedRoute>
+      } />
+
+
       <Route element={<MainLayout />}>
         {/* Pemilik — desktop layout */}
         <Route path="/dashboard/pemilik/*" element={
@@ -48,13 +60,6 @@ export default function App() {
 
         {/* Kurir — mobile layout */}
 
-
-        {/* Penjaga booth — mobile layout */}
-        <Route path="/dashboard/penjaga_booth/*" element={
-          <ProtectedRoute allowedRoles={['penjaga_booth']}>
-            <BoothDashboard />
-          </ProtectedRoute>
-        } />
 
         {/* <Route path="/pembelian" element={
           <ProtectedRoute allowedRoles={['pemilik', 'penjaga_booth']}>
@@ -67,13 +72,14 @@ export default function App() {
         <Route path="/pembelian/:id" element={<DetailPembelianPage />} />
         <Route path="/barang" element={<DataBarangPage />} />
         <Route path="/barang/:id" element={<DetailBarangPage />} />
-        <Route path="/barang/booth" element={<DataBarangBoothPage />} />
+        <Route path="/barang-booth" element={<DataBarangBoothPage />} />
+        <Route path="/barang-booth/:id" element={<DetailBarangBoothPage />} />
 
         <Route path="/booth" element={<DataBoothPage />} />
 
 
         <Route path="/karyawan" element={<DataKaryawanPage />} />
-        <Route path="/karyawan/jadwal" element={<JadwalPage />} />
+        <Route path="/karyawan-jadwal" element={<JadwalPage />} />
 
         <Route path="/resep" element={<ResepPage />} />
 

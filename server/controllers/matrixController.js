@@ -12,7 +12,7 @@ const {
 async function getMatrix(req, res) {
     try {
         const { location_id } = req.query;
-
+        console.log('getMatrix location_id:', location_id); // Debug log
         const rows = location_id
             ? await getStockMatrixByBooth(location_id)
             : await getStockMatrix();

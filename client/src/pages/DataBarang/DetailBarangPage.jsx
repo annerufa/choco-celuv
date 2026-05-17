@@ -40,12 +40,6 @@ const stokStatusVariant = {
     'Kritis': 'danger',
 };
 
-// function getStokStatus(stok, min, max) {
-//     if (stok <= min) return 'Kritis';
-//     if (stok >= max) return 'Overstock';
-//     return 'Aman';
-// }
-
 function getStokStatus(stok, min, max, safetyStock) {
     if (stok <= 0) return 'Habis';
     if (stok <= safetyStock) return 'Kritis';  // di bawah safety stock = darurat

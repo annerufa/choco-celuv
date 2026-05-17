@@ -1,3 +1,5 @@
+import { icon } from "leaflet";
+
 // statsConfig.js
 export function getStatsBarang(barangList) {
     const aktif = barangList.filter(b => b.is_active);
@@ -40,17 +42,25 @@ export function getStatsKaryawan(karyawanList) {
 export const getStatsBooth = (boothList) => {
     const totalBooth = boothList.length;
     const boothAktif = boothList.filter(b => b.is_active).length;
-    const boothNonaktif = boothList.filter(b => !b.active).length;
+    const boothNonaktif = boothList.filter(b => !b.is_active).length;
     const boothOpen = boothList.filter(b => b.is_open).length;
 
     return [
-        { id: 'total', icon: 'barang', iconVariant: 'brown', value: totalBooth, label: 'Total booth' },
-        { id: 'aktif', icon: 'bahan', iconVariant: 'success', value: boothAktif, label: 'Total Booth Aktif' },
-        { id: 'non-aktif', icon: 'bahan', iconVariant: 'success', value: boothNonaktif, label: 'Total Booth Non-Aktif' },
-        { id: 'on', icon: 'bahan', iconVariant: 'success', value: boothOpen, label: 'Total Booth sedang buka' }
+        { id: 'total', icon: 'booth', iconVariant: 'brown', value: totalBooth, label: 'Total booth' },
+        { id: 'aktif', icon: 'aktif', iconVariant: 'success', value: boothAktif, label: 'Total Booth Aktif' },
+        { id: 'non-aktif', icon: 'nonaktif', iconVariant: 'success', value: boothNonaktif, label: 'Total Booth Non-Aktif' },
+        { id: 'on', icon: 'person', iconVariant: 'success', value: boothOpen, label: 'Total Booth sedang buka' }
     ];
 };
-
+export const getStatsStokBooth = (stats) => {
+    return [
+        // { id: 'aman', icon: 'aman', value: stats.aman, label: 'Stok Aman' },
+        { id: 'menipis', icon: 'menipis', value: stats.menipis, label: 'Stok Menipis' },
+        { id: 'kritis', icon: 'kritis', value: stats.kritis, label: 'Stok Kritis' },
+        { id: 'habis', icon: 'habis', value: stats.habis, label: 'Stok Habis' },
+        { id: 'overstock', icon: 'overstock', value: stats.overstock, label: 'Overstock' },
+    ];
+};
 export function getStatsKeuangan(transaksiList) {
     const totalPemasukan = transaksiList.filter(t => t.type === 'masuk').reduce((s, t) => s + t.nominal, 0);
     const totalPengeluaran = transaksiList.filter(t => t.type === 'keluar').reduce((s, t) => s + t.nominal, 0);

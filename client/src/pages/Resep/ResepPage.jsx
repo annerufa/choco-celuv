@@ -10,22 +10,36 @@ export default function ResepPage() {
         error,
         createData,
         updateData,
+        customUpdate,
         deleteData,
-    } = useApi('/resep');
+    } = useApi('/recipes');
+
+    const {
+        data: itemData,
+        loading: itemLoading,
+    } = useApi('/items'); // ← sesuaikan endpoint-nya
 
     const resepList = Array.isArray(resepData)
         ? resepData
         : (resepData?.data ?? []);
 
+    const itemList = Array.isArray(itemData)
+        ? itemData
+        : (itemData?.data ?? []);
+
     const totalResep = resepList.length;
     const totalMixing = resepList.filter(r => r.tipe === 'mixing').length;
     const totalAdonan = resepList.filter(r => r.tipe === 'adonan').length;
-
+    // console.log({ loading, error, resepList });
     const stats = [
         { value: totalResep, label: 'Total Resep' },
         { value: totalMixing, label: 'Resep Mixing' },
         { value: totalAdonan, label: 'Resep Adonan' },
     ];
+    // buat fungsi toggle:
+    const handleToggleStatus = async (id, isActive) => {
+        await customUpdate(`/${id}/status`, { is_active: isActive });
+    };
 
     return (
         <div className={styles.page}>
@@ -52,9 +66,11 @@ export default function ResepPage() {
                 resepList={resepList}
                 loading={loading}
                 error={error}
+                itemList={itemList}
                 onCreate={createData}
                 onUpdate={updateData}
                 onDelete={deleteData}
+                onToggleStatus={handleToggleStatus}
             />
         </div>
     );

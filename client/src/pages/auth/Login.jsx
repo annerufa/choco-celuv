@@ -642,8 +642,8 @@ export default function Login() {
       login(data); // simpan ke context + localStorage
 
       const destination = ROLE_ROUTES[data.user.role] ?? '/dashboard';
-      navigate(destination);
       console.log(destination);
+      navigate(destination);
 
     } catch (err) {
       console.log(err.response?.data);

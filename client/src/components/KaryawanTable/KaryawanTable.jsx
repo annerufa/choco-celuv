@@ -2,6 +2,10 @@
 import { useState, useEffect } from 'react';
 import styles from './KaryawanTable.module.css';
 import TambahKaryawanModal from './TambahKaryawanModal';
+import EditKaryawanModal from './EditKaryawanModal';
+import toast from 'react-hot-toast'; // ← tambah ini
+import ConfirmModal from '../Shared/ConfirmModal';
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 
 const ITEMS_PER_PAGE = 8;
@@ -15,7 +19,9 @@ const roleVariant = {
     'kurir': 'accent',
     // 'Supervisor': 'success',
 };
-
+function getToken() {
+    return localStorage.getItem('token');
+}
 export default function KaryawanTable({ karyawanList, setKaryawanList, loading, error }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
@@ -24,6 +30,8 @@ export default function KaryawanTable({ karyawanList, setKaryawanList, loading, 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
     const [drawerTarget, setDrawerTarget] = useState(null);
+    const [actionLoading, setActionLoading] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
     useEffect(() => { setCurrentPage(1); }, [searchQuery, filterStatus]);
 
@@ -54,28 +62,34 @@ export default function KaryawanTable({ karyawanList, setKaryawanList, loading, 
     async function handleTambahKaryawan(newKaryawan) {
         const response = await fetch(`${BASE_URL}/karyawan`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`,
+            },
             body: JSON.stringify(newKaryawan),
         });
 
         const json = await response.json();
-        if (!response.ok) throw new Error(json.payload?.message || 'Gagal menyimpan karyawan');
+        console.log('Response status:', response.status);
+        console.log('Response body:', json); // ← cek ini dulu di console
+
+        if (!response.ok) throw new Error(json.payload?.message ?? json.message ?? 'Gagal menambahkan karyawan');
+
+        // if (!response.ok) throw new Error(json.payload?.message || 'Gagal menyimpan karyawan');
 
         const saved = json.payload.data;
         setKaryawanList(prev => [saved, ...prev]);
+        setIsTambahOpen(false);
         toast.success(`Data ${saved.name} berhasil ditambahkan!`);
-    }
-
-
-    function handleOpenEdit(booth) {
-        setSelectedBooth(booth);
-        setIsEditOpen(true);
     }
 
     async function handleEditKaryawan(id, updatedData) {
         const response = await fetch(`${BASE_URL}/karyawan/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`,
+            },
             body: JSON.stringify(updatedData),
         });
 
@@ -83,16 +97,45 @@ export default function KaryawanTable({ karyawanList, setKaryawanList, loading, 
         if (!response.ok) throw new Error(json.payload.message || 'Gagal update Karyawan');
 
         const saved = json.payload.data;
-        setBoothList(prev => prev.map(b => b.id === id ? saved : b)); // update list tanpa refetch
+        setKaryawanList(prev => prev.map(k => k.id === id ? saved : k));
+        setIsModalOpen(false);
         toast.success(`Data ${saved.name} berhasil diupdate!`);
     }
 
+    // Nonaktifkan — hit API DELETE (soft delete)
+    function handleToggleStatus(karyawan) {
+        setConfirmModal({ isOpen: true, karyawan });
+    }
 
+    async function handleConfirmToggle() {
+        const karyawan = confirmModal.karyawan;
+        const newStatus = karyawan.is_active ? 0 : 1;
 
-    function handleNonaktifkan(k) {
-        if (!window.confirm(`Nonaktifkan "${k.name}"?`)) return;
-        setKaryawanList(prev => prev.map(x => x.id === k.id ? { ...x, is_active: false } : x));
-        if (drawerTarget?.id === k.id) setDrawerTarget(prev => ({ ...prev, is_active: false }));
+        setActionLoading(karyawan.id);
+        try {
+            const res = await fetch(`${BASE_URL}/karyawan/${karyawan.id}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`,
+                },
+                body: JSON.stringify({ is_active: newStatus }),
+            });
+
+            if (!res.ok) throw new Error('Gagal mengupdate status');
+
+            setKaryawanList(prev => prev.map(k =>
+                k.id === karyawan.id
+                    ? { ...k, is_active: newStatus, status_label: newStatus ? 'Aktif' : 'Nonaktif' }
+                    : k
+            ));
+            toast.success(`${karyawan.name} berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}!`);
+            setConfirmModal({ isOpen: false, karyawan: null });
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setActionLoading(null);
+        }
     }
 
     return (
@@ -158,12 +201,6 @@ export default function KaryawanTable({ karyawanList, setKaryawanList, loading, 
                                     <td className={styles.idCell}>{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
                                     <td>
                                         <div className={styles.employeeCell}>
-                                            {/* <div
-                                                className={styles.avatar}
-                                                style={{ background: k.is_active ? 'var(--accent)' : 'var(--brown-300)' }}
-                                            >
-                                                {getInitials(k.name)}
-                                            </div> */}
                                             <div>
                                                 <div className={styles.employeeName}>{k.name}</div>
                                                 {/* <div className={styles.employeeEmail}>{`${styles.pill} ${styles[roleVariant[k.role] ?? 'brown']}`}</div> */}
@@ -175,8 +212,19 @@ export default function KaryawanTable({ karyawanList, setKaryawanList, loading, 
                                             {k.role}
                                         </span>
                                     </td>
-                                    <td className={styles.boothCell}>{k.nama_booth ?? '-'}</td>
-                                    <td className={styles.monoCell}>{k.shift ?? 'On Call'}</td>
+                                    <td className={styles.monoCell}>
+                                        {k.role === 'kurir'
+                                            ? 'Sesuai pengiriman'
+                                            : k.nama_booth ?? 'Belum punya jadwal'
+                                        }
+                                    </td>
+                                    {/* <td className={styles.monoCell}>{k.shift ?? 'On Call'}</td> */}
+                                    <td className={styles.monoCell}>
+                                        {k.role === 'kurir'
+                                            ? 'On Call'
+                                            : k.shift ?? 'Belum punya shift'
+                                        }
+                                    </td>
                                     <td>
                                         <span className={`${styles.pill} ${k.is_active ? styles.success : styles.danger}`}>
                                             {k.is_active ? 'Aktif' : 'Nonaktif'}
@@ -196,18 +244,25 @@ export default function KaryawanTable({ karyawanList, setKaryawanList, loading, 
                                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                                 </svg>
                                             </button>
-                                            {k.is_active && (
-                                                <button
-                                                    className={`${styles.iconBtn} ${styles.dangerBtn}`}
-                                                    title="Nonaktifkan"
-                                                    onClick={() => handleNonaktifkan(k)}
-                                                >
+                                            <button
+                                                className={`${styles.iconBtn} ${k.is_active ? styles.btnNonaktif : styles.btnAktifkan}`}
+                                                aria-label={k.is_active ? "Nonaktifkan karyawan" : "Aktifkan karyawan"}
+                                                onClick={() => handleToggleStatus(k)}
+                                                disabled={actionLoading === k.id}
+                                            >
+                                                {k.is_active ? (
+                                                    // ikon slash/ban
                                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                                         <circle cx="12" cy="12" r="10" />
                                                         <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                                                     </svg>
-                                                </button>
-                                            )}
+                                                ) : (
+                                                    // ikon centang/check
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                        <polyline points="20 6 9 17 4 12" />
+                                                    </svg>
+                                                )}
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -283,10 +338,11 @@ export default function KaryawanTable({ karyawanList, setKaryawanList, loading, 
                             <div className={styles.detailSection}>
                                 <div className={styles.detailSectionTitle}>Informasi Karyawan</div>
                                 {[
-                                    ['Email', drawerTarget.email],
-                                    ['No. HP', drawerTarget.phone],
-                                    ['Booth', drawerTarget.booth],
-                                    ['Tgl. Bergabung', new Date(drawerTarget.join_date).toLocaleDateString('id-ID', {
+                                    // ['Email', drawerTarget.email],
+                                    ['No. HP', drawerTarget.no_hp],
+                                    ['Booth', drawerTarget.role === 'kurir' ? 'Sesuai pengiriman' : drawerTarget.nama_booth ?? 'Belum punya jadwal'],
+                                    ['Shift', drawerTarget.role === 'kurir' ? 'On Call' : drawerTarget.shift ?? 'Belum punya shift'],
+                                    ['Tgl. Bergabung', new Date(drawerTarget.entry_date).toLocaleDateString('id-ID', {
                                         day: 'numeric', month: 'long', year: 'numeric',
                                     })],
                                     ['Status', drawerTarget.is_active ? 'Aktif' : 'Nonaktif'],
@@ -309,14 +365,12 @@ export default function KaryawanTable({ karyawanList, setKaryawanList, loading, 
                             >
                                 ✏️ Edit Karyawan
                             </button>
-                            {drawerTarget.is_active && (
-                                <button
-                                    className={`${styles.btnDanger} ${styles.btnSm}`}
-                                    onClick={() => handleNonaktifkan(drawerTarget)}
-                                >
-                                    🔒 Nonaktifkan
-                                </button>
-                            )}
+                            <button
+                                className={`${styles.btnSm} ${drawerTarget.is_active ? styles.btnPrimary : styles.btnDanger}`}
+                                onClick={() => handleToggleStatus(drawerTarget)}
+                            >
+                                {drawerTarget.is_active ? '🔒 Nonaktifkan' : '🔓 Aktifkan'}
+                            </button>
                         </div>
                     </div>
                 </>
@@ -327,6 +381,29 @@ export default function KaryawanTable({ karyawanList, setKaryawanList, loading, 
                 isOpen={isTambahOpen}
                 onClose={() => setIsTambahOpen(false)}
                 onSubmit={handleTambahKaryawan}
+            />
+            <EditKaryawanModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={handleEditKaryawan}
+                karyawan={editTarget}
+            />
+
+
+            {/* Confirm Modal */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, karyawan: null })}
+                onConfirm={handleConfirmToggle}
+                variant={confirmModal.karyawan?.is_active ? 'danger' : 'success'}
+                title={confirmModal.karyawan?.is_active ? 'Nonaktifkan Karyawan?' : 'Aktifkan Karyawan?'}
+                message={
+                    confirmModal.karyawan?.is_active
+                        ? `"${confirmModal.karyawan?.name}" tidak akan muncul dalam jadwal booth.`
+                        : `"${confirmModal.karyawan?.name}" akan aktif kembali dan masuk jadwal booth.`
+                }
+                confirmLabel={confirmModal.karyawan?.is_active ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan'}
+                loading={actionLoading === confirmModal.karyawan?.id}
             />
         </>
     );

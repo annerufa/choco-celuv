@@ -1,7 +1,7 @@
 // src/components/BarangBooth/SetupBarangBoothModal.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from './SetupBarangBoothModal.module.css';
-
+import toast from 'react-hot-toast';
 /**
  * Props:
  *  - isOpen: boolean
@@ -22,19 +22,23 @@ export default function SetupBarangBoothModal({
 }) {
     const [rows, setRows] = useState([]);
     const [errors, setErrors] = useState({});
+    const initialRowsRef = useRef([]); // untuk menyimpan data awal saat modal dibuka, dipakai untuk reset kalau user batal
 
     // Sync state saat modal dibuka / data berubah
     useEffect(() => {
         if (isOpen && boothSettings.length) {
-            setRows(
-                boothSettings.map(b => ({
-                    booth_id: b.booth_id,
-                    booth_name: b.booth_name,
-                    min: parseFloat(b.min ?? 0),
-                    max: parseFloat(b.max ?? 0),
-                    is_active: b.is_active ?? true,
-                }))
-            );
+            // console.log('boothSettings:', boothSettings); // ← cek ini
+            const normalized = boothSettings.map(b => ({
+                booth_id: b.booth_id,
+                booth_name: b.booth_name,
+                safety_stock: parseFloat(b.safety_stock ?? 0),
+                min: parseFloat(b.min ?? 0),
+                max: parseFloat(b.max ?? 0),
+                is_active: b.is_active ?? true,
+            }));
+            // console.log('normalized:', normalized); // ← dan ini
+            setRows(normalized);
+            initialRowsRef.current = normalized; // simpan untuk reset nanti
             setErrors({});
         }
     }, [isOpen, boothSettings]);
@@ -53,12 +57,31 @@ export default function SetupBarangBoothModal({
             return next;
         });
     }
+    /** Kembalikan hanya row yang nilainya beda dari snapshot awal */
+    function getDirtyRows() {
+        return rows.filter(row => {
+            const orig = initialRowsRef.current.find(r => r.booth_id === row.booth_id);
+            if (!orig) return true; // baris baru (edge case)
+            return (
+                Number(row.safety_stock) !== Number(orig.safety_stock) ||
+                Number(row.min) !== Number(orig.min) ||
+                Number(row.max) !== Number(orig.max) ||
+                row.is_active !== orig.is_active
+            );
+        });
+    }
 
     function validate() {
         const newErrors = {};
+        // validasi hanya untuk row yang diubah saja
         rows.forEach(r => {
+            if (!r.is_active) return; // skip validasi angka kalau booth ini dinonaktifkan 
+            const safety_stock = Number(r.safety_stock);
             const min = Number(r.min);
             const max = Number(r.max);
+            if (r.safety_stock === '' || isNaN(safety_stock) || safety_stock < 0) {
+                newErrors[`${r.booth_id}_safety_stock`] = 'Wajib diisi';
+            }
             if (r.min === '' || isNaN(min) || min < 0) {
                 newErrors[`${r.booth_id}_min`] = 'Wajib diisi';
             }
@@ -75,16 +98,27 @@ export default function SetupBarangBoothModal({
 
     function handleSubmit() {
         if (!validate()) return;
+
+        const dirtyRows = getDirtyRows();
+
+        if (dirtyRows.length === 0) {
+            // Tidak ada yang berubah — tutup saja
+            onClose();
+            return;
+        }
+
         onSubmit(
             item.id,
-            rows.map(r => ({
+            dirtyRows.map(r => ({
                 booth_id: r.booth_id,
+                safety_stock: Number(r.safety_stock),
                 min: Number(r.min),
                 max: Number(r.max),
                 is_active: r.is_active,
             }))
         );
         onClose();
+
     }
 
     function handleBackdropClick(e) {
@@ -114,6 +148,7 @@ export default function SetupBarangBoothModal({
                 {/* COLUMN LABELS */}
                 <div className={styles.colLabels}>
                     <span className={styles.colBooth}>Booth</span>
+                    <span className={styles.colSafety}>Stok cadangan</span>
                     <span className={styles.colMin}>Stok min</span>
                     <span className={styles.colMax}>Stok maks</span>
                     <span className={styles.colActive}>Aktif</span>
@@ -130,6 +165,22 @@ export default function SetupBarangBoothModal({
                             <div className={styles.boothName}>
                                 <span className={styles.boothIdx}>{String(idx + 1).padStart(2, '0')}</span>
                                 {row.booth_name}
+                            </div>
+
+                            {/* Safety stok */}
+                            <div className={styles.fieldWrap}>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    className={`${styles.numInput} ${errors[`${row.booth_id}_safety_stock`] ? styles.inputError : ''}`}
+                                    value={row.safety_stock}
+                                    onChange={e => updateRow(row.booth_id, 'safety_stock', e.target.value)}
+                                    disabled={!row.is_active}
+                                    placeholder="0"
+                                />
+                                {errors[`${row.booth_id}_safety_stock`] && (
+                                    <span className={styles.errMsg}>{errors[`${row.booth_id}_safety_stock`]}</span>
+                                )}
                             </div>
 
                             {/* Min */}

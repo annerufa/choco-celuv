@@ -27,4 +27,18 @@ const updateBooth = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
-module.exports = { getAllBooth, createBooth };
+
+const statusBooth = async (req, res) => {
+    try {
+        // const locationId = req.user.location_id ?? null;
+        const isActive = req.body.is_active ?? 0; // 0 = nonaktif, 1 = aktifkan
+
+        await Booth.statusChange(req.params.id, isActive);
+
+        const msg = isActive ? 'Booth berhasil diaktifkan' : 'Booth berhasil dinonaktifkan';
+        response(200, null, msg, res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+module.exports = { getAllBooth, createBooth, updateBooth, statusBooth };

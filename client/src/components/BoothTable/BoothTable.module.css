@@ -167,6 +167,30 @@
     font-size: 12px;
 }
 
+.btnNonaktif {
+    background: #FEE2E2;
+    color: var(--danger);
+    border-color: #FCA5A5;
+}
+
+.btnNonaktif:hover {
+    background: #FCA5A5;
+    color: #fff;
+    border-color: #FCA5A5;
+}
+
+.btnAktifkan {
+    background: #D1FAE5;
+    color: var(--success);
+    border-color: #6EE7B7;
+}
+
+.btnAktifkan:hover {
+    background: #A7F3D0;
+    color: #fff;
+    border-color: var(--success);
+}
+
 /* ── STATE MESSAGES ───────────────────────────────────────── */
 .stateMsg {
     text-align: center;
@@ -372,7 +396,7 @@
     border-radius: 7px;
     border: 1px solid var(--brown-200);
     background: #fff;
-    color: var(--brown-500);
+    color: #b91c1c;
     cursor: pointer;
     display: flex;
     align-items: center;

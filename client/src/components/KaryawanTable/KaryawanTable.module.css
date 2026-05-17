@@ -172,6 +172,7 @@
     background: #FECACA;
 }
 
+
 .btnSm {
     font-size: 12px;
     padding: 7px 12px;
@@ -362,11 +363,31 @@ tbody tr:hover td {
     border-color: var(--brown-200);
 }
 
-.dangerBtn:hover {
+
+.btnNonaktif {
     background: #FEE2E2;
     color: var(--danger);
     border-color: #FCA5A5;
 }
+
+.btnNonaktif:hover {
+    background: #FCA5A5;
+    color: #fff;
+    border-color: #FCA5A5;
+}
+
+.btnAktifkan {
+    background: #D1FAE5;
+    color: var(--success);
+    border-color: #6EE7B7;
+}
+
+.btnAktifkan:hover {
+    background: #A7F3D0;
+    color: #fff;
+    border-color: var(--success);
+}
+
 
 /* ── TABLE FOOTER ────────────────────────────────── */
 .tableFooter {

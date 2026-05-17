@@ -1,6 +1,8 @@
 // src/components/ResepList/ResepList.jsx
 import { useState, useMemo, useEffect } from 'react';
 import styles from './ResepList.module.css';
+import toast from 'react-hot-toast'; // ← tambah ini
+import ConfirmModal from '../../components/Shared/ConfirmModal';
 
 // ── Icon map ──────────────────────────────────────────────────
 const RESEP_ICON = { mix: '🫙', adonan: '🥤' };
@@ -60,6 +62,11 @@ function ResepFormModal({ resep, itemList, onSave, onClose }) {
 
     const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
+    // ── Set item_id yang sudah dipakai (untuk filter dropdown) ─
+    const usedItemIds = useMemo(
+        () => new Set(form.bahan.map(b => Number(b.item_id)).filter(Boolean)),
+        [form.bahan],
+    );
     // ── Bahan handlers ────────────────────────────────────────
     const addBahan = () => {
         setForm(f => ({
@@ -250,9 +257,13 @@ function ResepFormModal({ resep, itemList, onSave, onClose }) {
                                         onChange={e => setBahan(idx, 'item_id', e.target.value)}
                                     >
                                         <option value="">-- Pilih item --</option>
-                                        {itemList.map(i => (
-                                            <option key={i.id} value={i.id}>{i.name}</option>
-                                        ))}
+                                        // SESUDAH:
+                                        {itemList
+                                            .filter(i => !usedItemIds.has(i.id) || i.id === Number(b.item_id))
+                                            .map(i => (
+                                                <option key={i.id} value={i.id}>{i.name}</option>
+                                            ))
+                                        }
                                     </select>
                                     {errors[`bahan_item_${idx}`] && (
                                         <span className={styles.errorMsg}>{errors[`bahan_item_${idx}`]}</span>
@@ -311,114 +322,16 @@ function ResepFormModal({ resep, itemList, onSave, onClose }) {
     );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Modal: Catat Produksi
-// ─────────────────────────────────────────────────────────────
-function ProduksiModal({ resep, onSave, onClose }) {
-    const [qty, setQty] = useState(1);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
 
-    const handleSave = async () => {
-        if (!qty || Number(qty) <= 0) {
-            setError('Jumlah produksi wajib diisi dan lebih dari 0');
-            return;
-        }
-        setSaving(true);
-        try {
-            await onSave({
-                recipe_id: resep.id,
-                qty_produced: Number(qty),
-            });
-            onClose();
-        } catch (err) {
-            console.error('Gagal catat produksi:', err);
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const estimasiBahan = (resep.bahan ?? []).map(b => ({
-        ...b,
-        total_qty: (Number(b.qty_per_unit) * qty).toFixed(2),
-    }));
-
-    return (
-        <div className={styles.modalOverlay} onClick={onClose}>
-            <div className={styles.modal} style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
-                <div className={styles.modalHead}>
-                    <h2 className={styles.modalTitle}>Catat Produksi</h2>
-                    <button className={styles.modalClose} onClick={onClose}>✕</button>
-                </div>
-
-                <div className={styles.modalBody}>
-                    <div className={styles.produksiResepInfo}>
-                        <span className={styles.produksiIcon}>{RESEP_ICON[resep.type] ?? '📋'}</span>
-                        <div>
-                            <div className={styles.produksiResepName}>{resep.name}</div>
-                            <div className={styles.produksiResepSub}>
-                                Output per batch: {resep.output_qty} {resep.output_unit}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className={styles.formSection}>
-                        <div className={styles.formGroup}>
-                            <label className={styles.formLabel}>Jumlah Produksi (batch) *</label>
-                            <input
-                                className={`${styles.formInput} ${error ? styles.inputError : ''}`}
-                                type="number"
-                                min="1"
-                                step="1"
-                                value={qty}
-                                onChange={e => { setQty(e.target.value); setError(''); }}
-                            />
-                            {error && <span className={styles.errorMsg}>{error}</span>}
-                            {qty > 0 && (
-                                <span className={styles.formHint}>
-                                    Total output: {(resep.output_qty * qty).toLocaleString()} {resep.output_unit}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-
-                    {estimasiBahan.length > 0 && qty > 0 && (
-                        <div className={styles.formSection}>
-                            <div className={styles.formSectionTitle}>Estimasi Bahan Terpakai</div>
-                            {estimasiBahan.map(b => (
-                                <div key={b.item_id} className={styles.estimasiRow}>
-                                    <span className={styles.estimasiName}>
-                                        {b.item_name ?? `Item #${b.item_id}`}
-                                    </span>
-                                    <span className={styles.estimasiQty}>
-                                        {b.total_qty} {b.unit}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                <div className={styles.modalFoot}>
-                    <button className={styles.btnGhost} onClick={onClose} disabled={saving}>
-                        Batal
-                    </button>
-                    <button className={styles.btnPrimary} onClick={handleSave} disabled={saving}>
-                        {saving ? 'Menyimpan…' : 'Catat Produksi'}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 // ─────────────────────────────────────────────────────────────
 // Sub-komponen: ResepCard
 // ─────────────────────────────────────────────────────────────
 function ResepCard({ resep, selected, onClick }) {
+    const isNonaktif = resep.is_active === 0;
     return (
         <div
-            className={`${styles.resepCard} ${selected ? styles.selected : ''}`}
+            className={`${styles.resepCard} ${selected ? styles.selected : ''} ${isNonaktif ? styles.resepNonaktif : ''}`}
             onClick={onClick}
         >
             <div className={styles.rcHead}>
@@ -435,11 +348,17 @@ function ResepCard({ resep, selected, onClick }) {
                     </div>
                 </div>
                 <div className={styles.rcBadges}>
+                    {isNonaktif && (
+                        <span className={`${styles.badge} ${styles.badgeNonaktif}`}>
+                            Nonaktif
+                        </span>
+                    )}
                     <span className={`${styles.badge} ${styles[`badge${capitalize(resep.type)}`]}`}>
                         {capitalize(resep.type)}
                     </span>
                 </div>
             </div>
+            {/* ...sisa card sama... */}
 
             <div className={styles.bahanList}>
                 {(resep.bahan ?? []).slice(0, 4).map(b => (
@@ -480,7 +399,7 @@ function ResepCard({ resep, selected, onClick }) {
 // ─────────────────────────────────────────────────────────────
 // Sub-komponen: DetailPanel
 // ─────────────────────────────────────────────────────────────
-function DetailPanel({ resep, onEdit, onProduksi }) {
+function DetailPanel({ resep, onEdit, onToggleStatus, actionLoading }) {
     if (!resep) {
         return (
             <div className={styles.detailPanel}>
@@ -490,6 +409,7 @@ function DetailPanel({ resep, onEdit, onProduksi }) {
             </div>
         );
     }
+    const isNonaktif = resep.is_active === 0;
 
     return (
         <div className={styles.detailPanel}>
@@ -540,11 +460,17 @@ function DetailPanel({ resep, onEdit, onProduksi }) {
                 ))}
 
                 <div className={styles.dpActions}>
+                    <button
+                        className={isNonaktif ? styles.btnPrimary : styles.btnDanger}
+                        onClick={() => onToggleStatus(resep)}
+                        disabled={actionLoading === resep.id}
+                    >
+                        {actionLoading === resep.id
+                            ? 'Menyimpan…'
+                            : isNonaktif ? 'Aktifkan' : 'Nonaktifkan'}
+                    </button>
                     <button className={styles.btnGhost} onClick={() => onEdit(resep)}>
                         Edit Resep
-                    </button>
-                    <button className={styles.btnPrimary} onClick={() => onProduksi(resep)}>
-                        Catat Produksi
                     </button>
                 </div>
             </div>
@@ -563,7 +489,7 @@ export default function ResepList({
     onCreate,
     onUpdate,
     onDelete,
-    onCatatProduksi,    // (payload) => Promise — ke endpoint produksi
+    onToggleStatus,
 }) {
     const [activeTab, setActiveTab] = useState('semua');
     const [search, setSearch] = useState('');
@@ -575,6 +501,9 @@ export default function ResepList({
     const [showProduksi, setShowProduksi] = useState(false);
     const [produksiResep, setProduksiResep] = useState(null);
 
+    const [actionLoading, setActionLoading] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, resep: null });
+
     // Auto-select resep pertama saat data loaded
     useEffect(() => {
         if (resepList.length > 0 && selectedId === null) {
@@ -585,7 +514,11 @@ export default function ResepList({
     // ── Filter ────────────────────────────────────────────────
     const filtered = useMemo(() => {
         return resepList.filter(r => {
-            const matchTab = activeTab === 'semua' || r.type === activeTab;
+            const isArsip = r.is_active === 0;
+            const matchTab =
+                activeTab === 'arsip'
+                    ? isArsip
+                    : !isArsip && (activeTab === 'semua' || r.type === activeTab);
             const matchSearch =
                 (r.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
                 (r.notes ?? '').toLowerCase().includes(search.toLowerCase());
@@ -599,15 +532,18 @@ export default function ResepList({
         semua: resepList.length,
         mix: resepList.filter(r => r.type === 'mix').length,
         adonan: resepList.filter(r => r.type === 'adonan').length,
+        arsip: resepList.filter(r => r.is_active === 0).length,
     };
 
     const tabs = [
         { key: 'semua', label: 'Semua Resep' },
         { key: 'mix', label: 'Mixing' },
         { key: 'adonan', label: 'Adonan' },
+        { key: 'arsip', label: 'Arsip' },
     ];
 
     // ── Handlers ──────────────────────────────────────────────
+
     const handleTambah = () => {
         setEditResep(null);
         setShowForm(true);
@@ -631,8 +567,30 @@ export default function ResepList({
         }
     };
 
-    if (loading) return <div className={styles.stateBox}>Memuat resep…</div>;
-    if (error) return <div className={styles.stateBox}>Gagal memuat resep.</div>;
+    // Nonaktifkan — hit API DELETE (soft delete)
+    const handleToggleStatus = async (resep) => {
+        // console.log('toggle clicked', resep);
+        setConfirmModal({ isOpen: true, resep });
+    };
+
+    const handleConfirmToggle = async () => {
+        const resep = confirmModal.resep;
+        setActionLoading(resep.id);
+        try {
+            await onToggleStatus(resep.id, resep.is_active === 0 ? 1 : 0);
+            toast.success(
+                `${resep.name} berhasil ${resep.is_active === 0 ? 'diaktifkan' : 'dinonaktifkan'}!`
+            );
+            setConfirmModal({ isOpen: false, resep: null });
+        } catch {
+            toast.error('Gagal mengubah status resep.');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    // if (loading) return <div className={styles.stateBox}>Memuat resep…</div>;
+    // if (error) return <div className={styles.stateBox}>Gagal memuat resep.</div>;
 
     return (
         <>
@@ -674,51 +632,66 @@ export default function ResepList({
                     </div>
                 </div>
 
-                {/* Split layout */}
-                <div className={`${styles.layoutSplit} ${selectedResep ? styles.layoutWithDetail : ''}`}>
-                    <div className={styles.cardList}>
-                        {filtered.length === 0 ? (
-                            <div className={styles.stateBox}>Tidak ada resep ditemukan.</div>
-                        ) : (
-                            filtered.map(r => (
-                                <ResepCard
-                                    key={r.id}
-                                    resep={r}
-                                    selected={selectedId === r.id}
-                                    onClick={() => setSelectedId(prev => prev === r.id ? null : r.id)}
-                                />
-                            ))
+                {/* Ganti early return dengan kondisi inline di sini */}
+                {loading && resepList.length === 0 ? (
+                    <div className={styles.stateBox}>Memuat resep…</div>
+                ) : error ? (
+                    <div className={styles.stateBox}>Gagal memuat resep.</div>
+                ) : (
+                    <div className={`${styles.layoutSplit} ${selectedResep ? styles.layoutWithDetail : ''}`}>
+                        <div className={styles.cardList}>
+                            {filtered.length === 0 ? (
+                                <div className={styles.stateBox}>Tidak ada resep ditemukan.</div>
+                            ) : (
+                                filtered.map(r => (
+                                    <ResepCard
+                                        key={r.id}
+                                        resep={r}
+                                        selected={selectedId === r.id}
+                                        onClick={() => setSelectedId(prev => prev === r.id ? null : r.id)}
+                                    />
+                                ))
+                            )}
+                        </div>
+
+                        {selectedResep && (
+                            <DetailPanel
+                                resep={selectedResep}
+                                onEdit={handleEdit}
+                                onToggleStatus={handleToggleStatus}
+                                actionLoading={actionLoading}
+                            />
                         )}
                     </div>
-
-                    {selectedResep && (
-                        <DetailPanel
-                            resep={selectedResep}
-                            onEdit={handleEdit}
-                            onProduksi={handleProduksi}
-                        />
-                    )}
-                </div>
+                )}
             </div>
 
             {/* Modal Tambah / Edit */}
-            {showForm && (
-                <ResepFormModal
-                    resep={editResep}
-                    itemList={itemList}
-                    onSave={handleSaveForm}
-                    onClose={() => setShowForm(false)}
-                />
-            )}
+            {
+                showForm && (
+                    <ResepFormModal
+                        resep={editResep}
+                        itemList={itemList}
+                        onSave={handleSaveForm}
+                        onClose={() => setShowForm(false)}
+                    />
+                )
+            }
 
-            {/* Modal Produksi */}
-            {showProduksi && produksiResep && (
-                <ProduksiModal
-                    resep={produksiResep}
-                    onSave={onCatatProduksi}
-                    onClose={() => { setShowProduksi(false); setProduksiResep(null); }}
-                />
-            )}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.resep?.is_active === 0 ? 'Aktifkan Resep?' : 'Nonaktifkan Resep?'}
+                message={
+                    confirmModal.resep?.is_active === 0
+                        ? `Resep "${confirmModal.resep?.name}" akan diaktifkan kembali.`
+                        : `Resep "${confirmModal.resep?.name}" akan dinonaktifkan dan tidak muncul di daftar aktif.`
+                }
+                onConfirm={handleConfirmToggle}
+                onClose={() => {
+                    console.log('cancel clicked');
+                    setConfirmModal({ isOpen: false, resep: null });
+                }}
+            />
         </>
     );
 }

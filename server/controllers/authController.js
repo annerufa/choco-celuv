@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
+// const User = require('./models/userModel');
+const { findUsername, getLocationId } = require('../models/userModel');
 const response = require('../helpers/response');
 
 const SECRET = process.env.JWT_SECRET;
@@ -12,10 +13,9 @@ const login = async (req, res) => {
     }
 
     try {
-        const user = await User.findUsername(username);
+        const user = await findUsername(username);
 
         if (!user) return response(401, null, 'Username tidak ditemukan', res);
-        // if (!user.is_active) return response(403, null, 'Akun tidak aktif. Hubungi pemilik.', res);
 
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) return response(401, null, 'Password salah', res);
@@ -36,16 +36,11 @@ const login = async (req, res) => {
             payload.booth_id = null;
         } else {
             // Penjaga booth butuh booth_id + location_id dari jadwal hari ini
-            const boothData = await user.getLocationId(user.id);
+            const boothData = await getLocationId(user.id);
 
-            if (!boothData) {
-                return res.status(403).json({
-                    message: 'Tidak ada jadwal jaga untuk hari ini. Hubungi pemilik.'
-                });
-            }
-
-            payload.booth_id = boothData.booth_id;
-            payload.location_id = boothData.location_id;
+            // Tidak ada jadwal → tetap login, booth_id & location_id null
+            payload.booth_id = boothData?.booth_id ?? null;
+            payload.location_id = boothData?.location_id ?? null;
         }
         // 4. Sign token
         const token = jwt.sign(payload, SECRET, { expiresIn: '8h' });
@@ -56,4 +51,4 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { login };
+module.exports = login;

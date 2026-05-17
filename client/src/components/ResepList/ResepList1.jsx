@@ -224,8 +224,8 @@ export default function ResepList({
         { key: 'adonan', label: 'Adonan' },
     ];
 
-    if (loading) return <div className={styles.stateBox}>Memuat resep…</div>;
-    if (error) return <div className={styles.stateBox}>Gagal memuat resep.</div>;
+    // if (loading) return <div className={styles.stateBox}>Memuat resep…</div>;
+    // if (error) return <div className={styles.stateBox}>Gagal memuat resep.</div>;
 
     return (
         <div className={styles.container}>
@@ -266,33 +266,37 @@ export default function ResepList({
                 </div>
             </div>
 
-            {/* Split layout */}
-            <div className={`${styles.layoutSplit} ${selectedResep ? styles.layoutWithDetail : ''}`}>
-                {/* Daftar kartu */}
-                <div className={styles.cardList}>
-                    {filtered.length === 0 ? (
-                        <div className={styles.stateBox}>Tidak ada resep ditemukan.</div>
-                    ) : (
-                        filtered.map(r => (
-                            <ResepCard
-                                key={r.id}
-                                resep={r}
-                                selected={selectedId === r.id}
-                                onClick={() => setSelectedId(prev => prev === r.id ? null : r.id)}
-                            />
-                        ))
+            {/* Ganti early return dengan kondisi inline di sini */}
+            {loading && resepList.length === 0 ? (
+                <div className={styles.stateBox}>Memuat resep…</div>
+            ) : error ? (
+                <div className={styles.stateBox}>Gagal memuat resep.</div>
+            ) : (
+                <div className={`${styles.layoutSplit} ${selectedResep ? styles.layoutWithDetail : ''}`}>
+                    <div className={styles.cardList}>
+                        {filtered.length === 0 ? (
+                            <div className={styles.stateBox}>Tidak ada resep ditemukan.</div>
+                        ) : (
+                            filtered.map(r => (
+                                <ResepCard
+                                    key={r.id}
+                                    resep={r}
+                                    selected={selectedId === r.id}
+                                    onClick={() => setSelectedId(prev => prev === r.id ? null : r.id)}
+                                />
+                            ))
+                        )}
+                    </div>
+
+                    {selectedResep && (
+                        <DetailPanel
+                            resep={selectedResep}
+                            onEdit={resep => onUpdate?.(resep.id, resep)}
+                            onProduksi={resep => console.log('Produksi:', resep)}
+                        />
                     )}
                 </div>
-
-                {/* Detail panel */}
-                {selectedResep && (
-                    <DetailPanel
-                        resep={selectedResep}
-                        onEdit={resep => onUpdate?.(resep.id, resep)}
-                        onProduksi={resep => console.log('Produksi:', resep)}
-                    />
-                )}
-            </div>
+            )}
         </div>
     );
 }

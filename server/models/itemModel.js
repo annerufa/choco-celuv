@@ -54,18 +54,13 @@ const create = async (data) => {
 
         // 3. Generate stock_per_location untuk semua lokasi
         for (const loc of locations) {
-            const isGudangPusat = loc.type === 'warehouse';
-            console.log('isGudangPusat:', isGudangPusat);
 
             await conn.execute(
                 `INSERT INTO stock_per_location (item_id, location_id, current_stock, min_qty, max_qty, safety_stock)
-         VALUES (?, ?, 0, ?, ?, ?)`,
+         VALUES (?, ?, 0, 0,0,0)`,
                 [
                     item_id,
-                    loc.id,
-                    isGudangPusat ? min_qty : 0,
-                    isGudangPusat ? max_qty : 0,
-                    isGudangPusat ? safety_stock : 0,
+                    loc.id
                 ]
             );
         }
@@ -92,6 +87,97 @@ const create = async (data) => {
         conn.release();
     }
 };
+
+const update = async (id, data, location_id) => {
+    const { name, category, unit, safety_stock, min_qty, max_qty, is_active } = data;
+
+    const conn = await db.getConnection();
+
+    try {
+        await conn.beginTransaction();
+        // ambil data is_active lama dulu
+        const [existing] = await conn.execute(
+            `SELECT is_active FROM items WHERE id = ?`, [id]
+        );
+        const isActiveChanged = existing[0].is_active !== is_active;
+
+        // 1. update tabel item 
+        const [result] = await conn.execute(
+            `UPDATE items SET name=?, category=?, unit=?, is_active=?
+             WHERE id=?`,
+            [name, category, unit, is_active, id]
+        );
+        // 2. update tabel stock_per_location untuk lokasi gudang pusat saja
+        const [result2] = await conn.execute(
+            `UPDATE stock_per_location SET min_qty=?, max_qty=?, is_active=?, safety_stock=? WHERE item_id=? AND location_id = ?`,
+            [min_qty, max_qty, is_active, safety_stock, id, location_id]
+        );
+        // klo status berubah, update semua lokasi
+        if (isActiveChanged) {
+            await conn.execute(
+                `UPDATE stock_per_location SET is_active=? 
+                 WHERE item_id=? AND location_id != 1`,
+                [is_active, id]
+            );
+        }
+
+        await conn.commit();
+        // return { id: item_id, ...data };
+        return {
+            id: id,
+            name,
+            category,
+            unit,
+            is_active: data.is_active ?? 1,
+            safety_stock,
+            min_qty,
+            max_qty,
+        };
+
+    } catch (err) {
+        await conn.rollback();
+        throw err;
+    } finally {
+        conn.release();
+    }
+};
+
+// soft delete
+const statusChange = async (id, isActive, location_id) => {
+    if (location_id === 1) {
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+            await conn.execute(
+                `UPDATE items SET is_active=? WHERE id=?`,
+                [isActive, id]
+            );
+            await conn.execute(
+                `UPDATE stock_per_location SET is_active=? WHERE item_id=?`,
+                [isActive, id]
+            );
+            await conn.commit();
+        } catch (err) {
+            await conn.rollback();
+            throw err;
+        } finally {
+            conn.release();
+        }
+    } else {
+        await db.execute(
+            `UPDATE stock_per_location SET is_active=? WHERE item_id=? AND location_id=?`,
+            [isActive, id, location_id]
+        );
+    }
+};
+
+const getMatrix = async () => {
+    const [rows] = await db.query(
+        'SELECT * FROM items i JOIN stock_per_loc s ON i.id = s.item_id WHERE s.location_id = ? AND s.is_active = 1',
+    );
+    return rows[0];
+};
+
 
 const getItem = async (id, location_id) => {
 
@@ -149,90 +235,8 @@ const getById = async (loc_id) => {
     return rows;
 };
 
-const getMatrix = async () => {
-    const [rows] = await db.query(
-        'SELECT * FROM items i JOIN stock_per_loc s ON i.id = s.item_id WHERE s.location_id = ? AND s.is_active = 1',
-    );
-    return rows[0];
-};
 
-const update = async (id, data, location_id) => {
-    const { name, category, unit, safety_stock, min_qty, max_qty, is_active } = data;
 
-    // perlu jika ada beberapa query yang saling terhubung dan harus commit atau rollback secara bersamaan
-    const conn = await db.getConnection();
-
-    try {
-        await conn.beginTransaction();
-
-        // 1. update tabel item 
-        const [result] = await conn.execute(
-            `UPDATE items SET name=?, category=?, unit=?, is_active=?
-             WHERE id=?`,
-            [name, category, unit, is_active, id]
-        );
-        // 2. update tabel stock_per_location untuk lokasi gudang pusat saja
-        const [result2] = await conn.execute(
-            `UPDATE stock_per_location SET min_qty=?, max_qty=?, is_active=?, safety_stock=? WHERE item_id=? AND location_id = ?`,
-            [min_qty, max_qty, is_active, safety_stock, id, location_id]
-        );
-
-        if (location_id === 1) {
-            await conn.execute(
-                `UPDATE stock_per_location SET is_active=? 
-                 WHERE item_id=? AND location_id != 1`,
-                [is_active, id]
-            );
-        }
-
-        await conn.commit();
-        // return { id: item_id, ...data };
-        return {
-            id: id,
-            name,
-            category,
-            unit,
-            is_active: data.is_active ?? 1,
-            safety_stock,
-            min_qty,
-            max_qty,
-        };
-
-    } catch (err) {
-        await conn.rollback();
-        throw err;
-    } finally {
-        conn.release();
-    }
-};
-
-const statusChange = async (id, isActive, location_id) => {
-    if (location_id === 1) {
-        const conn = await db.getConnection();
-        try {
-            await conn.beginTransaction();
-            await conn.execute(
-                `UPDATE items SET is_active=? WHERE id=?`,
-                [isActive, id]
-            );
-            await conn.execute(
-                `UPDATE stock_per_location SET is_active=? WHERE item_id=?`,
-                [isActive, id]
-            );
-            await conn.commit();
-        } catch (err) {
-            await conn.rollback();
-            throw err;
-        } finally {
-            conn.release();
-        }
-    } else {
-        await db.execute(
-            `UPDATE stock_per_location SET is_active=? WHERE item_id=? AND location_id=?`,
-            [isActive, id, location_id]
-        );
-    }
-};
 const removePerLoc = async (itemId, locationId, isActive) => {
     await db.query(
         'UPDATE stock_per_location SET is_active = ? WHERE item_id = ? AND location_id = ?',
@@ -248,5 +252,59 @@ const getConversions = async (item_id) => {
     return rows;
 };
 
+// Ambil semua booth settings untuk 1 item (untuk isi modal)
+const getBoothSettingsByItemId = async (item_id) => {
+    const [rows] = await db.execute(
+        `SELECT 
+            sl.id AS booth_id,
+            b.name AS booth_name,         -- dari tabel booth, bukan stock_locations
+            spl.safety_stock,
+            spl.min_qty AS min,
+            spl.max_qty AS max,
+            spl.is_active
+         FROM stock_locations sl
+         JOIN booth b ON b.id = sl.booth_id
+         LEFT JOIN stock_per_location spl 
+            ON spl.location_id = sl.id AND spl.item_id = ?
+         WHERE sl.type = 'booth'
+         ORDER BY b.name`,
+        [item_id]
+    );
+    return rows;
+};
 
-module.exports = { getAll, create, update, statusChange, removePerLoc, getAllPerLoc, getById, getMatrix, getItem, getByItemId, getByLocation, getConversions };
+// Update hanya booth yang dirty (bulk, satu item)
+const updateBoothSettings = async (item_id, booths) => {
+    // booths: [{ booth_id, safety_stock, min, max, is_active }]
+
+    const conn = await db.getConnection();
+
+    try {
+        await conn.beginTransaction();
+
+        for (const b of booths) {
+            await conn.execute(
+                `UPDATE stock_per_location
+                 SET safety_stock = ?,
+                     min_qty      = ?,
+                     max_qty      = ?,
+                     is_active    = ?
+                 WHERE item_id     = ?
+                   AND location_id = ?`,
+                [b.safety_stock, b.min, b.max, b.is_active ? 1 : 0, item_id, b.booth_id]
+            );
+        }
+
+        await conn.commit();
+        return { item_id, updated: booths.length };
+
+    } catch (err) {
+        await conn.rollback();
+        throw err;
+    } finally {
+        conn.release();
+    }
+};
+
+
+module.exports = { getBoothSettingsByItemId, updateBoothSettings, getAll, create, update, statusChange, removePerLoc, getAllPerLoc, getById, getMatrix, getItem, getByItemId, getByLocation, getConversions };

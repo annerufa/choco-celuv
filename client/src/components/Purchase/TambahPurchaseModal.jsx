@@ -73,6 +73,7 @@ export default function TambahPurchaseModal({ isOpen, onClose, onSuccess, itemLi
         if (!formData.date) errs.date = 'Tanggal wajib diisi';
         formData.items.forEach((item, i) => {
             if (!item.item_id) errs[`item_${i}`] = 'Pilih barang';
+            if (!item.buy_unit) errs[`buy_unit_${i}`] = 'Pilih satuan';
             if (!item.buy_qty || item.buy_qty <= 0) errs[`qty_${i}`] = 'Qty tidak valid';
             if (!item.unit_price || item.unit_price <= 0) errs[`unit_price_${i}`] = 'Harga tidak valid';
         });
@@ -197,7 +198,7 @@ export default function TambahPurchaseModal({ isOpen, onClose, onSuccess, itemLi
                                                 {/* Satuan Beli */}
                                                 <td style={{ width: '130px' }}>
                                                     <select
-                                                        className={styles.input}
+                                                        className={`${styles.input} ${errors[`buy_unit_${i}`] ? styles.inputError : ''}`}
                                                         value={item.buy_unit}
                                                         onChange={e => handleItemChange(i, 'buy_unit', e.target.value)}
                                                         disabled={!item.item_id}
@@ -212,6 +213,7 @@ export default function TambahPurchaseModal({ isOpen, onClose, onSuccess, itemLi
                                                             </option>
                                                         ))}
                                                     </select>
+                                                    {errors[`buy_unit_${i}`] && <span className={styles.errorMsg}>{errors[`buy_unit_${i}`]}</span>}
                                                 </td>
 
                                                 {/* Harga Satuan */}

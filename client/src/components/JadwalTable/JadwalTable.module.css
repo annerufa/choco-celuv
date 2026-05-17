@@ -1,6 +1,4 @@
-/* src/components/JadwalTable/JadwalTable.module.css */
-
-/* ── CARD ────────────────────────────────────────── */
+/* ── TABLE CARD ─────────────────────────────────── */
 .card {
     background: #fff;
     border-radius: var(--radius);
@@ -9,7 +7,7 @@
 }
 
 .cardHeader {
-    padding: 14px 20px;
+    padding: 16px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -18,113 +16,36 @@
     flex-wrap: wrap;
 }
 
+.cardTitle {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brown-900);
+}
+
 .cardActions {
     display: flex;
     gap: 8px;
     align-items: center;
-    flex-wrap: wrap;
 }
 
-/* ── WEEK NAVIGATOR ──────────────────────────────── */
-.weekNav {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.weekLabel {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--brown-900);
-    min-width: 180px;
-    text-align: center;
-}
-
-.navBtn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid var(--brown-200);
-    background: #fff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--brown-500);
-    transition: all var(--transition);
-}
-
-.navBtn:hover {
-    background: var(--brown-50);
-    color: var(--brown-800);
-}
-
-.btnToday {
-    padding: 4px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--brown-200);
-    background: var(--brown-50);
-    font-family: var(--font);
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--brown-600);
-    cursor: pointer;
-    transition: all var(--transition);
-}
-
-.btnToday:hover {
-    background: var(--brown-100);
-}
-
-/* ── LEGEND ──────────────────────────────────────── */
-.legend {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.legItem {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    color: var(--brown-500);
-}
-
-.legDot {
-    width: 10px;
-    height: 10px;
-    border-radius: 3px;
-}
-
-.legPagi  { background: #FEF3C7; border: 1px solid #D97706; }
-.legSore  { background: #DBEAFE; border: 1px solid #3B82F6; }
-.legMalam { background: #EDE9FE; border: 1px solid #8B5CF6; }
-.legLibur { background: var(--brown-50); border: 1px solid var(--brown-200); }
-
-/* ── BUTTONS ─────────────────────────────────────── */
-.btnPrimary {
+.btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 16px;
+    padding: 7px 14px;
     border-radius: 8px;
     border: none;
-    background: var(--accent);
-    color: #fff;
     font-family: var(--font);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(212, 80, 10, 0.25);
-    transition: background var(--transition), box-shadow var(--transition);
+    transition: all var(--transition);
     white-space: nowrap;
 }
 
-.btnPrimary:hover {
-    background: var(--accent-light);
-    box-shadow: 0 4px 12px rgba(212, 80, 10, 0.35);
+.btn svg {
+    width: 14px;
+    height: 14px;
 }
 
 .btnGhost {
@@ -141,7 +62,6 @@
     font-weight: 600;
     cursor: pointer;
     transition: background var(--transition), border-color var(--transition);
-    white-space: nowrap;
 }
 
 .btnGhost:hover {
@@ -149,164 +69,230 @@
     border-color: var(--brown-300);
 }
 
-.btnDanger {
+.btnPrimary {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
+    padding: 8px 16px;
     border-radius: 8px;
     border: none;
-    background: #FEE2E2;
-    color: var(--danger);
+    background: var(--accent);
+    color: #fff;
     font-family: var(--font);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: background var(--transition);
+    box-shadow: 0 2px 6px rgba(212, 80, 10, .25);
+    transition: background var(--transition), box-shadow var(--transition);
 }
 
-.btnDanger:hover { background: #FECACA; }
+.btnPrimary:hover {
+    background: var(--accent-light);
+    box-shadow: 0 4px 12px rgba(212, 80, 10, .35);
+}
 
-/* ── SCHEDULE GRID ───────────────────────────────── */
+.btnPrimary svg,
+.btnGhost svg {
+    width: 15px;
+    height: 15px;
+}
+
+
+.searchBox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--brown-50);
+    border: 1px solid var(--brown-100);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--brown-500);
+}
+
+.searchBox svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.searchBox input {
+    border: none;
+    background: transparent;
+    font-family: var(--font);
+    font-size: 12px;
+    color: var(--brown-900);
+    outline: none;
+    width: 140px;
+}
+
+.searchBox input::placeholder {
+    color: var(--brown-400);
+}
+
+/* TABLE */
 .tableWrap {
     overflow-x: auto;
 }
 
-.scheduleGrid {
-    display: grid;
-    min-width: 720px;
+table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.gridHead {
-    padding: 10px 8px;
+thead th {
+    padding: 10px 20px;
+    text-align: left;
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.05em;
+    letter-spacing: .06em;
     text-transform: uppercase;
     color: var(--brown-500);
     background: var(--brown-50);
     border-bottom: 1px solid var(--brown-100);
-    text-align: center;
     white-space: nowrap;
 }
 
-.todayHead {
-    color: var(--accent);
-    background: #FEF0E8;
-}
-
-.todayBadge {
-    display: block;
-    font-size: 9px;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: 0;
-    margin-top: 2px;
-    text-transform: none;
-}
-
-/* ── EMPLOYEE CELL ───────────────────────────────── */
-.empCell {
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+tbody td {
+    padding: 12px 20px;
+    font-size: 13px;
+    color: var(--brown-800);
     border-bottom: 1px solid var(--brown-50);
-    background: #fff;
+    vertical-align: middle;
 }
 
-.avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    color: #fff;
-    font-size: 10px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+tbody tr:last-child td {
+    border-bottom: none;
 }
 
-.empName {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--brown-900);
-    line-height: 1.3;
-}
-
-.empRole {
-    font-size: 11px;
-    color: var(--brown-400);
-}
-
-/* ── DAY CELL ────────────────────────────────────── */
-.dayCell {
-    padding: 8px 6px;
-    border-bottom: 1px solid var(--brown-50);
-    border-left: 1px solid var(--brown-50);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    min-height: 60px;
-    cursor: pointer;
-    transition: background var(--transition);
-}
-
-.dayCell:hover {
+tbody tr:hover td {
     background: var(--brown-50);
 }
 
-.todayCol {
-    background: #FEF9F6;
+/* BarangTable.module.css */
+.inputWithSuffix {
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
-.todayCol:hover {
-    background: #FEF0E8;
+.suffix {
+    position: absolute;
+    right: 12px;
+    color: var(--brown-400);
+    pointer-events: none;
 }
 
-/* ── SHIFT PILLS ─────────────────────────────────── */
-.shiftPill {
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     padding: 3px 10px;
     border-radius: 20px;
-    font-size: 10px;
-    font-weight: 700;
-    width: 100%;
-    max-width: 76px;
-    text-align: center;
-    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 600;
 }
 
-.shiftPagi  { background: #FEF3C7; color: #92400E; }
-.shiftSore  { background: #DBEAFE; color: #1E40AF; }
-.shiftMalam { background: #EDE9FE; color: #5B21B6; }
-.shiftLibur { background: var(--brown-100); color: var(--brown-500); }
-
-.shiftTime {
-    font-size: 10px;
-    color: var(--brown-400);
+.pill::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .6;
 }
 
-.shiftEmpty {
-    font-size: 16px;
-    color: var(--brown-200);
-    line-height: 1;
+.brown {
+    background: var(--brown-100);
+    color: var(--brown-700);
 }
 
-/* ── STATE CELLS ─────────────────────────────────── */
-.stateCell {
-    grid-column: 1 / -1;
-    padding: 40px 20px;
-    text-align: center;
-    font-size: 13px;
-    color: var(--brown-400);
+.accent {
+    background: #FEE8D8;
+    color: var(--accent);
 }
 
-.errorCell { color: var(--danger); }
+.success {
+    background: #D1FAE5;
+    color: var(--success);
+}
 
-/* ── TABLE FOOTER ────────────────────────────────── */
+.warning {
+    background: #FEF3C7;
+    color: var(--warning);
+}
+
+.danger {
+    background: #FEE2E2;
+    color: var(--danger);
+}
+
+
+.grey {
+    background: #f7f4f4;
+    color: #a8a8a8;
+}
+
+.actionBtns {
+    display: flex;
+    gap: 6px;
+}
+
+.iconBtn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--brown-100);
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brown-500);
+    transition: all var(--transition);
+}
+
+.iconBtn svg {
+    width: 13px;
+    height: 13px;
+}
+
+.iconBtn:hover {
+    background: var(--brown-50);
+    color: var(--brown-800);
+    border-color: var(--brown-200);
+}
+
+.btnNonaktif {
+    background: #FEE2E2;
+    color: var(--danger);
+    border-color: #FCA5A5;
+}
+
+.btnNonaktif:hover {
+    background: #FCA5A5;
+    color: #fff;
+    border-color: #FCA5A5;
+}
+
+.btnAktifkan {
+    background: #D1FAE5;
+    color: var(--success);
+    border-color: #6EE7B7;
+}
+
+.btnAktifkan:hover {
+    background: #A7F3D0;
+    color: #fff;
+    border-color: var(--success);
+}
+
+/* .danger:hover {
+    background: #FEE2E2;
+    color: var(--danger);
+    border-color: #FCA5A5;
+} */
+
 .tableFooter {
     padding: 12px 20px;
     display: flex;
@@ -319,61 +305,119 @@
     gap: 8px;
 }
 
-/* ── MODAL ───────────────────────────────────────── */
-.modalBackdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.3);
-    z-index: 40;
-    animation: fadeIn 0.15s ease;
+.pagination {
+    display: flex;
+    gap: 4px;
 }
 
-.modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 380px;
-    max-width: calc(100vw - 32px);
+.pageBtn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--brown-100);
     background: #fff;
-    border-radius: 12px;
-    z-index: 41;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-    animation: scaleIn 0.15s ease;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--font);
+    color: var(--brown-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+}
+
+.pageBtn:hover,
+.pageBtn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+/* ── DETAIL DRAWER ───────────────────────────────── */
+.drawerBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    z-index: 40;
+    animation: fadeIn 0.2s ease;
+}
+
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 340px;
+    background: #fff;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.25s ease;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
-@keyframes scaleIn {
-    from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
-    to   { opacity: 1; transform: translate(-50%, -50%) scale(1);    }
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
 }
 
-.modalHead {
-    padding: 18px 20px;
+.drawerHead {
+    padding: 20px;
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--brown-100);
+    align-items: center;
     gap: 12px;
+    border-bottom: 1px solid var(--brown-100);
 }
 
-.modalTitle {
+.drawerAvatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.drawerInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.drawerName {
     font-size: 15px;
     font-weight: 700;
     color: var(--brown-900);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.modalSub {
+.drawerId {
     font-size: 12px;
     color: var(--brown-400);
-    margin-top: 3px;
+    margin-top: 2px;
 }
 
-.modalClose {
+.drawerClose {
     width: 28px;
     height: 28px;
     border-radius: 6px;
@@ -389,126 +433,84 @@
     transition: all var(--transition);
 }
 
-.modalClose:hover {
+.drawerClose:hover {
     background: var(--brown-50);
     color: var(--brown-800);
 }
 
-.modalBody {
+.drawerBody {
+    flex: 1;
+    overflow-y: auto;
     padding: 20px;
+}
+
+.detailSection {
+    margin-bottom: 20px;
+}
+
+.detailSectionTitle {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--brown-400);
+    margin-bottom: 12px;
+}
+
+.detailRow {
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.formGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.formLabel {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--brown-600);
-}
-
-/* ── SHIFT TYPE PICKER ───────────────────────────── */
-.shiftPicker {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-}
-
-.shiftPickBtn {
-    padding: 8px 4px;
-    border-radius: 8px;
-    border: 1px solid var(--brown-200);
-    background: #fff;
-    font-family: var(--font);
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--brown-500);
-    cursor: pointer;
-    text-align: center;
-    transition: all var(--transition);
-}
-
-.shiftPickBtn:hover {
-    background: var(--brown-50);
-    border-color: var(--brown-300);
-}
-
-.shiftPickActive {
-    border-width: 2px !important;
-}
-
-/* active states per shift type */
-.shiftPickBtn.shiftPickActive:has(+ *) { color: inherit; }
-
-/* pagi active */
-.shiftPicker button:nth-child(1).shiftPickActive {
-    background: #FEF3C7;
-    border-color: #D97706;
-    color: #92400E;
-}
-/* sore active */
-.shiftPicker button:nth-child(2).shiftPickActive {
-    background: #DBEAFE;
-    border-color: #3B82F6;
-    color: #1E40AF;
-}
-/* malam active */
-.shiftPicker button:nth-child(3).shiftPickActive {
-    background: #EDE9FE;
-    border-color: #8B5CF6;
-    color: #5B21B6;
-}
-/* libur active */
-.shiftPicker button:nth-child(4).shiftPickActive {
-    background: var(--brown-100);
-    border-color: var(--brown-400);
-    color: var(--brown-700);
-}
-
-/* ── TIME ROW ────────────────────────────────────── */
-.timeRow {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    justify-content: space-between;
+    align-items: flex-start;
     gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--brown-50);
 }
 
-.timeInput {
-    width: 100%;
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--brown-200);
-    font-family: var(--font);
-    font-size: 13px;
-    color: var(--brown-900);
-    outline: none;
-    transition: border-color var(--transition);
+.detailRow:last-child {
+    border-bottom: none;
 }
 
-.timeInput:focus { border-color: var(--accent); }
+.detailKey {
+    font-size: 12px;
+    color: var(--brown-400);
+    flex-shrink: 0;
+}
 
-/* ── MODAL FOOTER ────────────────────────────────── */
-.modalFoot {
-    padding: 14px 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.detailVal {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--brown-800);
+    text-align: right;
+    word-break: break-all;
+}
+
+.drawerFoot {
+    padding: 16px 20px;
     border-top: 1px solid var(--brown-100);
+    display: flex;
+    gap: 8px;
 }
 
 /* ── RESPONSIVE ──────────────────────────────────── */
 @media (max-width: 480px) {
     .cardHeader {
-        flex-direction: column;
-        align-items: flex-start;
+        padding: 12px 14px;
     }
 
-    .legend {
+    thead th,
+    tbody td {
+        padding: 10px 14px;
+    }
+
+    .searchBox input {
+        width: 100px;
+    }
+
+    .drawer {
+        width: 100%;
+    }
+
+    .filterGroup {
         display: none;
     }
 }

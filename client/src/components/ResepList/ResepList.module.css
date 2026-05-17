@@ -38,7 +38,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 18px;
-    border-bottom: 0.5px solid var(--color-border-tertiary);
+    border-bottom: 0.5px solid var(--accent);
     flex-wrap: wrap;
     gap: 8px;
 }
@@ -57,7 +57,7 @@
     font-size: 13px;
     font-weight: 500;
     font-family: var(--font-sans);
-    color: var(--color-text-secondary);
+    color: var(--brown-900);
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
@@ -76,7 +76,7 @@
 
 .tabBadge {
     font-size: 11px;
-    background: var(--color-background-secondary);
+    background: #f8a273;
     color: var(--color-text-secondary);
     padding: 1px 7px;
     border-radius: 20px;
@@ -86,6 +86,15 @@
 .tabBadgeActive {
     background: #FEE8D8;
     color: #9A3412;
+}
+
+.resepNonaktif {
+    opacity: 0.55;
+}
+
+.badgeNonaktif {
+    background: #F3F4F6;
+    color: #6B7280;
 }
 
 /* ── Toolbar ─────────────────────────────────────────────────── */
@@ -135,7 +144,7 @@
     align-items: center;
     gap: 6px;
     padding: 7px 14px;
-    border-radius: var(--border-radius-md);
+    border-radius: 8px;
     border: none;
     background: #D4500A;
     color: #fff;
@@ -155,9 +164,9 @@
     align-items: center;
     gap: 6px;
     padding: 7px 14px;
-    border-radius: var(--border-radius-md);
-    border: 0.5px solid var(--color-border-secondary);
-    background: var(--color-background-primary);
+    border-radius: 8px;
+    border: 0.5px solid #ff9962;
+    background: #ffecec;
     color: var(--color-text-primary);
     font-family: var(--font-sans);
     font-size: 12px;
@@ -166,7 +175,7 @@
 }
 
 .btnGhost:hover {
-    background: var(--color-background-secondary);
+    background: #ff813d;
 }
 
 /* ── Layout Split ────────────────────────────────────────────── */
@@ -193,15 +202,15 @@
 /* ── Resep Card ──────────────────────────────────────────────── */
 .resepCard {
     background: var(--brown-50);
-    border: 0.5px solid var(--color-border-tertiary);
-    border-radius: var(--border-radius-lg);
+    border: 0.5px solid #ffbf9c;
+    border-radius: 10px;
     overflow: hidden;
     cursor: pointer;
     transition: border-color 0.15s;
 }
 
 .resepCard:hover {
-    border-color: var(--color-border-secondary);
+    border-color: #ff8d50;
 }
 
 .selected {
@@ -215,7 +224,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
-    border-bottom: 0.5px solid var(--color-border-tertiary);
+    border-bottom: 0.5px solid #ffbf9c;
 }
 
 .rcHeadLeft {
@@ -497,7 +506,7 @@
 /* Kapasitas box */
 .kapasitasBox {
     background: var(--color-background-secondary);
-    border-radius: var(--border-radius-md);
+    border-radius: 8px;
     padding: 12px;
     display: flex;
     flex-direction: column;
@@ -553,6 +562,319 @@
     text-align: center;
     font-size: 13px;
     color: var(--color-text-secondary);
+}
+
+/* ── Append ini ke bagian bawah ResepList.module.css ─────────── */
+
+/* ── Modal Overlay ───────────────────────────────────────────── */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+/* ── Modal Head ──────────────────────────────────────────────── */
+.modalHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 0.5px solid #ffb68fe5;
+    flex-shrink: 0;
+}
+
+.modalTitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--brown-700);
+    margin: 0;
+}
+
+.modalClose {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: var(--color-background-secondary);
+    color: #3D2314;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+
+.modalClose:hover {
+    background: var(--color-border-tertiary);
+}
+
+/* ── Modal Body ──────────────────────────────────────────────── */
+.modalBody {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ── Modal Foot ──────────────────────────────────────────────── */
+.modalFoot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 0.5px solid #ffb68fd8;
+    flex-shrink: 0;
+}
+
+/* ── Form Section ────────────────────────────────────────────── */
+.formSection {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.formSectionTitle {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #3D2314;
+    padding-bottom: 6px;
+    border-bottom: 0.5px solid #ffb68f;
+}
+
+.formSectionTitleRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 6px;
+    border-bottom: 0.5px solid #ffb68f;
+}
+
+.formSectionTitleRow .formSectionTitle {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* ── Form Row & Group ────────────────────────────────────────── */
+.formRow {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.formRow .formGroup {
+    flex: 1;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.formLabel {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+/* ── Inputs ──────────────────────────────────────────────────── */
+.formInput,
+.formSelect,
+.formTextarea {
+    padding: 8px 10px;
+    border: 0.5px solid #ffb68fe5;
+    border-radius: 7px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--brown-900);
+    background: #fff;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+
+.formInput:focus,
+.formSelect:focus,
+.formTextarea:focus {
+    border-color: #D4500A;
+}
+
+.formTextarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+.formSelect {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+}
+
+.inputError {
+    border-color: #EF4444 !important;
+}
+
+.errorMsg {
+    font-size: 11px;
+    color: #EF4444;
+}
+
+.formHint {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+}
+
+/* ── Bahan Form Row ──────────────────────────────────────────── */
+.bahanFormRow {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 10px;
+    background: var(--color-background-secondary);
+    border-radius: 8px;
+    border: 0.5px solid var(--color-border-tertiary);
+}
+
+.bahanEmpty {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    text-align: center;
+    padding: 20px;
+    background: var(--color-background-secondary);
+    border-radius: 8px;
+    border: 0.5px dashed var(--color-border-secondary);
+}
+
+/* ── Button Danger ───────────────────────────────────────────── */
+.btnDanger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 10px;
+    border-radius: 7px;
+    border: none;
+    background: #FEE2E2;
+    color: #991B1B;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+
+.btnDanger:hover {
+    background: #FECACA;
+}
+
+/* ── Detail Panel: Notes ─────────────────────────────────────── */
+.dpNotes {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    background: var(--color-background-secondary);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+/* ── Produksi Modal ──────────────────────────────────────────── */
+.produksiResepInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--color-background-secondary);
+    border-radius: 8px;
+    border: 0.5px solid var(--color-border-tertiary);
+}
+
+.produksiIcon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.produksiResepName {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.produksiResepSub {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+}
+
+/* ── Estimasi bahan ──────────────────────────────────────────── */
+.estimasiRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    font-size: 13px;
+}
+
+.estimasiRow:last-child {
+    border-bottom: none;
+}
+
+.estimasiName {
+    color: var(--color-text-primary);
+}
+
+.estimasiQty {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+/* ── Responsive modal ────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .modal {
+        max-height: 95vh;
+        border-radius: 12px 12px 0 0;
+        align-self: flex-end;
+    }
+
+    .modalOverlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .formRow {
+        flex-direction: column;
+    }
+
+    .bahanFormRow {
+        flex-wrap: wrap;
+    }
 }
 
 /* ── Responsive ──────────────────────────────────────────────── */
