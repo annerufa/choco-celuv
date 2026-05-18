@@ -43,7 +43,7 @@ export const menuConfig = [
                 submenu: [
                     { label: 'Daftar karyawan', path: '/karyawan' },
                     { label: 'Jadwal jaga', path: '/karyawan-jadwal' },
-                    { label: 'Absensi', path: '/karyawan-absen' },
+                    { label: 'Absensi', path: '/karyawan-absensi' },
                 ],
             },
             {

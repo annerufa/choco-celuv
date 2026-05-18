@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import "./mobile.css";
 import { useAuth } from '../../context/AuthContext'; // tambah ini
 import { useNavigate } from 'react-router-dom'; // tambah ini
-
+import SetPasswordModal from "./SetPasswordModal";
 // icons
 import { IconHome, IconStok, IconPenjaga, IconAbsensi, IconProfil } from "./Icons";
 
@@ -47,11 +47,18 @@ function PageRenderer({ role, page, setPage }) {
 
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function MobilePenjaga() {
-  const { user, logout } = useAuth();       // tambah ini
-  const navigate = useNavigate();     // tambah ini
+
+  const { user, logout, updateUser } = useAuth(); // pastikan setUser ada di context
+  const navigate = useNavigate();
   const [role, setRole] = useState(user?.role || "");
   const [page, setPage] = useState("home");
 
+  // ✅ Cek is_update — tampilkan modal jika belum diupdate
+  const needsPasswordUpdate = user?.is_update === 0 || user?.is_update === false;
+
+  function handlePasswordUpdated() {
+    updateUser({ is_update: 1 });
+  }
 
   function handleLogout() {           // tambah ini
     logout();
@@ -70,7 +77,10 @@ export default function MobilePenjaga() {
   console.log("Current role:", role, "Current page:", page);
   return (
     <div className="phone">
-
+      {/* ✅ Modal blokir jika belum set password */}
+      {needsPasswordUpdate && (
+        <SetPasswordModal onSuccess={handlePasswordUpdated} />
+      )}
       {/* SCREEN */}
       <div className="screen" key={`${role}-${page}`}>
         <PageRenderer role={role} page={page} setPage={setPage} />

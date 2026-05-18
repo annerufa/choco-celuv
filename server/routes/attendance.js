@@ -7,7 +7,9 @@ const {
     clockIn,
     clockOut,
     getOpen,
-    getMine
+    getMine,
+    getTodayOwner,
+    insertManual
 } = require('../controllers/attendanceController');
 
 router.get('/today', getAttendanceToday);
@@ -16,6 +18,6 @@ router.post('/clockin', clockIn);
 router.post('/clockout', clockOut);
 router.get('/open', getOpen);
 router.get('/mine', getMine);
-router.get('/today-owner', getMine);
-router.post('/manual', getMine);
+router.get('/today-owner', getTodayOwner);
+router.post('/manual', insertManual);
 module.exports = router;

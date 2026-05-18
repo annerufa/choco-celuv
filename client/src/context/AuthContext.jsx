@@ -32,9 +32,16 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];
   };
-
+  // ✅ Tambahan: update sebagian field user + sync localStorage
+  const updateUser = (fields) => {
+    setUser((prev) => {
+      const updated = { ...prev, ...fields };
+      localStorage.setItem('user', JSON.stringify(updated));
+      return updated;
+    });
+  };
   // ✅ Fix 2: stabilkan value agar consumer tidak re-render terus
-  const value = useMemo(() => ({ user, token, login, logout }), [user, token]);
+  const value = useMemo(() => ({ user, token, login, logout, updateUser }), [user, token]);
 
   return (
     <AuthContext.Provider value={value}>

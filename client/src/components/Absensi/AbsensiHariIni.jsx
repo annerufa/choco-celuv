@@ -4,12 +4,12 @@ import styles from './AbsensiTable.module.css';
 import StatusModal from './StatusModal';
 
 const statusVariant = {
-    hadir:     { cls: 'success', label: 'Hadir' },
+    hadir: { cls: 'success', label: 'Hadir' },
     terlambat: { cls: 'warning', label: 'Terlambat' },
-    absen:     { cls: 'danger',  label: 'Absen' },
-    izin:      { cls: 'accent',  label: 'Izin' },
-    sakit:     { cls: 'brown',   label: 'Sakit' },
-    libur:     { cls: 'grey',    label: 'Libur' },
+    absen: { cls: 'danger', label: 'Absen' },
+    izin: { cls: 'accent', label: 'Izin' },
+    sakit: { cls: 'brown', label: 'Sakit' },
+    libur: { cls: 'grey', label: 'Libur' },
 };
 
 function formatJam(dt) {
@@ -26,14 +26,47 @@ function selisihMenit(clockIn, expectedIn) {
     return Math.round((actual - expected) / 60000);
 }
 
-function SelisihBadge({ menit }) {
-    if (menit === null) return <span style={{ color: 'var(--brown-400)' }}>–</span>;
-    if (menit <= 0) return <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600 }}>Tepat waktu</span>;
-    return (
-        <span style={{ color: 'var(--warning)', fontSize: 12, fontWeight: 600 }}>
-            +{menit} mnt
-        </span>
-    );
+function selisihMenitPulang(clockOut, expectedOut) {
+    if (!clockOut || !expectedOut) return null;
+    const actual = new Date(clockOut);
+    const [h, m] = expectedOut.split(':').map(Number);
+    const expected = new Date(actual);
+    expected.setHours(h, m, 0, 0);
+    return Math.round((expected - actual) / 60000);
+}
+function SelisihBadge({ menit, masuk }) {
+    // 1. Jika data belum ada (belum clock in / clock out)
+    if (menit === null || menit === undefined) {
+        return <span style={{ color: 'var(--brown-400)' }}>–</span>;
+    }
+
+    // 2. LOGIKA UNTUK MASUK (CLOCK IN)
+    if (masuk) {
+        // Jika menit positif (> 0), artinya lewat dari jadwal = TERLAMBAT
+        if (menit > 0) {
+            return (
+                <span style={{ color: 'var(--danger)', fontSize: 12, fontWeight: 600 }}>
+                    Terlambat {menit} mnt
+                </span>
+            );
+        }
+        // Jika menit <= 0, artinya datang lebih awal atau pas jadwal = TEPAT WAKTU
+        return <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600 }}>Tepat waktu</span>;
+    }
+
+    // 3. LOGIKA UNTUK PULANG (CLOCK OUT)
+    if (!masuk) {
+        // Jika menit negatif (< 0), artinya pulang sebelum jamnya = PULANG CEPAT
+        if (menit < 0) {
+            return (
+                <span style={{ color: 'var(--warning)', fontSize: 12, fontWeight: 600 }}>
+                    Pulang cepat {Math.abs(menit)} mnt
+                </span>
+            );
+        }
+        // Jika menit >= 0, artinya pulang pas jadwal atau lembur = TEPAT WAKTU
+        return <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600 }}>Tepat waktu</span>;
+    }
 }
 
 function LokasiDot({ valid }) {
@@ -120,10 +153,10 @@ export default function AbsensiHariIni({ data = [], loading, error, onUbahStatus
                                 <th>Karyawan</th>
                                 <th>Booth</th>
                                 <th>Shift</th>
-                                <th>Seharusnya</th>
-                                <th>Jam Masuk</th>
+                                <th>Jam Kerja</th>
+                                <th>Masuk</th>
                                 <th>Selisih</th>
-                                <th>Jam Keluar</th>
+                                <th>Keluar</th>
                                 <th>Lokasi</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
@@ -140,24 +173,25 @@ export default function AbsensiHariIni({ data = [], loading, error, onUbahStatus
                                 filtered.map((item, idx) => {
                                     const belumAbsen = !item.clock_in && !item.status;
                                     const menit = selisihMenit(item.clock_in, item.expected_clock_in);
+                                    const menitPulang = selisihMenitPulang(item.clock_out, item.expected_clock_out);
                                     const sv = statusVariant[item.status] ?? { cls: 'grey', label: 'Belum Absen' };
 
                                     return (
                                         <tr key={item.employee_id} style={{ opacity: actionLoading === item.employee_id ? 0.5 : 1 }}>
                                             <td className={styles.idCell}>{idx + 1}</td>
-                                            <td className={styles.namaCell}>{item.employee_name}</td>
+                                            <td className={styles.namaCell}>{item.employee_name} <span className={`${styles.pill} ${styles[item.shift === 'pagi' ? 'success' : 'warning']}`}>
+                                                {item.shift?.charAt(0).toUpperCase() + item.shift?.slice(1)}
+                                            </span></td>
                                             <td>{item.booth_name}</td>
-                                            <td>
-                                                <span className={`${styles.pill} ${styles[item.shift === 'pagi' ? 'success' : 'warning']}`}>
-                                                    {item.shift?.charAt(0).toUpperCase() + item.shift?.slice(1)}
-                                                </span>
-                                            </td>
                                             <td className={styles.monoCell}>
                                                 {item.expected_clock_in?.slice(0, 5) ?? '–'} – {item.expected_clock_out?.slice(0, 5) ?? '–'}
                                             </td>
                                             <td className={styles.monoCell}>{formatJam(item.clock_in)}</td>
                                             <td><SelisihBadge menit={menit} /></td>
                                             <td className={styles.monoCell}>{formatJam(item.clock_out)}</td>
+                                            <td>
+
+                                            </td>
                                             <td>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                                     <LokasiDot valid={item.location_in_valid} />

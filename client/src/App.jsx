@@ -20,6 +20,7 @@ import DistribusiPage from './pages/Distribusi/DistribusiPage';
 
 import DataKaryawanPage from './pages/DataKaryawan/DataKaryawanPage';
 import JadwalPage from './pages/Jadwal/JadwalPage';
+import AbsensiPage from './pages/Absensi/RekapAbsensiPage';
 
 import ResepPage from './pages/Resep/ResepPage';
 
@@ -80,6 +81,7 @@ export default function App() {
 
         <Route path="/karyawan" element={<DataKaryawanPage />} />
         <Route path="/karyawan-jadwal" element={<JadwalPage />} />
+        <Route path="/karyawan-absensi" element={<AbsensiPage />} />
 
         <Route path="/resep" element={<ResepPage />} />
 

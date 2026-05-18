@@ -1,7 +1,6 @@
 // components/AbsensiTable/AbsensiRekap.jsx
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import * as XLSX from 'xlsx';
 import styles from './AbsensiTable.module.css';
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
@@ -33,25 +32,6 @@ function selisihMenit(clockIn, expectedIn) {
     return Math.round((actual - expected) / 60000);
 }
 
-// negatif = pulang lebih awal, positif = lembur
-function selisihPulang(clockOut, expectedOut) {
-    if (!clockOut || !expectedOut) return null;
-    const actual = new Date(clockOut);
-    const [h, m] = expectedOut.split(':').map(Number);
-    const expected = new Date(actual);
-    expected.setHours(h, m, 0, 0);
-    return Math.round((actual - expected) / 60000);
-}
-
-function formatDurasi(clockIn, clockOut) {
-    if (!clockIn || !clockOut) return null;
-    const menit = Math.round((new Date(clockOut) - new Date(clockIn)) / 60000);
-    const jam = Math.floor(menit / 60);
-    const sisa = menit % 60;
-    if (jam === 0) return `${sisa}m`;
-    return sisa === 0 ? `${jam}j` : `${jam}j ${sisa}m`;
-}
-
 function getDefaultRange() {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -60,12 +40,12 @@ function getDefaultRange() {
 }
 
 const statusVariant = {
-    hadir: { cls: 'success', label: 'Hadir' },
+    hadir:     { cls: 'success', label: 'Hadir' },
     terlambat: { cls: 'warning', label: 'Terlambat' },
-    absen: { cls: 'danger', label: 'Absen' },
-    izin: { cls: 'accent', label: 'Izin' },
-    sakit: { cls: 'brown', label: 'Sakit' },
-    libur: { cls: 'grey', label: 'Libur' },
+    absen:     { cls: 'danger',  label: 'Absen' },
+    izin:      { cls: 'accent',  label: 'Izin' },
+    sakit:     { cls: 'brown',   label: 'Sakit' },
+    libur:     { cls: 'grey',    label: 'Libur' },
 };
 
 // ── Leaflet Map ───────────────────────────────────────────────────────────────
@@ -151,19 +131,19 @@ const ITEMS_PER_PAGE = 10;
 export default function AbsensiRekap() {
     const def = getDefaultRange();
     const [startDate, setStartDate] = useState(def.start);
-    const [endDate, setEndDate] = useState(def.end);
+    const [endDate, setEndDate]     = useState(def.end);
     const [employeeId, setEmployeeId] = useState('');
-    const [data, setData] = useState([]);
+    const [data, setData]           = useState([]);
     const [employees, setEmployees] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading]     = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const [drawerItem, setDrawerItem] = useState(null);
+    const [drawerItem, setDrawerItem]   = useState(null);
 
     // Fetch employee list untuk dropdown
     useEffect(() => {
         authApi().get('/karyawan/penjaga')
             .then(r => setEmployees(r.data?.payload?.data ?? []))
-            .catch(() => { });
+            .catch(() => {});
     }, []);
 
     // Fetch rekap
@@ -187,7 +167,7 @@ export default function AbsensiRekap() {
 
     // ── Pagination ────────────────────────────────────────────
     const totalPages = Math.ceil(data.length / ITEMS_PER_PAGE);
-    const paginated = data.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const paginated  = data.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
         .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
         .reduce((acc, page, i, arr) => {
@@ -195,73 +175,6 @@ export default function AbsensiRekap() {
             acc.push(page);
             return acc;
         }, []);
-
-    // ── Print ─────────────────────────────────────────────────────────────────
-    const handlePrint = () => {
-        const printContent = document.getElementById('rekap-print-area');
-        const win = window.open('', '_blank');
-        win.document.write(`
-            <html><head>
-            <title>Rekap Absensi</title>
-            <style>
-                body { font-family: sans-serif; font-size: 12px; color: #1a1309; }
-                table { width: 100%; border-collapse: collapse; }
-                th { background: #f7f5f2; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e6e0d8; }
-                td { padding: 8px 10px; border-bottom: 1px solid #eeeae4; }
-                h2 { margin-bottom: 4px; }
-                p { color: #6b5a42; margin-bottom: 12px; font-size: 11px; }
-                @media print { button { display: none; } }
-            </style>
-            </head><body>
-            <h2>Rekap Absensi</h2>
-            <p>${startDate} s/d ${endDate}${employeeId ? ' · ' + (employees.find(e => String(e.id) === String(employeeId))?.name ?? '') : ' · Semua Karyawan'}</p>
-            ${printContent.innerHTML}
-            </body></html>
-        `);
-        win.document.close();
-        win.focus();
-        setTimeout(() => { win.print(); win.close(); }, 300);
-    };
-
-    // ── Download Excel ─────────────────────────────────────────────────────────
-    const handleDownload = () => {
-        if (data.length === 0) return;
-
-        const employeeName = employeeId
-            ? (employees.find(e => String(e.id) === String(employeeId))?.name ?? 'Karyawan')
-            : 'Semua Karyawan';
-
-        const rows = data.map((item, idx) => {
-            const menit = selisihMenit(item.clock_in, item.expected_clock_in);
-            const sp = selisihPulang(item.clock_out, item.expected_clock_out);
-            const durasi = formatDurasi(item.clock_in, item.clock_out);
-            const sv = statusVariant[item.status] ?? { label: '–' };
-
-            return {
-                'No': idx + 1,
-                'Karyawan': item.employee_name,
-                'Tanggal': formatTanggal(item.date),
-                'Booth': item.booth_name,
-                'Shift': item.shift,
-                'Jadwal Masuk': item.expected_clock_in?.slice(0, 5) ?? '–',
-                'Jadwal Keluar': item.expected_clock_out?.slice(0, 5) ?? '–',
-                'Jam Masuk': formatJam(item.clock_in),
-                'Keterlambatan (mnt)': menit === null ? '' : menit <= 0 ? 0 : menit,
-                'Jam Keluar': formatJam(item.clock_out),
-                'Lebih Awal (mnt)': sp === null ? '' : sp < 0 ? Math.abs(sp) : 0,
-                'Durasi Kerja': durasi ?? '–',
-                'Lokasi Masuk': item.location_in_valid === true ? 'Valid' : item.location_in_valid === false ? 'Di luar radius' : '–',
-                'Lokasi Keluar': item.location_out_valid === true ? 'Valid' : item.location_out_valid === false ? 'Di luar radius' : '–',
-                'Status': sv.label,
-                'Catatan': item.notes ?? '',
-            };
-        });
-
-        const ws = XLSX.utils.json_to_sheet(rows);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Rekap Absensi');
-        XLSX.writeFile(wb, `rekap-absensi_${startDate}_${endDate}_${employeeName.replace(/\s+/g, '-')}.xlsx`);
-    };
 
     return (
         <>
@@ -302,40 +215,11 @@ export default function AbsensiRekap() {
                         <button className={styles.btnPrimary} onClick={fetchRekap} disabled={loading}>
                             {loading ? 'Memuat...' : 'Tampilkan'}
                         </button>
-
-                        {/* Divider */}
-                        {data.length > 0 && (
-                            <div style={{ width: 1, height: 24, background: 'var(--brown-100)', margin: '0 4px' }} />
-                        )}
-
-                        {/* Download Excel */}
-                        {data.length > 0 && (
-                            <button className={styles.btnGhost} onClick={handleDownload} title="Download Excel">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 14, height: 14 }}>
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="7 10 12 15 17 10" />
-                                    <line x1="12" y1="15" x2="12" y2="3" />
-                                </svg>
-                                Excel
-                            </button>
-                        )}
-
-                        {/* Print */}
-                        {data.length > 0 && (
-                            <button className={styles.btnGhost} onClick={handlePrint} title="Print">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 14, height: 14 }}>
-                                    <polyline points="6 9 6 2 18 2 18 9" />
-                                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                                    <rect x="6" y="14" width="12" height="8" />
-                                </svg>
-                                Print
-                            </button>
-                        )}
                     </div>
                 </div>
 
                 {/* Tabel */}
-                <div className={styles.tableWrap} id="rekap-print-area">
+                <div className={styles.tableWrap}>
                     <table className={styles.table}>
                         <thead>
                             <tr>
@@ -344,11 +228,10 @@ export default function AbsensiRekap() {
                                 <th>Tanggal</th>
                                 <th>Booth</th>
                                 <th>Shift</th>
+                                <th>Seharusnya</th>
                                 <th>Jam Masuk</th>
-                                <th>Keterlambatan</th>
+                                <th>Selisih</th>
                                 <th>Jam Keluar</th>
-                                <th>Lebih Awal</th>
-                                <th>Durasi</th>
                                 <th>Lokasi</th>
                                 <th>Status</th>
                                 <th>Detail</th>
@@ -374,6 +257,9 @@ export default function AbsensiRekap() {
                                                     {item.shift?.charAt(0).toUpperCase() + item.shift?.slice(1)}
                                                 </span>
                                             </td>
+                                            <td className={styles.monoCell}>
+                                                {item.expected_clock_in?.slice(0, 5) ?? '–'} – {item.expected_clock_out?.slice(0, 5) ?? '–'}
+                                            </td>
                                             <td className={styles.monoCell}>{formatJam(item.clock_in)}</td>
                                             <td>
                                                 {menit === null ? (
@@ -385,16 +271,6 @@ export default function AbsensiRekap() {
                                                 )}
                                             </td>
                                             <td className={styles.monoCell}>{formatJam(item.clock_out)}</td>
-                                            <td>{(() => {
-                                                const sp = selisihPulang(item.clock_out, item.expected_clock_out);
-                                                if (sp === null) return <span style={{ color: 'var(--brown-300)' }}>–</span>;
-                                                if (Math.abs(sp) <= 5) return <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600 }}>Tepat</span>;
-                                                if (sp < 0) return <span style={{ color: 'var(--brown-400)', fontSize: 12, fontWeight: 600 }}>{Math.abs(sp)} mnt lebih awal</span>;
-                                                return <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600 }}>+{sp} mnt</span>;
-                                            })()}</td>
-                                            <td style={{ fontSize: 12, fontWeight: 600, color: 'var(--brown-600)' }}>
-                                                {formatDurasi(item.clock_in, item.clock_out) ?? '–'}
-                                            </td>
                                             <td>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                                     {item.clock_in && (
@@ -503,22 +379,11 @@ export default function AbsensiRekap() {
                                     ['Jadwal Keluar', drawerItem.expected_clock_out?.slice(0, 5) ?? '–'],
                                     ['Jam Masuk', formatJam(drawerItem.clock_in)],
                                     ['Jam Keluar', formatJam(drawerItem.clock_out)],
-                                    ['Keterlambatan', (() => {
+                                    ['Selisih Masuk', (() => {
                                         const m = selisihMenit(drawerItem.clock_in, drawerItem.expected_clock_in);
                                         if (m === null) return '–';
                                         if (m <= 0) return <span style={{ color: 'var(--success)', fontWeight: 600 }}>Tepat waktu</span>;
-                                        return <span style={{ color: 'var(--warning)', fontWeight: 600 }}>+{m} menit</span>;
-                                    })()],
-                                    ['Lebih Awal', (() => {
-                                        const sp = selisihPulang(drawerItem.clock_out, drawerItem.expected_clock_out);
-                                        if (sp === null) return '–';
-                                        if (Math.abs(sp) <= 5) return <span style={{ color: 'var(--success)', fontWeight: 600 }}>Tepat waktu</span>;
-                                        if (sp < 0) return <span style={{ color: 'var(--brown-500)', fontWeight: 600 }}>{Math.abs(sp)} menit lebih awal</span>;
-                                        return <span style={{ color: 'var(--success)', fontWeight: 600 }}>Lembur {sp} menit</span>;
-                                    })()],
-                                    ['Durasi Kerja', (() => {
-                                        const d = formatDurasi(drawerItem.clock_in, drawerItem.clock_out);
-                                        return d ?? '–';
+                                        return <span style={{ color: 'var(--warning)', fontWeight: 600 }}>+{m} menit terlambat</span>;
                                     })()],
                                     ['Lokasi Masuk', drawerItem.location_in_valid === true ? <span style={{ color: 'var(--success)' }}>✓ Valid</span> : drawerItem.location_in_valid === false ? <span style={{ color: 'var(--danger)' }}>✗ Di luar radius</span> : '–'],
                                     ['Lokasi Keluar', drawerItem.location_out_valid === true ? <span style={{ color: 'var(--success)' }}>✓ Valid</span> : drawerItem.location_out_valid === false ? <span style={{ color: 'var(--danger)' }}>✗ Di luar radius</span> : '–'],

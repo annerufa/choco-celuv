@@ -272,6 +272,103 @@ const getMine = async (employeeId) => {
   );
   return rows;
 };
+
+// GET absensi hari ini versi owner:
+// Gabungkan semua karyawan berjadwal hari ini + data absensinya (kalau ada)
+const getTodayOwner = async () => {
+  const today = new Date().toLocaleDateString('en-CA');
+  // console.log('hari ca: ', today1); // Hasil: "2026-05-19" (Sesuai tanggal lokalmu)
+  // const today = new Date().toISOString().slice(0, 10);
+  console.log('hari ini:', today);
+  const [rows] = await db.query(
+    `SELECT
+            es.employee_id,
+            es.booth_id,
+            es.id          AS schedule_id,
+            es.shift,
+            es.expected_clock_in,
+            es.expected_clock_out,
+            u.name         AS employee_name,
+            b.name         AS booth_name,
+            b.latitude     AS booth_lat,
+            b.longitude    AS booth_lon,
+            a.id           AS attendance_id,
+            a.status,
+            a.clock_in,
+            a.clock_out,
+            a.lat_in,
+            a.lon_in,
+            a.lat_out,
+            a.lon_out,
+            a.notes,
+            CASE
+                WHEN a.lat_in IS NOT NULL
+                THEN (6371000 * 2 * ATAN2(
+                    SQRT(POW(SIN(RADIANS(a.lat_in - b.latitude)/2),2) + COS(RADIANS(b.latitude))*COS(RADIANS(a.lat_in))*POW(SIN(RADIANS(a.lon_in - b.longitude)/2),2)),
+                    SQRT(1-(POW(SIN(RADIANS(a.lat_in - b.latitude)/2),2) + COS(RADIANS(b.latitude))*COS(RADIANS(a.lat_in))*POW(SIN(RADIANS(a.lon_in - b.longitude)/2),2)))
+                )) <= 500
+                ELSE NULL
+            END AS location_in_valid,
+            CASE
+                WHEN a.lat_out IS NOT NULL
+                THEN (6371000 * 2 * ATAN2(
+                    SQRT(POW(SIN(RADIANS(a.lat_out - b.latitude)/2),2) + COS(RADIANS(b.latitude))*COS(RADIANS(a.lat_out))*POW(SIN(RADIANS(a.lon_out - b.longitude)/2),2)),
+                    SQRT(1-(POW(SIN(RADIANS(a.lat_out - b.latitude)/2),2) + COS(RADIANS(b.latitude))*COS(RADIANS(a.lat_out))*POW(SIN(RADIANS(a.lon_out - b.longitude)/2),2)))
+                )) <= 500
+                ELSE NULL
+            END AS location_out_valid
+        FROM employee_schedules es
+        JOIN users u ON u.id = es.employee_id
+        JOIN booth b ON b.id = es.booth_id
+        LEFT JOIN attendance a
+            ON a.employee_id = es.employee_id
+            AND a.date = ?
+            AND a.shift = es.shift
+        WHERE es.is_active = 1
+        ORDER BY es.shift ASC, u.name ASC`,
+    [today]
+  );
+  return rows;
+};
+
+// INSERT absensi manual (izin/sakit/libur) oleh owner
+const insertManual = async ({ employeeId, boothId, scheduleId, shift, status, notes, createdBy }) => {
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Cek apakah sudah ada record hari ini
+  const [existing] = await db.query(
+    `SELECT id FROM attendance WHERE employee_id = ? AND date = ? AND shift = ?`,
+    [employeeId, today, shift]
+  );
+  if (existing.length > 0) {
+    throw new Error('Karyawan sudah memiliki record absensi hari ini.');
+  }
+
+  // Ambil snapshot expected dari jadwal
+  let expectedIn = null;
+  let expectedOut = null;
+  if (scheduleId) {
+    const [sched] = await db.query(
+      `SELECT expected_clock_in, expected_clock_out FROM employee_schedules WHERE id = ?`,
+      [scheduleId]
+    );
+    if (sched[0]) {
+      expectedIn = sched[0].expected_clock_in;
+      expectedOut = sched[0].expected_clock_out;
+    }
+  }
+
+  const [result] = await db.query(
+    `INSERT INTO attendance
+           (employee_id, booth_id, schedule_id, expected_clock_in, expected_clock_out,
+            date, shift, is_override, status, notes, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
+    [employeeId, boothId, scheduleId || null, expectedIn, expectedOut,
+      today, shift, status, notes || null, createdBy]
+  );
+  return result.insertId;
+};
+
 module.exports = {
   isWithinBooth,
   resolveStatus,
@@ -281,5 +378,7 @@ module.exports = {
   getByDateRange,
   getOpenAttendance,
   getOpen,
-  getMine
+  getMine,
+  getTodayOwner,
+  insertManual
 };

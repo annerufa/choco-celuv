@@ -6,6 +6,7 @@ router.get('/withJadwal', getAllKaryawanwithJadwal);
 router.post('/', createKaryawan);
 router.put('/:id', updateKaryawan);
 router.patch('/:id/status', statusKaryawan);
+router.patch('/:id/status', statusKaryawan);
 
 
 

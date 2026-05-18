@@ -25,6 +25,7 @@ const login = async (req, res) => {
             id: user.id,
             name: user.name,
             role: user.role,
+            is_update: user.is_update,
         };
 
         // cek role untuk menentukan location_id yang dimasukkan ke token
@@ -45,7 +46,7 @@ const login = async (req, res) => {
         // 4. Sign token
         const token = jwt.sign(payload, SECRET, { expiresIn: '8h' });
         console.log(token);
-        response(200, { token, user: { id: user.id, name: user.name, role: user.role, location_id: payload.location_id, booth_id: payload.booth_id } }, 'Login berhasil', res);
+        response(200, { token, user: { id: user.id, name: user.name, role: user.role, location_id: payload.location_id, booth_id: payload.booth_id, is_update: user.is_update } }, 'Login berhasil', res);
     } catch (err) {
         response(500, null, err.message, res);
     }

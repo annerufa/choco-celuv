@@ -117,4 +117,40 @@ const getMine = async (req, res) => {
     }
 };
 
-module.exports = { getAttendanceToday, getAttendanceRange, clockIn, clockOut, getOpen, getMine };
+const getTodayOwner = async (req, res) => {
+    try {
+        const data = await Attendance.getTodayOwner();
+        response(200, data, 'Berhasil mengambil absensi hari ini', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+const insertManual = async (req, res) => {
+    try {
+        const { employee_id, booth_id, schedule_id, shift, status, notes } = req.body;
+
+        if (!employee_id || !booth_id || !shift || !status) {
+            return response(400, null, 'employee_id, booth_id, shift, status wajib diisi', res);
+        }
+        if (!['izin', 'sakit', 'libur'].includes(status)) {
+            return response(400, null, 'Status harus izin, sakit, atau libur', res);
+        }
+
+        await Attendance.insertManual({
+            employeeId: employee_id,
+            boothId: booth_id,
+            scheduleId: schedule_id || null,
+            shift,
+            status,
+            notes,
+            createdBy: req.user.id,
+        });
+        response(201, null, `Status ${status} berhasil dicatat`, res);
+    } catch (err) {
+        const code = err.message.includes('sudah memiliki') ? 409 : 500;
+        response(code, null, err.message, res);
+    }
+};
+
+module.exports = { getAttendanceToday, getAttendanceRange, clockIn, clockOut, getOpen, getMine, getTodayOwner, insertManual };
