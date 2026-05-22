@@ -97,8 +97,7 @@ const getByItemOrLocation = async (req, res) => {
 };
 
 const getItemsPerLoc = async (req, res) => {
-    const locationId = req.user.location_id ?? null;
-
+    const locationId = req.query.location_id ?? null;
     try {
         const data = await Items.getAllPerLoc(locationId);
         response(200, data, 'Berhasil mengambil data barang dan stok pada lokasi id', res);
@@ -180,4 +179,54 @@ const updateBoothSettings = async (req, res) => {
     }
 };
 
-module.exports = { getAllItems, getMyItems, createItems, statusItem, getConversions, getBoothSettings, updateBoothSettings, updateItems, deleteItems, getItem, getItemsPerLoc, getByItemOrLocation };
+const getUnitConversions = async (req, res) => {
+    try {
+        const data = await Items.getConversions(req.params.id);
+        response(200, data, 'Berhasil mengambil satuan beli', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+const createUnitConversion = async (req, res) => {
+    try {
+        const { role } = req.user;
+        if (role !== 'pemilik') return response(403, null, 'Tidak memiliki akses', res);
+
+        const { label, buy_unit, buy_qty, base_unit, base_qty } = req.body;
+        if (!label || !buy_unit || !buy_qty || !base_unit || !base_qty) {
+            return response(400, null, 'Semua field wajib diisi', res);
+        }
+        if (Number(buy_qty) <= 0 || Number(base_qty) <= 0) {
+            return response(400, null, 'Jumlah harus lebih dari 0', res);
+        }
+
+        const data = await Items.createConversion(req.params.id, {
+            label, buy_unit,
+            buy_qty: Number(buy_qty),
+            base_unit,
+            base_qty: Number(base_qty),
+        });
+        response(201, data, 'Satuan beli berhasil ditambahkan', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+const deleteUnitConversion = async (req, res) => {
+    try {
+        const { role } = req.user;
+        if (role !== 'pemilik') return response(403, null, 'Tidak memiliki akses', res);
+
+        await Items.deleteConversion(req.params.id, req.params.ucId);
+        response(200, null, 'Satuan beli berhasil dihapus', res);
+    } catch (err) {
+        if (err.message === 'Konversi tidak ditemukan') {
+            return response(404, null, err.message, res);
+        }
+        response(500, null, err.message, res);
+    }
+};
+
+
+module.exports = { getAllItems, getMyItems, createItems, statusItem, getConversions, getBoothSettings, updateBoothSettings, updateItems, deleteItems, getItem, getItemsPerLoc, getByItemOrLocation, getUnitConversions, createUnitConversion, deleteUnitConversion };

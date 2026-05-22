@@ -1,7 +1,8 @@
 const router = require('express').Router();
-const { getAllBooth, createBooth, updateBooth, statusBooth } = require('../controllers/boothController');
+const { getAllBooth, getBoothwithloc, createBooth, updateBooth, statusBooth } = require('../controllers/boothController');
 
 router.get('/', getAllBooth);
+router.get('/loc', getBoothwithloc);
 router.post('/', createBooth);
 router.put('/:id', updateBooth);
 router.patch('/:id/status', statusBooth);

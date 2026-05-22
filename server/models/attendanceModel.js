@@ -36,8 +36,8 @@ const resolveStatus = (expectedClockIn, actualClockIn) => {
 // CLOCK IN
 // -------------------------------------------------------
 const clockIn = async ({ employeeId, boothId, scheduleId, shift, lat, lon, isOverride = false, createdBy = null }) => {
-  const today = new Date().toISOString().slice(0, 10);
-
+  // const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('en-CA');
   const [existing] = await db.query(
     `SELECT id FROM attendance WHERE employee_id = ? AND date = ? AND shift = ?`,
     [employeeId, today, shift]
@@ -99,7 +99,8 @@ const clockOut = async ({ attendanceId, lat, lon }) => {
 // GET absensi hari ini (untuk owner dashboard)
 // -------------------------------------------------------
 const getToday = async (boothId) => {
-  const today = new Date().toISOString().slice(0, 10);
+  // const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('en-CA');
   let sql = `
     SELECT
       a.*,
@@ -194,7 +195,8 @@ const getByDateRange = async (startDate, endDate, employeeId, boothId) => {
 // GET absensi aktif (sudah clock-in, belum clock-out)
 // -------------------------------------------------------
 const getOpenAttendance = async (employeeId) => {
-  const today = new Date().toISOString().slice(0, 10);
+  // const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('en-CA');
   const [rows] = await db.query(
     `SELECT a.*, b.latitude AS booth_lat, b.longitude AS booth_lon
      FROM attendance a
@@ -207,7 +209,8 @@ const getOpenAttendance = async (employeeId) => {
 };
 // GET sesi clock-in yang masih terbuka hari ini (belum clock-out)
 const getOpen = async (employeeId) => {
-  const today = new Date().toISOString().slice(0, 10);
+  // const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('en-CA');
   const [rows] = await db.query(
     `SELECT a.*, b.latitude AS booth_lat, b.longitude AS booth_lon
          FROM attendance a
@@ -333,8 +336,8 @@ const getTodayOwner = async () => {
 
 // INSERT absensi manual (izin/sakit/libur) oleh owner
 const insertManual = async ({ employeeId, boothId, scheduleId, shift, status, notes, createdBy }) => {
-  const today = new Date().toISOString().slice(0, 10);
-
+  // const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('en-CA');
   // Cek apakah sudah ada record hari ini
   const [existing] = await db.query(
     `SELECT id FROM attendance WHERE employee_id = ? AND date = ? AND shift = ?`,

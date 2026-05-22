@@ -17,6 +17,7 @@ import DetailBarangBoothPage from './pages/DataBarang/DetailBarangBoothPage';
 
 import DataBoothPage from './pages/DataBooth/DataBoothPage';
 import DistribusiPage from './pages/Distribusi/DistribusiPage';
+import DetailDistribusiPage from './pages/Distribusi/DetailDistribusiPage';
 
 import DataKaryawanPage from './pages/DataKaryawan/DataKaryawanPage';
 import JadwalPage from './pages/Jadwal/JadwalPage';
@@ -29,7 +30,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 // import HomePenjaga from './pages/Penjaga/Home';
 import HomeKurir from './pages/Mobileapp/MobileApp3';
 
-import HomePenjaga from './pages/PenjagaBooth/MobilePenjaga';
+import HomeKaryawan from './pages/PenjagaBooth/MobileApp';
 export default function App() {
   // console.log(import.meta.env.VITE_API_URL)
   return (
@@ -38,17 +39,17 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       {/* <Route path="/tes" element={<HomePenjaga />} /> */}
 
-      <Route path="/dashboard/kurir/*" element={
-        <ProtectedRoute allowedRoles={['kurir']}>
-          <HomeKurir />
+      <Route path="/dashboard/karyawan/*" element={
+        <ProtectedRoute allowedRoles={['kurir', 'penjaga_booth']}>
+          <HomeKaryawan />
         </ProtectedRoute>
       } />
-
+      {/* 
       <Route path="/dashboard/penjaga_booth/*" element={
         <ProtectedRoute allowedRoles={['penjaga_booth']}>
           <HomePenjaga />
         </ProtectedRoute>
-      } />
+      } /> */}
 
 
       <Route element={<MainLayout />}>
@@ -86,6 +87,7 @@ export default function App() {
         <Route path="/resep" element={<ResepPage />} />
 
         <Route path="/distribusi" element={<DistribusiPage />} />
+        <Route path="/distribusi/:id" element={<DetailDistribusiPage />} />
 
       </Route>
 

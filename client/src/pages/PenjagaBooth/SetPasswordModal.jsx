@@ -1,5 +1,11 @@
 // SetPasswordModal.jsx — bisa dijadikan file terpisah
 import { useState } from "react";
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
+
+
+function getToken() {
+    return localStorage.getItem('token');
+}
 
 export default function SetPasswordModal({ onSuccess }) {
     const [pw, setPw] = useState("");
@@ -14,18 +20,26 @@ export default function SetPasswordModal({ onSuccess }) {
 
         setLoading(true);
         try {
+            const headers = { Authorization: `Bearer ${getToken()}` };
+
             // Ganti endpoint sesuai API kamu
-            const res = await fetch("/api/karyawan/update-password", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
+            const res = await fetch(`${BASE_URL}/karyawan/update-password`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    'Authorization': `Bearer ${getToken()}`
+                },
                 body: JSON.stringify({ password: pw }),
             });
             const data = await res.json();
+
+            console.log('response status:', res.status, 'data:', data); // tambah ini
             if (!res.ok) throw new Error(data.message || "Gagal update password.");
             onSuccess(); // callback → tutup modal + update state user
         } catch (e) {
+            console.error('update-password error:', e); // tambah ini
             setErr(e.message);
+
         } finally {
             setLoading(false);
         }

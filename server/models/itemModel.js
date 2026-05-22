@@ -205,15 +205,17 @@ const getByItemId = async (item_id) => {
 const getByLocation = async (location_id) => {
     const [rows] = await db.query(
         `SELECT 
-            spl.*,
-            i.name     AS item_name,
-            i.category,
-            i.unit,
-            i.last_price
-        FROM stock_per_location spl
-        JOIN items i ON i.id = spl.item_id
-        WHERE spl.location_id = ?
-        ORDER BY i.name ASC`, [location_id]);
+            i.*,
+            sl.current_stock,
+            sl.safety_stock,
+            sl.min_qty,
+            sl.max_qty,
+            sl.is_active AS stock_active
+         FROM items i
+         JOIN stock_per_location sl ON i.id = sl.item_id
+         WHERE sl.location_id = ?
+         ORDER BY i.updated_at DESC`,
+        [location_id]);
     return rows;
 };
 
@@ -307,4 +309,25 @@ const updateBoothSettings = async (item_id, booths) => {
 };
 
 
-module.exports = { getBoothSettingsByItemId, updateBoothSettings, getAll, create, update, statusChange, removePerLoc, getAllPerLoc, getById, getMatrix, getItem, getByItemId, getByLocation, getConversions };
+const createConversion = async (item_id, data) => {
+    const { label, buy_unit, buy_qty, base_unit, base_qty } = data;
+    const [result] = await db.execute(
+        `INSERT INTO unit_conversions (item_id, label, buy_unit, buy_qty, base_unit, base_qty)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [item_id, label, buy_unit, buy_qty, base_unit, base_qty]
+    );
+    return { id: result.insertId, item_id, label, buy_unit, buy_qty, base_unit, base_qty };
+};
+
+const deleteConversion = async (item_id, uc_id) => {
+    const [result] = await db.execute(
+        `DELETE FROM unit_conversions WHERE id = ? AND item_id = ?`,
+        [uc_id, item_id]
+    );
+    if (result.affectedRows === 0) throw new Error('Konversi tidak ditemukan');
+    return true;
+};
+
+
+
+module.exports = { getBoothSettingsByItemId, updateBoothSettings, getAll, create, update, statusChange, removePerLoc, getAllPerLoc, getById, getMatrix, getItem, getByItemId, getByLocation, getConversions, getConversions, createConversion, deleteConversion };

@@ -1,8 +1,49 @@
 import { ROLES } from "./roles";
 import { IconKasir, IconStok, IconCheck, IconWarn } from "./Icons";
+import { useAuth } from '../../context/AuthContext';
+import { useApi } from '../../hooks/useApi';
+
+const ROLE_LABEL = {
+  pemilik: 'Pemilik',
+  kurir: 'Kurir',
+  penjaga_booth: 'Penjaga Booth',
+};
+const statusVariant = {
+  hadir: { cls: 'success', label: 'Hadir' },
+  terlambat: { cls: 'warning', label: 'Terlambat' },
+  absen: { cls: 'danger', label: 'Absen' },
+  izin: { cls: 'accent', label: 'Izin' },
+  sakit: { cls: 'brown', label: 'Sakit' },
+  libur: { cls: 'grey', label: 'Libur' },
+};
+export function formatRole(role) {
+  return ROLE_LABEL[role] ?? role;
+}
+
+function formatJam(dt) {
+  if (!dt) return '–';
+  if (typeof dt === 'string' && dt.length <= 8 && dt.includes(':')) {
+    return dt.slice(0, 5);
+  }
+  return new Date(dt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+}
 
 export default function HomePenjaga({ setPage }) {
   const r = ROLES.kasir;
+  const { user, logout } = useAuth();
+
+  const {
+    data: openAbsen,
+    loading: loadingOpen,
+    fetchData: refetchOpen,
+  } = useApi('/attendance/open');
+  // console.log('openAbsen:', openAbsen);
+  const rawOpen = openAbsen; // ini array [] atau [{ ... }]
+  const absenHariIni = Array.isArray(rawOpen) ? (rawOpen[0] ?? null) : rawOpen ?? null;
+  // console.log("status: ", absenHariIni.status);
+
+  const getInitial = (name) =>
+    name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 
   return (
     <div className="page">
@@ -10,11 +51,11 @@ export default function HomePenjaga({ setPage }) {
       <div className="phead">
         <div className="phead-row">
           <div>
-            <div className="ptitle">Hai, {r.name.split(" ")[0]} 👋</div>
-            <div className="psub">{r.sub}</div>
+            <div className="ptitle">Hai, {user?.name.split(" ")[0]} 👋</div>
+            <div className="psub" style={{ textTransform: 'capitalize' }}>{formatRole(user?.role)}</div>
           </div>
           <div className="ava" style={{ background: r.avaGrad, color: "#0e0a07" }}>
-            {r.init}
+            {getInitial(user?.name)}
           </div>
         </div>
       </div>
@@ -23,7 +64,7 @@ export default function HomePenjaga({ setPage }) {
         {/* HERO */}
         <div className="hero">
           <div className="hero-lbl">Penjualan Hari Ini</div>
-          <div className="hero-val">Rp 3,85jt</div>
+          <div className="hero-val">Rp 62.000</div>
           <div className="hero-tag">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <polyline points="20 6 9 17 4 12" />
@@ -33,19 +74,67 @@ export default function HomePenjaga({ setPage }) {
           <div className="hero-minis">
             <div className="hmini">
               <div className="hmini-lbl">Transaksi</div>
-              <div className="hmini-val">31</div>
+              <div className="hmini-val">3</div>
             </div>
             <div className="hmini">
               <div className="hmini-lbl">Avg. Order</div>
-              <div className="hmini-val">124rb</div>
+              <div className="hmini-val">12rb</div>
             </div>
-            <div className="hmini">
+            {/* <div className="hmini">
               <div className="hmini-lbl">QRIS</div>
               <div className="hmini-val">68%</div>
-            </div>
+            </div> */}
           </div>
         </div>
+        <div style={{ marginBottom: "10px" }}>
+          <div className="scard-row">
+            <div className="scard-icon" style={{ background: openAbsen ? "var(--greensoft)" : "var(--bg2)", color: openAbsen ? "var(--green)" : "var(--text3)" }}>
+              <IconKasir />
+            </div>
+            <div className="scard-info">
+              {absenHariIni ? (
+                <>
+                  <div className="sval" style={{ fontSize: 14 }}>Absen hari ini</div>
+                  <div style={{ marginTop: 4 }}>
+                    <span style={{ padding: '4px', color: 'var(--accent)', fontSize: 12 }}>{(absenHariIni.status)}   </span>
+                    <span style={{
+                      background: 'var(--greensoft)', color: 'var(--green)',
+                      fontSize: 11, fontWeight: 700, padding: '2px 8px',
+                      borderRadius: 20, display: 'inline-block'
+                    }}>
+                      {formatJam(absenHariIni.clock_in)}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="slbl">Hari ini</div>
+                  <div className="sval" style={{ fontSize: 14 }}>Belum absen masuk</div>
+                </>
+              )}
+            </div>
 
+            {/* Tombol absensi — selalu muncul */}
+            <button
+              onClick={() => setPage("absensi")}
+              style={{
+                marginLeft: 'auto',
+                flexShrink: 0,
+                padding: '7px 13px',
+                borderRadius: '10px',
+                border: 'none',
+                background: 'var(--greensoft)',
+                color: 'var(--green)',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Absensi
+            </button>
+          </div>
+        </div>
         {/* STAT CARDS */}
         <div className="sgrid">
           <div className="scard" onClick={() => setPage("kasir")}>
@@ -126,6 +215,6 @@ export default function HomePenjaga({ setPage }) {
 
         <div style={{ height: 20 }} />
       </div>
-    </div>
+    </div >
   );
 }

@@ -1,0 +1,655 @@
+/* src/pages/Distribusi/DetailDistribusiPage.module.css */
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ── Loading & Error ─────────────────────────────── */
+.loadingWrap,
+.errorWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 300px;
+    color: var(--brown-500);
+    font-size: 14px;
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--brown-100);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.errorWrap svg {
+    color: var(--danger);
+}
+
+/* ── Header ──────────────────────────────────────── */
+.pageHeader {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.backBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    color: var(--brown-700);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+}
+
+.backBtn:hover {
+    background: var(--brown-50);
+    border-color: var(--brown-300);
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--brown-400);
+}
+
+.breadcrumbLink {
+    color: var(--brown-600);
+    cursor: pointer;
+}
+
+.breadcrumbLink:hover {
+    text-decoration: underline;
+}
+
+/* ── Hero Card ───────────────────────────────────── */
+.heroCard {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--brown-100);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.heroLeft {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.heroIcon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: var(--brown-50);
+    border: 1px solid var(--brown-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brown-500);
+    flex-shrink: 0;
+}
+
+.heroId {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--brown-900);
+    margin-bottom: 8px;
+}
+
+.heroMeta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.metaDot {
+    color: var(--brown-300);
+}
+
+.metaDesc {
+    font-size: 12px;
+    color: var(--brown-500);
+}
+
+.heroActions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ── Buttons ─────────────────────────────────────── */
+.btnGhost {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    color: var(--brown-700);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+}
+
+.btnGhost:hover {
+    background: var(--brown-50);
+    border-color: var(--brown-300);
+}
+
+.btnGhost:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btnPrimary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity var(--transition);
+}
+
+.btnPrimary:hover {
+    opacity: 0.9;
+}
+
+.btnPrimary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btnPickup {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(212, 80, 10, 0.25);
+    transition: opacity var(--transition);
+}
+
+.btnPickup:hover {
+    opacity: 0.9;
+}
+
+.btnReceive {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--success);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(46, 138, 86, 0.25);
+    transition: opacity var(--transition);
+}
+
+.btnReceive:hover {
+    opacity: 0.9;
+}
+
+.btnCancel {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #FCA5A5;
+    background: #FEE2E2;
+    color: var(--danger);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition);
+}
+
+.btnCancel:hover {
+    background: #FECACA;
+}
+
+.btnDanger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--danger);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity var(--transition);
+}
+
+.btnDanger:hover {
+    opacity: 0.9;
+}
+
+.btnDanger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Timeline ────────────────────────────────────── */
+.timeline {
+    display: flex;
+    align-items: flex-start;
+    padding: 20px 24px;
+    gap: 0;
+}
+
+.timelineStep {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    flex: 1;
+}
+
+.timelineDot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.dotDone {
+    background: var(--success);
+    color: #fff;
+    border: 2px solid var(--success);
+}
+
+.dotActive {
+    background: #fff;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 4px rgba(212, 80, 10, 0.12);
+}
+
+.dotPending {
+    background: var(--brown-50);
+    border: 2px solid var(--brown-200);
+}
+
+.dotInner {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--brown-300);
+}
+
+.dotActive .dotInner {
+    background: var(--accent);
+}
+
+.timelineLine {
+    position: absolute;
+    top: 14px;
+    left: calc(50% + 14px);
+    right: calc(-50% + 14px);
+    height: 2px;
+}
+
+.lineDone {
+    background: var(--success);
+}
+
+.linePending {
+    background: var(--brown-200);
+}
+
+.timelineLabel {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--brown-500);
+    text-align: center;
+    margin-top: 4px;
+}
+
+/* ── Grid ────────────────────────────────────────── */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.fullWidth {
+    grid-column: 1 / -1;
+}
+
+/* ── Card ────────────────────────────────────────── */
+.card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--brown-100);
+    overflow: hidden;
+}
+
+.cardHeader {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--brown-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cardTitle {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brown-900);
+}
+
+.cardSubtitle {
+    font-size: 11px;
+    color: var(--brown-400);
+}
+
+.emptyState {
+    padding: 32px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--brown-400);
+}
+
+/* ── Info List ───────────────────────────────────── */
+.infoList {
+    display: flex;
+    flex-direction: column;
+}
+
+.infoRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 11px 20px;
+    border-bottom: 1px solid var(--brown-50);
+    font-size: 13px;
+}
+
+.infoRow:last-child {
+    border-bottom: none;
+}
+
+.infoLabel {
+    color: var(--brown-500);
+}
+
+.infoValue {
+    font-weight: 600;
+    color: var(--brown-800);
+    text-align: right;
+    max-width: 60%;
+}
+
+/* ── Cancelled banner ────────────────────────────── */
+.cancelledBanner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 20px 16px;
+    padding: 10px 14px;
+    background: #FEE2E2;
+    color: var(--danger);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ── Table ───────────────────────────────────────── */
+.tableWrap {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table thead th {
+    padding: 10px 20px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--brown-500);
+    background: var(--brown-50);
+    border-bottom: 1px solid var(--brown-100);
+    white-space: nowrap;
+}
+
+.table tbody td {
+    padding: 12px 20px;
+    font-size: 13px;
+    color: var(--brown-800);
+    border-bottom: 1px solid var(--brown-50);
+    vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table tbody tr:hover td {
+    background: var(--brown-50);
+}
+
+.namaCell {
+    font-weight: 600;
+}
+
+.monoCell {
+    font-family: var(--mono);
+}
+
+/* ── Pills ───────────────────────────────────────── */
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.pill::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .6;
+}
+
+.pillBrown {
+    background: var(--brown-100);
+    color: var(--brown-700);
+}
+
+.grey {
+    background: #f7f4f4;
+    color: #a8a8a8;
+}
+
+.success {
+    background: #D1FAE5;
+    color: var(--success);
+}
+
+.warning {
+    background: #FEF3C7;
+    color: var(--warning);
+}
+
+.danger {
+    background: #FEE2E2;
+    color: var(--danger);
+}
+
+.accent {
+    background: #FEE8D8;
+    color: var(--accent);
+}
+
+/* ── Confirm Dialog ──────────────────────────────── */
+.confirmBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 10, 5, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.confirmBox {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 24px 24px;
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    animation: slideUp 0.2s ease;
+    box-shadow: 0 20px 60px rgba(15, 10, 5, 0.2);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(16px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.confirmIcon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+}
+
+.confirmTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--brown-900);
+    text-align: center;
+}
+
+.confirmDesc {
+    font-size: 13px;
+    color: var(--brown-500);
+    text-align: center;
+    line-height: 1.6;
+}
+
+.confirmActions {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.confirmActions>* {
+    flex: 1;
+    justify-content: center;
+}
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 768px) {
+    .heroCard {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fullWidth {
+        grid-column: 1;
+    }
+
+    .timeline {
+        padding: 16px;
+    }
+}

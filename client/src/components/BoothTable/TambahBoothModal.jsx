@@ -4,9 +4,9 @@ import styles from './BoothModal.module.css';
 
 // Lazy load MapPicker — Leaflet tidak support SSR (penting untuk Next.js)
 // Kalau pakai Vite/CRA, bisa import biasa: 
-import MapPicker from './MapPicker'
+// import MapPicker from './MapPicker'
 // const MapPicker = lazy(() => import('./MapPicker'));
-
+import MapPicker from './MapPicker';
 const INITIAL_FORM = {
     name: '',
     penyewa: '',

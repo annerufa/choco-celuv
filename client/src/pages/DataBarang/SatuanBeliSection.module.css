@@ -1,0 +1,306 @@
+/* src/pages/DataBarang/SatuanBeliSection.module.css */
+
+/* ── Badge satuan dasar ──────────────────────────── */
+.baseUnitBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 10px;
+    padding: 2px 8px;
+    background: var(--brown-50);
+    border: 1px solid var(--brown-100);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--brown-500);
+    vertical-align: middle;
+}
+
+.baseUnitBadge strong {
+    color: var(--brown-800);
+}
+
+/* ── Tombol tambah ───────────────────────────────── */
+.btnAdd {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px dashed var(--brown-300);
+    background: transparent;
+    color: var(--brown-600);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btnAdd:hover {
+    background: var(--brown-50);
+    border-color: var(--accent);
+    color: var(--accent);
+    border-style: solid;
+}
+
+/* ── Form tambah ─────────────────────────────────── */
+.formWrap {
+    padding: 16px 20px 20px;
+    background: var(--brown-50);
+    border-bottom: 1px solid var(--brown-100);
+}
+
+.formHint {
+    font-size: 12px;
+    color: var(--brown-400);
+    margin: 0 0 14px;
+}
+
+.saveError {
+    background: #FEE2E2;
+    color: var(--danger);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    margin-bottom: 12px;
+}
+
+.formRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.formField {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 120px;
+}
+
+.fieldLabel {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--brown-500);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.req {
+    color: var(--danger);
+}
+
+.input {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    font-family: var(--font);
+    font-size: 13px;
+    color: var(--brown-900);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.input:focus {
+    border-color: var(--accent);
+}
+
+.inputErr {
+    border-color: var(--danger) !important;
+}
+
+.errMsg {
+    font-size: 11px;
+    color: var(--danger);
+}
+
+/* Input dengan suffix satuan */
+.inputSuffix {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.inputSuffix .input {
+    padding-right: 36px;
+}
+
+.suffix {
+    position: absolute;
+    right: 10px;
+    font-size: 11px;
+    color: var(--brown-400);
+    font-weight: 600;
+    pointer-events: none;
+}
+
+/* Panah di antara field */
+.arrowWrap {
+    display: flex;
+    align-items: center;
+    padding-top: 26px;
+    color: var(--brown-300);
+    flex-shrink: 0;
+}
+
+/* Preview konversi */
+.preview {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 7px 12px;
+    background: #D1FAE5;
+    color: var(--success);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--mono);
+}
+
+.previewSub {
+    font-weight: 400;
+    color: var(--success);
+    opacity: 0.8;
+}
+
+/* Tombol aksi form */
+.formActions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    justify-content: flex-end;
+}
+
+.btnSave {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.btnSave:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btnSave:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+/* ── Tabel list konversi ─────────────────────────── */
+.tableWrap {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table thead th {
+    padding: 9px 20px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--brown-500);
+    background: var(--brown-50);
+    border-bottom: 1px solid var(--brown-100);
+    white-space: nowrap;
+}
+
+.table tbody td {
+    padding: 11px 20px;
+    font-size: 13px;
+    color: var(--brown-800);
+    border-bottom: 1px solid var(--brown-50);
+    vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table tbody tr:hover td {
+    background: var(--brown-50);
+}
+
+.ucLabel {
+    font-weight: 600;
+    color: var(--brown-800);
+}
+
+.ucUnit {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--brown-100);
+    color: var(--brown-700);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.monoCell {
+    font-family: var(--mono);
+    font-size: 13px;
+}
+
+.arrow {
+    color: var(--brown-300);
+    margin: 0 2px;
+}
+
+/* Tombol hapus */
+.btnDelete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--brown-300);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.btnDelete:hover:not(:disabled) {
+    background: #FEE2E2;
+    color: var(--danger);
+    border-color: #FECACA;
+}
+
+.btnDelete:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 600px) {
+    .formRow {
+        flex-direction: column;
+    }
+
+    .arrowWrap {
+        padding-top: 0;
+        transform: rotate(90deg);
+        align-self: center;
+    }
+}

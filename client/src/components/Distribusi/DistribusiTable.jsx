@@ -91,7 +91,6 @@ export default function DistribusiTable() {
         fetchDistribusi();
         toast.success('Distribusi berhasil dibuat!');
     }
-
     // async function handleCancel(distribusi) {
     //     if (!window.confirm(`Batalkan distribusi ke "${distribusi.to_location_name}"?`)) return;
     //     setActionLoading(distribusi.id);

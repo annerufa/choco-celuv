@@ -18,7 +18,7 @@ function getStokStatus(stok, min, max, safetyStock) {
 }
 export default function DataBarangPage() {
     const { user } = useAuth();
-    const stokEndpoint = user?.location_id ? `/items?location_id=${user.location_id}` : null;
+    const stokEndpoint = user?.location_id ? `/items/perLoc?location_id=${user.location_id}` : null;
     // console.log('stokEndpoint:', stokEndpoint);
     const { data: stokData, loading, error, fetchData, createData, updateData, deleteData } = useApi(stokEndpoint);
 
@@ -27,18 +27,23 @@ export default function DataBarangPage() {
     useEffect(() => {
         if (!stokData) return;
         const unitMap = { ml: 'L', gram: 'kg' };
+        // const unitMap = { ml: 'L', gram: 'kg' };
         const items = Array.isArray(stokData) ? stokData : (stokData.payload?.data ?? []);
+        console.log('stok: ', items);
+
         const processed = items.map(item => {
+            const divisor = unitMap[item.unit] ? 1000 : 1;
             const stok_sekarang = parseFloat(item.current_stock ?? 0);
             const min = item.min_qty ?? 0;
             const max = item.max_qty ?? 0;
             // console.log(`Processing item ${item.id}: stok_sekarang=${stok_sekarang}, min=${min}, max=${max}`);
             return {
                 ...item,
-                display_stok: unitMap[item.unit] ? stok_sekarang / 1000 : stok_sekarang,
+                display_stok: stok_sekarang / divisor,
                 display_unit: unitMap[item.unit] || item.unit,
+
                 display_last_price: item.last_price != null
-                    ? (unitMap[item.unit] ? item.last_price * 1000 : item.last_price)
+                    ? item.last_price * divisor   // gram→kg: ×1000, lainnya: ×1
                     : null,
                 min, max,
                 stok_status: getStokStatus(stok_sekarang, min, max, item.safety_stock ?? 0),

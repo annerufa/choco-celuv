@@ -129,4 +129,11 @@ const statusChange = async (id, isActive) => {
     return row[0];
 };
 
-module.exports = { getAll, create, update, statusChange, getKurir, getPenjaga, getAllwithJadwal };
+const updatePassword = async (id, passwordBaru) => {
+    const [row] = await db.execute(
+        `UPDATE users SET  \`password\`=?, is_update=1 WHERE id=?`,
+        [passwordBaru, id]
+    );
+    return row[0];
+}
+module.exports = { getAll, create, update, statusChange, getKurir, getPenjaga, getAllwithJadwal, updatePassword };

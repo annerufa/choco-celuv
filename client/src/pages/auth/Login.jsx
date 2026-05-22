@@ -608,8 +608,8 @@ export default function Login() {
   // role map
   const ROLE_ROUTES = {
     pemilik: "/dashboard/pemilik",
-    kurir: "/dashboard/kurir",
-    penjaga_booth: "/dashboard/penjaga_booth",
+    kurir: "/dashboard/karyawan",
+    penjaga_booth: "/dashboard/karyawan",
   }
 
   const [formData, setFormData] = useState({ username: "", password: "", remember: false });

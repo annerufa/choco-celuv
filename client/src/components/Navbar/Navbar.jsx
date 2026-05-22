@@ -102,7 +102,7 @@ export default function Navbar({ onToggleSidebar }) {
 
                     {/* Profile */}
                     <button className={styles.navProfile}>
-                        <div className={styles.navAvatar}>BS</div>
+                        <div className={styles.navAvatar}>SF</div>
                         <div className={styles.navProfileInfo}>
                             <div className={styles.navProfileName}>{user?.name}</div>
                             <div className={styles.navProfileRole}>{user?.role}</div>

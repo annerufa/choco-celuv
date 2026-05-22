@@ -1,19 +1,11 @@
 // pages/AbsensiPage.jsx
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useApi } from '../../hooks/useApi';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
-
-function getToken() {
-  return localStorage.getItem('token');
-}
-
-function api() {
-  return axios.create({
-    baseURL: API,
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-}
 
 function getNow() {
   const n = new Date();
@@ -32,12 +24,19 @@ function getDateLabel() {
 
 function formatJam(dt) {
   if (!dt) return '–';
+  if (typeof dt === 'string' && dt.length <= 8 && dt.includes(':')) {
+    return dt.slice(0, 5);
+  }
   return new Date(dt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
 function formatTanggal(d) {
   if (!d) return '–';
-  return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  const clean = typeof d === 'string' ? d.slice(0, 10) : d;
+  const date = new Date(clean + 'T00:00:00');
+  return date.toLocaleDateString('id-ID', {
+    day: 'numeric', month: 'short', year: 'numeric'
+  });
 }
 
 function statusColor(status) {
@@ -54,100 +53,76 @@ function AbsenMap({ userLat, userLon, boothLat, boothLon, radius = 100, clockInL
 
   useEffect(() => {
     if (!boothLat || !boothLon) return;
+    if (!mapRef.current) return;
+    if (mapRef.current._leaflet_id) return;
 
-    if (!mapRef.current) return; // safety check
-    if (mapRef.current._leaflet_id) return; // sudah diinisialisasi, jangan buat ulang
-    // if (instanceRef.current) {
-    //   instanceRef.current.remove();
-    //   instanceRef.current = null;
-    // }
-
-    // Dynamic import Leaflet
-    Promise.all([
-      import('leaflet'),
-      import('leaflet/dist/leaflet.css'),
-    ]).then(([L]) => {
-      L = L.default ?? L;
-
-      if (!mapRef.current || mapRef.current._leaflet_id) return; // safety check lagi setelah load
-      const centerLat = userLat ?? boothLat;
-      const centerLon = userLon ?? boothLon;
-
-      const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, doubleClickZoom: false });
-      // Kalau ada posisi user, fit ke 2 titik
-      if (userLat && userLon) {
-        const bounds = L.latLngBounds(
-          [boothLat, boothLon],
-          [userLat, userLon]
-        );
-        map.fitBounds(bounds, { padding: [30, 30] }); // ← padding biar tidak terlalu mepet pinggir
-      } else {
-        // Kalau GPS belum ada, center ke booth aja
-        map.setView([boothLat, boothLon], 17);
-      }
-      instanceRef.current = map;
-
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
-
-      // Radius circle booth
-      L.circle([boothLat, boothLon], {
-        radius,
-        color: '#c47b10',
-        fillColor: '#c47b10',
-        fillOpacity: 0.08,
-        weight: 1.5,
-        dashArray: '4 4',
-      }).addTo(map);
-
-      // Marker booth
-      const boothIcon = L.divIcon({
-        html: `<div style="width:28px;height:28px;background:#c47b10;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.2)"></div>`,
-        iconSize: [28, 28], iconAnchor: [14, 28], className: '',
-      });
-      L.marker([boothLat, boothLon], { icon: boothIcon })
-        .addTo(map)
-        .bindPopup('<b>📍 Booth</b>');
-
-      // Marker posisi karyawan saat ini
-      if (userLat && userLon) {
-        const userIcon = L.divIcon({
-          html: `<div style="width:16px;height:16px;background:#2563a8;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 4px rgba(37,99,168,0.2)"></div>`,
-          iconSize: [16, 16], iconAnchor: [8, 8], className: '',
-        });
-        L.marker([userLat, userLon], { icon: userIcon })
-          .addTo(map)
-          .bindPopup('<b>📱 Posisimu</b>');
-      }
-
-      // Marker clock in (histori)
-      if (clockInLat && clockInLon) {
-        const inIcon = L.divIcon({
-          html: `<div style="width:12px;height:12px;background:#2e8a56;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>`,
-          iconSize: [12, 12], iconAnchor: [6, 6], className: '',
-        });
-        L.marker([clockInLat, clockInLon], { icon: inIcon })
-          .addTo(map)
-          .bindPopup('<b>✅ Clock In</b>');
-      }
-
-      // Marker clock out (histori)
-      if (clockOutLat && clockOutLon) {
-        const outIcon = L.divIcon({
-          html: `<div style="width:12px;height:12px;background:#c0392b;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>`,
-          iconSize: [12, 12], iconAnchor: [6, 6], className: '',
-        });
-        L.marker([clockOutLat, clockOutLon], { icon: outIcon })
-          .addTo(map)
-          .bindPopup('<b>🔴 Clock Out</b>');
-      }
+    const map = L.map(mapRef.current, {
+      zoomControl: false,
+      attributionControl: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
     });
+
+    if (userLat && userLon) {
+      const bounds = L.latLngBounds([boothLat, boothLon], [userLat, userLon]);
+      map.fitBounds(bounds, { padding: [30, 30] });
+    } else {
+      map.setView([boothLat, boothLon], 17);
+    }
+    instanceRef.current = map;
+
+    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}').addTo(map);
+
+    // Radius circle booth
+    L.circle([boothLat, boothLon], {
+      radius,
+      color: '#c47b10',
+      fillColor: '#c47b10',
+      fillOpacity: 0.08,
+      weight: 1.5,
+      dashArray: '4 4',
+    }).addTo(map);
+
+    // Marker booth
+    const boothIcon = L.divIcon({
+      html: `<div style="width:28px;height:28px;background:#c47b10;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.2)"></div>`,
+      iconSize: [28, 28], iconAnchor: [14, 28], className: '',
+    });
+    L.marker([boothLat, boothLon], { icon: boothIcon }).addTo(map).bindPopup('<b>📍 Booth</b>');
+
+    // Marker posisi user
+    if (userLat && userLon) {
+      const userIcon = L.divIcon({
+        html: `<div style="width:16px;height:16px;background:#2563a8;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 4px rgba(37,99,168,0.2)"></div>`,
+        iconSize: [16, 16], iconAnchor: [8, 8], className: '',
+      });
+      L.marker([userLat, userLon], { icon: userIcon }).addTo(map).bindPopup('<b>📱 Posisimu</b>');
+    }
+
+    // Marker clock in
+    if (clockInLat && clockInLon) {
+      const inIcon = L.divIcon({
+        html: `<div style="width:12px;height:12px;background:#2e8a56;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>`,
+        iconSize: [12, 12], iconAnchor: [6, 6], className: '',
+      });
+      L.marker([clockInLat, clockInLon], { icon: inIcon }).addTo(map).bindPopup('<b>✅ Clock In</b>');
+    }
+
+    // Marker clock out
+    if (clockOutLat && clockOutLon) {
+      const outIcon = L.divIcon({
+        html: `<div style="width:12px;height:12px;background:#c0392b;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>`,
+        iconSize: [12, 12], iconAnchor: [6, 6], className: '',
+      });
+      L.marker([clockOutLat, clockOutLon], { icon: outIcon }).addTo(map).bindPopup('<b>🔴 Clock Out</b>');
+    }
+
 
     return () => {
       if (instanceRef.current) {
         instanceRef.current.remove();
         instanceRef.current = null;
       }
-      // reset leaftlet id
       if (mapRef.current) {
         delete mapRef.current._leaflet_id;
       }
@@ -155,50 +130,52 @@ function AbsenMap({ userLat, userLon, boothLat, boothLon, radius = 100, clockInL
   }, [userLat, userLon, boothLat, boothLon, clockInLat, clockInLon, clockOutLat, clockOutLon]);
 
   return (
-    <div ref={mapRef} style={{ width: '100%', height: '180px', borderRadius: '16px', overflow: 'hidden', zIndex: 0 }} />
+    <div
+      ref={mapRef}
+      style={{ width: '100%', height: '180px', borderRadius: '16px', overflow: 'hidden', zIndex: 0 }}
+    />
   );
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function AbsensiPage() {
   const [time, setTime] = useState(getNow);
-  const [jadwal, setJadwal] = useState(null);         // jadwal aktif hari ini
-  const [openAbsen, setOpenAbsen] = useState(null);   // record absen hari ini yg belum clock out
-  const [histori, setHistori] = useState([]);         // histori absensi pribadi
-  const [userPos, setUserPos] = useState(null);       // { lat, lon }
+  const [userPos, setUserPos] = useState(null);
   const [gpsStatus, setGpsStatus] = useState('idle'); // idle | loading | ok | denied | error
   const [actionLoading, setActionLoading] = useState(false);
-  const [toast, setToast] = useState(null);           // { msg, type }
-  const [loadingPage, setLoadingPage] = useState(true);
+  const [toast, setToast] = useState(null);   // { msg, type }
+
+  // ── useApi hooks ────────────────────────────────────────────────────────────
+  const {
+    data: jadwal,
+    loading: loadingJadwal,
+    fetchData: refetchJadwal,
+  } = useApi('/schedules/me');
+
+  const {
+    data: openAbsen,
+    loading: loadingOpen,
+    fetchData: refetchOpen,
+  } = useApi('/attendance/open');
+
+  const {
+    data: histori,
+    loading: loadingHistori,
+    fetchData: refetchHistori,
+  } = useApi('/attendance/mine');
+
+  const loadingPage = loadingJadwal || loadingOpen || loadingHistori;
+
+  // Refetch semua setelah aksi clock in/out
+  const refetchAll = async () => {
+    await Promise.all([refetchJadwal(), refetchOpen(), refetchHistori()]);
+  };
 
   // Jam realtime
   useEffect(() => {
     const t = setInterval(() => setTime(getNow()), 1000);
     return () => clearInterval(t);
   }, []);
-
-  // Fetch jadwal + open absen + histori
-  useEffect(() => {
-    fetchAll();
-  }, []);
-
-  const fetchAll = async () => {
-    setLoadingPage(true);
-    try {
-      const [jadwalRes, openRes, historiRes] = await Promise.all([
-        api().get('/schedules/me'),
-        api().get('/attendance/open'),
-        api().get('/attendance/mine'),
-      ]);
-      setJadwal(jadwalRes.data?.payload?.data ?? null);
-      setOpenAbsen(openRes.data?.payload?.data ?? null);
-      setHistori(historiRes.data?.payload?.data ?? []);
-    } catch {
-      // silent — tampilkan kosong
-    } finally {
-      setLoadingPage(false);
-    }
-  };
 
   // Ambil GPS
   const getGPS = () => new Promise((resolve, reject) => {
@@ -232,19 +209,23 @@ export default function AbsensiPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  // Clock In
+  // ── Clock In ────────────────────────────────────────────────────────────────
   const handleClockIn = async () => {
-    if (!jadwal) return showToast('Tidak ada jadwal aktif hari ini.', 'error');
+    // useApi mengembalikan array; jadwal aktif ada di index 0
+    const jadwalAktif = Array.isArray(jadwal) ? jadwal[0] : jadwal;
+    if (!jadwalAktif) return showToast('Tidak ada jadwal aktif hari ini.', 'error');
+
     setActionLoading(true);
     try {
       const { lat, lon } = await getGPS();
-      await api().post('/attendance/clockin', {
-        booth_id: jadwal.booth_id,
-        shift: jadwal.shift,
-        lat, lon,
+      await axios.post(`${API}/attendance/clockin`, {
+        booth_id: jadwalAktif.booth_id,
+        shift: jadwalAktif.shift,
+        lat,
+        lon,
       });
       showToast('Clock in berhasil! ✅');
-      await fetchAll();
+      await refetchAll();
     } catch (err) {
       showToast(err.response?.data?.payload?.message || err.message, 'error');
     } finally {
@@ -252,14 +233,14 @@ export default function AbsensiPage() {
     }
   };
 
-  // Clock Out
+  // ── Clock Out ───────────────────────────────────────────────────────────────
   const handleClockOut = async () => {
     setActionLoading(true);
     try {
       const { lat, lon } = await getGPS();
-      await api().post('/attendance/clockout', { lat, lon });
+      await axios.post(`${API}/attendance/clockout`, { lat, lon });
       showToast('Clock out berhasil! 👋');
-      await fetchAll();
+      await refetchAll();
     } catch (err) {
       showToast(err.response?.data?.payload?.message || err.message, 'error');
     } finally {
@@ -267,9 +248,21 @@ export default function AbsensiPage() {
     }
   };
 
-  const sudahClockIn = Boolean(openAbsen);
-  const sudahClockOut = histori[0]?.date === new Date().toISOString().slice(0, 10) && histori[0]?.clock_out;
+  // ── Derived state ───────────────────────────────────────────────────────────
+  // Sesuaikan jika useApi mengembalikan object tunggal atau array
+  const jadwalAktif = Array.isArray(jadwal) ? jadwal[0] : jadwal;
+  const openAbsenData = Array.isArray(openAbsen) ? openAbsen[0] : openAbsen;
+  const historiList = Array.isArray(histori) ? histori : [];
+  console.log('histori raw:', histori);
+  console.log('historiList:', historiList);
 
+
+  const sudahClockIn = Boolean(openAbsenData);
+  const sudahClockOut =
+    historiList[0]?.date === new Date().toISOString().slice(0, 10) &&
+    Boolean(historiList[0]?.clock_out);
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="page">
       {/* Toast */}
@@ -316,16 +309,18 @@ export default function AbsensiPage() {
           {/* Info Jadwal */}
           {loadingPage ? (
             <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 14 }}>Memuat jadwal...</div>
-          ) : jadwal ? (
+          ) : jadwalAktif ? (
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 8, marginBottom: 14, flexWrap: 'wrap',
             }}>
               <span style={{ background: 'var(--accentsoft)', color: 'var(--accent)', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
-                {jadwal.booth_name}
+                {jadwalAktif.booth_name}
               </span>
               <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>
-                {jadwal.shift.charAt(0).toUpperCase() + jadwal.shift.slice(1)} · {jadwal.expected_clock_in?.slice(0, 5)} – {jadwal.expected_clock_out?.slice(0, 5)}
+                {jadwalAktif.shift.charAt(0).toUpperCase() + jadwalAktif.shift.slice(1)}
+                {' · '}
+                {jadwalAktif.expected_clock_in?.slice(0, 5)} – {jadwalAktif.expected_clock_out?.slice(0, 5)}
               </span>
             </div>
           ) : (
@@ -335,12 +330,12 @@ export default function AbsensiPage() {
           {/* Status hari ini */}
           {sudahClockIn && !sudahClockOut && (
             <div style={{ fontSize: 12, color: 'var(--green)', fontWeight: 700, marginBottom: 10 }}>
-              ✅ Masuk {formatJam(openAbsen.clock_in)} · Belum clock out
+              ✅ Masuk {formatJam(openAbsenData.clock_in)} · Belum clock out
             </div>
           )}
           {sudahClockOut && (
             <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 700, marginBottom: 10 }}>
-              ✅ Selesai · {formatJam(histori[0]?.clock_in)} – {formatJam(histori[0]?.clock_out)}
+              ✅ Selesai · {formatJam(historiList[0]?.clock_in)} – {formatJam(historiList[0]?.clock_out)}
             </div>
           )}
 
@@ -351,8 +346,8 @@ export default function AbsensiPage() {
                 <button
                   className="abtn abtn-in"
                   onClick={handleClockIn}
-                  disabled={actionLoading || !jadwal}
-                  style={{ opacity: actionLoading || !jadwal ? 0.5 : 1 }}
+                  disabled={actionLoading || !jadwalAktif}
+                  style={{ opacity: actionLoading || !jadwalAktif ? 0.5 : 1 }}
                 >
                   {actionLoading ? '⏳ Memproses...' : '✅ Absen Masuk'}
                 </button>
@@ -372,22 +367,25 @@ export default function AbsensiPage() {
 
         {/* GPS WARNING */}
         {gpsStatus === 'denied' && (
-          <div style={{ background: 'var(--redsoft)', borderRadius: 12, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: 'var(--red)', fontWeight: 600 }}>
+          <div style={{
+            background: 'var(--redsoft)', borderRadius: 12, padding: '10px 14px',
+            marginBottom: 14, fontSize: 12, color: 'var(--red)', fontWeight: 600,
+          }}>
             ⚠️ GPS diblokir. Buka pengaturan browser → izinkan akses lokasi untuk halaman ini.
           </div>
         )}
 
         {/* PETA */}
-        {jadwal?.booth_latitude && (
+        {jadwalAktif?.booth_latitude && (
           <div style={{ marginBottom: 16 }}>
             <div className="sec-title" style={{ marginBottom: 8 }}>Lokasi Booth</div>
             <AbsenMap
               userLat={userPos?.lat}
               userLon={userPos?.lon}
-              boothLat={jadwal.booth_latitude}
-              boothLon={jadwal.booth_longitude}
-              clockInLat={openAbsen?.lat_in}
-              clockInLon={openAbsen?.lon_in}
+              boothLat={jadwalAktif.booth_latitude}
+              boothLon={jadwalAktif.booth_longitude}
+              clockInLat={openAbsenData?.lat_in}
+              clockInLon={openAbsenData?.lon_in}
             />
             <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, color: 'var(--text2)' }}>
               <span>🟡 Booth</span>
@@ -397,25 +395,33 @@ export default function AbsensiPage() {
           </div>
         )}
 
-        {/* HISTORI ABSENSI PRIBADI */}
+        {/* HISTORI */}
         <div className="sec-title">Riwayat Absensimu</div>
-        {histori.length === 0 ? (
+        {loadingHistori ? (
+          <div style={{ textAlign: 'center', color: 'var(--text3)', fontSize: 13, padding: '20px 0' }}>
+            Memuat riwayat...
+          </div>
+        ) : historiList.length === 0 ? (
           <div style={{ textAlign: 'center', color: 'var(--text3)', fontSize: 13, padding: '20px 0' }}>
             Belum ada riwayat absensi
           </div>
         ) : (
           <div className="alist">
-            {histori.map((item) => {
+            {historiList.map((item) => {
               const { bg, col } = statusColor(item.status);
               const sudahOut = Boolean(item.clock_out);
               return (
-                <div className="arow" key={item.id} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+                <div
+                  className="arow"
+                  key={item.id}
+                  style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-                    {/* Tanggal */}
                     <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text1)', flex: 1 }}>
-                      {formatTanggal(item.date)}
+                      {formatTanggal(item.date)} <span style={{ marginLeft: 'auto', color: 'var(--text3)', fontSize: 11 }}>
+                        {item.booth_name}
+                      </span>
                     </div>
-                    {/* Badge status */}
                     <div className="abadge" style={{ background: bg, color: col }}>
                       {item.status ?? '–'}
                     </div>
@@ -425,24 +431,22 @@ export default function AbsensiPage() {
                       <span style={{ color: 'var(--green)', fontWeight: 700 }}>Masuk </span>
                       {formatJam(item.clock_in)}
                     </span>
+                    <span style={{ color: item.location_in_valid ? 'var(--green)' : item.location_in_valid === false ? 'var(--red)' : 'var(--text3)' }}>
+                      {item.location_in_valid === 1 ? '📍 Masuk ✓' : item.location_in_valid === false ? '📍 Masuk ✗' : '📍 –'}
+                    </span>
+
+
+                  </div>
+                  <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
                     <span>
                       <span style={{ color: sudahOut ? 'var(--red)' : 'var(--text3)', fontWeight: 700 }}>
                         Keluar{' '}
                       </span>
                       {sudahOut ? formatJam(item.clock_out) : '–'}
                     </span>
-                    <span style={{ marginLeft: 'auto', color: 'var(--text3)', fontSize: 11 }}>
-                      {item.booth_name}
-                    </span>
-                  </div>
-                  {/* Indikator lokasi */}
-                  <div style={{ display: 'flex', gap: 8, fontSize: 11 }}>
-                    <span style={{ color: item.location_in_valid ? 'var(--green)' : item.location_in_valid === false ? 'var(--red)' : 'var(--text3)' }}>
-                      {item.location_in_valid === true ? '📍 In ✓' : item.location_in_valid === false ? '📍 In ✗' : '📍 –'}
-                    </span>
                     {sudahOut && (
                       <span style={{ color: item.location_out_valid ? 'var(--green)' : item.location_out_valid === false ? 'var(--red)' : 'var(--text3)' }}>
-                        {item.location_out_valid === true ? '📍 Out ✓' : item.location_out_valid === false ? '📍 Out ✗' : '📍 –'}
+                        {item.location_out_valid === 1 ? '📍 Pulang ✓' : item.location_out_valid === false ? '📍 Pulang ✗' : '📍 –'}
                       </span>
                     )}
                   </div>

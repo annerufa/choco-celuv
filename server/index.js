@@ -29,7 +29,7 @@ app.use("/api/recipes", require("./routes/resep"));
 
 // http://localhost:3001/api/stock-per-location?location_id=1
 
-app.use('/api/karyawan', require('./routes/karyawan')); //
+app.use('/api/karyawan', authenticate, require('./routes/karyawan')); //
 
 
 app.use('/api/schedules', authenticate, require('./routes/schedule'));

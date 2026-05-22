@@ -1,7 +1,20 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rolldownOptions: {
+      output: {
+        advancedChunks: {
+          groups: [
+            { name: 'leaflet', test: /node_modules\/leaflet/ },
+            { name: 'react-leaflet', test: /node_modules\/(react-leaflet|@react-leaflet)/ },
+            { name: 'vendor', test: /node_modules\/(react|react-dom)/ },
+            { name: 'xlsx', test: /node_modules\/xlsx/ },
+          ]
+        }
+      }
+    }
+  }
 })

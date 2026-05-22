@@ -3,7 +3,9 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import styles from './AbsensiTable.module.css';
-
+// Tambahkan di bagian atas file, setelah import lainnya
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 
 function authApi() {
@@ -14,8 +16,28 @@ function authApi() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+// function formatJam(dt) {
+//     if (!dt) return '–';
+//     return new Date(dt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+// }
+// Helper: konversi "HH:mm:ss" atau datetime ke Date object hari ini
+function toDate(val) {
+    if (!val) return null;
+    // Kalau format TIME "HH:mm:ss" atau "HH:mm"
+    if (typeof val === 'string' && val.length <= 8 && val.includes(':')) {
+        const [h, m, s] = val.split(':').map(Number);
+        const d = new Date();
+        d.setHours(h, m, s ?? 0, 0);
+        return d;
+    }
+    // Kalau datetime lengkap
+    return new Date(val);
+}
 function formatJam(dt) {
     if (!dt) return '–';
+    if (typeof dt === 'string' && dt.length <= 8 && dt.includes(':')) {
+        return dt.slice(0, 5);
+    }
     return new Date(dt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
@@ -26,39 +48,43 @@ function formatTanggal(d) {
 
 function selisihMenit(clockIn, expectedIn) {
     if (!clockIn || !expectedIn) return null;
-    const actual = new Date(clockIn);
+    const actual = toDate(clockIn);
     const [h, m] = expectedIn.split(':').map(Number);
-    const expected = new Date(actual);
+    const expected = new Date();
     expected.setHours(h, m, 0, 0);
     return Math.round((actual - expected) / 60000);
 }
 
-// negatif = pulang lebih awal, positif = lembur
 function selisihPulang(clockOut, expectedOut) {
     if (!clockOut || !expectedOut) return null;
-    const actual = new Date(clockOut);
+    const actual = toDate(clockOut);
     const [h, m] = expectedOut.split(':').map(Number);
-    const expected = new Date(actual);
+    const expected = new Date();
     expected.setHours(h, m, 0, 0);
     return Math.round((actual - expected) / 60000);
 }
 
+// Durasi (formatDurasi juga perlu diupdate)
 function formatDurasi(clockIn, clockOut) {
     if (!clockIn || !clockOut) return null;
-    const menit = Math.round((new Date(clockOut) - new Date(clockIn)) / 60000);
-    const jam = Math.floor(menit / 60);
-    const sisa = menit % 60;
-    if (jam === 0) return `${sisa}m`;
-    return sisa === 0 ? `${jam}j` : `${jam}j ${sisa}m`;
+    const menit = Math.round((toDate(clockOut) - toDate(clockIn)) / 60000);
+    if (isNaN(menit) || menit < 0) return null;
+    return formatMenit(menit);
 }
-
 function getDefaultRange() {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
     const fmt = d => d.toISOString().slice(0, 10);
     return { start: fmt(firstDay), end: fmt(now) };
 }
-
+function formatMenit(menit) {
+    if (menit === null || isNaN(menit)) return null;
+    const jam = Math.floor(Math.abs(menit) / 60);
+    const sisa = Math.abs(menit) % 60;
+    if (jam === 0) return `${sisa} menit`;
+    if (sisa === 0) return `${jam} jam`;
+    return `${jam} jam ${sisa} menit`;
+}
 const statusVariant = {
     hadir: { cls: 'success', label: 'Hadir' },
     terlambat: { cls: 'warning', label: 'Terlambat' },
@@ -77,66 +103,57 @@ function DetailMap({ boothLat, boothLon, clockInLat, clockInLon, clockOutLat, cl
         if (!mapRef.current) return;
         if (mapRef.current._leaflet_id) return;
 
-        Promise.all([import('leaflet'), import('leaflet/dist/leaflet.css')]).then(([L]) => {
-            L = L.default ?? L;
-            if (!mapRef.current || mapRef.current._leaflet_id) return;
-
-            const map = L.map(mapRef.current, {
-                zoomControl: false, attributionControl: false,
-                dragging: false, scrollWheelZoom: false,
-                touchZoom: false, doubleClickZoom: false,
-            });
-
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
-
-            // Radius booth
-            L.circle([boothLat, boothLon], {
-                radius: 100, color: '#c47b10', fillColor: '#c47b10',
-                fillOpacity: 0.08, weight: 1.5, dashArray: '4 4',
-            }).addTo(map);
-
-            // Marker booth
-            const boothIcon = L.divIcon({
-                html: `<div style="width:24px;height:24px;background:#c47b10;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.2)"></div>`,
-                iconSize: [24, 24], iconAnchor: [12, 24], className: '',
-            });
-            L.marker([boothLat, boothLon], { icon: boothIcon }).addTo(map).bindPopup('<b>📍 Booth</b>');
-
-            const points = [[boothLat, boothLon]];
-
-            if (clockInLat && clockInLon) {
-                points.push([clockInLat, clockInLon]);
-                const inIcon = L.divIcon({
-                    html: `<div style="width:14px;height:14px;background:#2e8a56;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>`,
-                    iconSize: [14, 14], iconAnchor: [7, 7], className: '',
-                });
-                L.marker([clockInLat, clockInLon], { icon: inIcon }).addTo(map).bindPopup('<b>✅ Clock In</b>');
-            }
-
-            if (clockOutLat && clockOutLon) {
-                points.push([clockOutLat, clockOutLon]);
-                const outIcon = L.divIcon({
-                    html: `<div style="width:14px;height:14px;background:#c0392b;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>`,
-                    iconSize: [14, 14], iconAnchor: [7, 7], className: '',
-                });
-                L.marker([clockOutLat, clockOutLon], { icon: outIcon }).addTo(map).bindPopup('<b>🔴 Clock Out</b>');
-            }
-
-            if (points.length > 1) {
-                map.fitBounds(L.latLngBounds(points), { padding: [30, 30] });
-            } else {
-                map.setView([boothLat, boothLon], 17);
-            }
+        const map = L.map(mapRef.current, {
+            zoomControl: false, attributionControl: false,
+            dragging: false, scrollWheelZoom: false,
+            touchZoom: false, doubleClickZoom: false,
         });
 
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+        // Radius booth
+        L.circle([boothLat, boothLon], {
+            radius: 100, color: '#c47b10', fillColor: '#c47b10',
+            fillOpacity: 0.08, weight: 1.5, dashArray: '4 4',
+        }).addTo(map);
+
+        // Marker booth
+        const boothIcon = L.divIcon({
+            html: `<div style="width:24px;height:24px;background:#c47b10;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.2)"></div>`,
+            iconSize: [24, 24], iconAnchor: [12, 24], className: '',
+        });
+        L.marker([boothLat, boothLon], { icon: boothIcon }).addTo(map).bindPopup('<b>📍 Booth</b>');
+
+        const points = [[boothLat, boothLon]];
+
+        if (clockInLat && clockInLon) {
+            points.push([clockInLat, clockInLon]);
+            const inIcon = L.divIcon({
+                html: `<div style="width:14px;height:14px;background:#2e8a56;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>`,
+                iconSize: [14, 14], iconAnchor: [7, 7], className: '',
+            });
+            L.marker([clockInLat, clockInLon], { icon: inIcon }).addTo(map).bindPopup('<b>✅ Clock In</b>');
+        }
+
+        if (clockOutLat && clockOutLon) {
+            points.push([clockOutLat, clockOutLon]);
+            const outIcon = L.divIcon({
+                html: `<div style="width:14px;height:14px;background:#c0392b;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>`,
+                iconSize: [14, 14], iconAnchor: [7, 7], className: '',
+            });
+            L.marker([clockOutLat, clockOutLon], { icon: outIcon }).addTo(map).bindPopup('<b>🔴 Clock Out</b>');
+        }
+
+        if (points.length > 1) {
+            map.fitBounds(L.latLngBounds(points), { padding: [30, 30] });
+        } else {
+            map.setView([boothLat, boothLon], 17);
+        }
+
         return () => {
-            if (mapRef.current?._leaflet_id) {
-                const L = window.L;
-                if (L) mapRef.current._leaflet_id = null;
-            }
+            map.remove();
         };
     }, [boothLat, boothLon, clockInLat, clockInLon, clockOutLat, clockOutLon]);
-
     return (
         <div style={{ position: 'relative' }}>
             <div ref={mapRef} style={{ width: '100%', height: 200, borderRadius: 10, overflow: 'hidden' }} />
@@ -174,7 +191,11 @@ export default function AbsensiRekap() {
             const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
             if (employeeId) params.append('employee_id', employeeId);
             const r = await authApi().get(`/attendance/range?${params}`);
-            setData(r.data?.payload?.data ?? []);
+            const result = r.data?.payload?.data ?? [];
+
+            console.log('rekap data:', result);
+            console.log('sample item[0]:', result[0]); // lihat struktur 1 item
+            setData(result);
         } catch {
             setData([]);
         } finally {
@@ -375,22 +396,19 @@ export default function AbsensiRekap() {
                                                 </span>
                                             </td>
                                             <td className={styles.monoCell}>{formatJam(item.clock_in)}</td>
-                                            <td>
-                                                {menit === null ? (
-                                                    <span style={{ color: 'var(--brown-300)' }}>–</span>
-                                                ) : menit <= 0 ? (
-                                                    <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600 }}>Tepat</span>
-                                                ) : (
-                                                    <span style={{ color: 'var(--warning)', fontSize: 12, fontWeight: 600 }}>+{menit} mnt</span>
-                                                )}
-                                            </td>
+                                            <td>{(() => {
+                                                const m = selisihMenit(item.clock_in, item.expected_clock_in);
+                                                if (m === null) return <span style={{ color: 'var(--brown-300)' }}>–</span>;
+                                                if (m <= 0) return <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600 }}>Tepat</span>;
+                                                return <span style={{ color: 'var(--warning)', fontSize: 12, fontWeight: 600 }}>+{formatMenit(m)}</span>;
+                                            })()}</td>
                                             <td className={styles.monoCell}>{formatJam(item.clock_out)}</td>
                                             <td>{(() => {
                                                 const sp = selisihPulang(item.clock_out, item.expected_clock_out);
                                                 if (sp === null) return <span style={{ color: 'var(--brown-300)' }}>–</span>;
                                                 if (Math.abs(sp) <= 5) return <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600 }}>Tepat</span>;
-                                                if (sp < 0) return <span style={{ color: 'var(--brown-400)', fontSize: 12, fontWeight: 600 }}>{Math.abs(sp)} mnt lebih awal</span>;
-                                                return <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600 }}>+{sp} mnt</span>;
+                                                if (sp < 0) return <span style={{ color: 'var(--brown-400)', fontSize: 12, fontWeight: 600 }}>{formatMenit(sp)} lebih awal</span>;
+                                                return <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600 }}>+{formatMenit(sp)} lembur</span>;
                                             })()}</td>
                                             <td style={{ fontSize: 12, fontWeight: 600, color: 'var(--brown-600)' }}>
                                                 {formatDurasi(item.clock_in, item.clock_out) ?? '–'}

@@ -28,7 +28,7 @@ export default function ResepPage() {
         : (itemData?.data ?? []);
 
     const totalResep = resepList.length;
-    const totalMixing = resepList.filter(r => r.tipe === 'mixing').length;
+    const totalMixing = resepList.filter(r => r.tipe === 'mixing' && r.tipe !== 'arsip').length;
     const totalAdonan = resepList.filter(r => r.tipe === 'adonan').length;
     // console.log({ loading, error, resepList });
     const stats = [

@@ -7,6 +7,22 @@ const getAll = async () => {
     );
     return rows;
 };
+const getAllwithloc = async () => {
+    const [rows] = await db.query(
+        `SELECT 
+            b.*,
+            sl.id   AS location_id,
+            GROUP_CONCAT(DISTINCT u.name SEPARATOR ', ') AS pegawai,
+            COUNT(DISTINCT es.employee_id) AS jumlah_pegawai
+         FROM booth b
+         LEFT JOIN stock_locations sl ON sl.booth_id = b.id
+         LEFT JOIN employee_schedules es ON b.id = es.booth_id AND es.is_active = 1
+         LEFT JOIN users u ON es.employee_id = u.id
+         GROUP BY b.id, sl.id
+         ORDER BY b.is_active DESC`
+    );
+    return rows;
+};
 const create = async (data) => {
     const { name, address, longitude, latitude, penyewa, cp_penyewa, harga, is_active, is_open } = data;
 
@@ -100,4 +116,4 @@ const statusChange = async (id, isActive) => {
     );
     return row[0];
 };
-module.exports = { getAll, create, update, statusChange };
+module.exports = { getAll, create, update, statusChange, getAllwithloc };

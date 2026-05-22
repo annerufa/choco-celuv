@@ -1,11 +1,11 @@
 const router = require('express').Router();
-const { getAllKaryawan, createKaryawan, updateKaryawan, statusKaryawan, getKurir, getPenjaga, getAllKaryawanwithJadwal } = require('../controllers/karyawanController');
+const { getAllKaryawan, createKaryawan, updateKaryawan, statusKaryawan, getKurir, getPenjaga, getAllKaryawanwithJadwal, updatePassword } = require('../controllers/karyawanController');
 
 router.get('/', getAllKaryawan);
 router.get('/withJadwal', getAllKaryawanwithJadwal);
 router.post('/', createKaryawan);
 router.put('/:id', updateKaryawan);
-router.patch('/:id/status', statusKaryawan);
+router.patch('/update-password', updatePassword);
 router.patch('/:id/status', statusKaryawan);
 
 

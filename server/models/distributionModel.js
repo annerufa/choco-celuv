@@ -95,20 +95,20 @@ const create = async (data) => {
             }
 
             // Kurangi stok from_location
-            await conn.execute(
-                `UPDATE stock_per_location
-                SET current_stock = current_stock - ?
-                WHERE item_id = ? AND location_id = ?`,
-                [item.qty, item.item_id, from_location_id]
-            );
+            // await conn.execute(
+            //     `UPDATE stock_per_location
+            //     SET current_stock = current_stock - ?
+            //     WHERE item_id = ? AND location_id = ?`,
+            //     [item.qty, item.item_id, from_location_id]
+            // );
 
             // Catat movement OUT dari from_location
-            await conn.execute(
-                `INSERT INTO stock_movements
-                    (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'OUT', 'distribution', ?)`,
-                [item.item_id, from_location_id, item.qty, distribution_id]
-            );
+            // await conn.execute(
+            //     `INSERT INTO stock_movements
+            //         (item_id, location_id, qty, movement_type, source_type, source_id)
+            //      VALUES (?, ?, ?, 'OUT', 'distribution', ?)`,
+            //     [item.item_id, from_location_id, item.qty, distribution_id]
+            // );
         }
 
         await conn.commit();
@@ -220,4 +220,208 @@ const cancel = async (distribution_id, cancelled_by) => {
         conn.release();
     }
 };
-module.exports = { getAll, create, confirmBooth, cancel };
+
+
+const getByKurir = async (kurir_id, status) => {
+    let sql = `
+        SELECT 
+            d.*,
+            fl.name AS from_location_name,
+            tl.name AS to_location_name,
+            u.name  AS kurir_name
+        FROM distributions d
+        LEFT JOIN stock_locations fl ON fl.id = d.from_location_id
+        LEFT JOIN stock_locations tl ON tl.id = d.to_location_id
+        LEFT JOIN users u ON u.id = d.kurir_id
+        WHERE d.kurir_id = ?
+    `;
+    const params = [kurir_id];
+
+    if (status) {
+        sql += ' AND d.status = ?';
+        params.push(status);
+    }
+
+    sql += ' ORDER BY d.planned_date ASC, d.id DESC';
+
+    const [rows] = await db.query(sql, params);
+    return rows;
+};
+
+const getItems = async (distribution_id) => {
+    const [rows] = await db.query(
+        `SELECT 
+            di.*,
+            i.name AS item_name,
+            i.unit
+         FROM distribution_items di
+         JOIN items i ON i.id = di.item_id
+         WHERE di.distribution_id = ?`,
+        [distribution_id]
+    );
+    return rows;
+};
+
+// Pickup: ubah status → dikirim + catat kurir + kurangi stok gudang
+const pickup = async (distribution_id, kurir_id) => {
+    const conn = await db.getConnection();
+    try {
+        await conn.beginTransaction();
+
+        // 1. Cek distribusi valid & masih draft
+        const [[dist]] = await conn.execute(
+            `SELECT * FROM distributions WHERE id = ? AND kurir_id = ?`,
+            [distribution_id, kurir_id]
+        );
+        if (!dist) throw new Error('Distribusi tidak ditemukan atau bukan milik kamu');
+        if (dist.status !== 'draft') throw new Error('Distribusi bukan draft, tidak bisa di-pickup');
+
+        // 2. Ambil semua item distribusi
+        const [items] = await conn.execute(
+            `SELECT * FROM distribution_items WHERE distribution_id = ?`,
+            [distribution_id]
+        );
+
+        // 3. Kurangi stok di gudang asal (from_location_id)
+        for (const item of items) {
+            await conn.execute(
+                `UPDATE stock_per_location 
+                 SET current_stock = current_stock - ?
+                 WHERE item_id = ? AND location_id = ?`,
+                [item.qty, item.item_id, dist.from_location_id]
+            );
+
+            // 4. Catat stock movement
+            await conn.execute(
+                `INSERT INTO stock_movements 
+                 (item_id, location_id, movement_type, qty, source_type, source_id, created_by)
+                 VALUES (?, ?, 'OUT', ?, 'distribution', ?, ?)`,
+                [item.item_id, dist.from_location_id, item.qty, distribution_id, kurir_id]
+            );
+        }
+
+        // 5. Update status distribusi → dikirim
+        await conn.execute(
+            `UPDATE distributions 
+             SET status = 'dikirim',
+                 confirmed_by_kurir = ?,
+                 confirmed_at_kurir = NOW()
+             WHERE id = ?`,
+            [kurir_id, distribution_id]
+        );
+
+        await conn.commit();
+    } catch (err) {
+        await conn.rollback();
+        throw err;
+    } finally {
+        conn.release();
+    }
+};
+
+// Tambahkan ke distributionModel.js
+
+const getDisToday = async (kurir_id) => {
+    const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+
+    // 1. Ambil header distribusi milik kurir hari ini
+    const [rows] = await db.query(
+        `SELECT 
+            d.id,
+            d.status,
+            d.notes,
+            d.planned_date,
+            d.confirmed_at_kurir,
+            fl.name AS from_location_name,
+            tl.name AS to_location_name,
+            tl.id   AS to_location_id
+         FROM distributions d
+         LEFT JOIN stock_locations fl ON fl.id = d.from_location_id
+         LEFT JOIN stock_locations tl ON tl.id = d.to_location_id
+         WHERE d.kurir_id = ?
+           AND DATE(d.planned_date) = ?
+           AND d.status != 'dibatalkan'
+         ORDER BY d.id ASC`,
+        [kurir_id, today]
+    );
+
+    if (!rows.length) return [];
+
+    // 2. Ambil semua items sekaligus (1 query, bukan N query)
+    const ids = rows.map(r => r.id);
+    const [items] = await db.query(
+        `SELECT 
+            di.distribution_id,
+            di.qty,
+            di.notes AS item_notes,
+            i.name   AS name,
+            i.unit
+         FROM distribution_items di
+         JOIN items i ON i.id = di.item_id
+         WHERE di.distribution_id IN (?)`,
+        [ids]
+    );
+
+    // 3. Group items ke tiap distribusi
+    const itemMap = {};
+    for (const item of items) {
+        if (!itemMap[item.distribution_id]) itemMap[item.distribution_id] = [];
+        itemMap[item.distribution_id].push({
+            name: item.name,
+            qty: item.qty,
+            unit: item.unit,
+            notes: item.item_notes,
+        });
+    }
+
+    // 4. Gabungkan
+    return rows.map(d => ({
+        id: d.id,
+        delivery_code: `#DIST-${String(d.id).padStart(4, '0')}`,
+        booth_name: d.to_location_name,
+        from_location_name: d.from_location_name,
+        status: d.status,           // 'draft' | 'dikirim' | 'diterima'
+        planned_date: d.planned_date,
+        confirmed_at_kurir: d.confirmed_at_kurir,
+        notes: d.notes,
+        items: itemMap[d.id] ?? [],
+    }));
+};
+
+const getById = async (id) => {
+    const [[distribution]] = await db.query(
+        `SELECT 
+            d.*,
+            fl.name  AS from_location_name,
+            tl.name  AS to_location_name,
+            cb.name  AS created_by_name,
+            k.name   AS kurir_name,
+            ck.name  AS confirmed_by_kurir_name,
+            cbooth.name AS confirmed_by_booth_name
+        FROM distributions d
+        LEFT JOIN stock_locations fl    ON fl.id = d.from_location_id
+        LEFT JOIN stock_locations tl    ON tl.id = d.to_location_id
+        LEFT JOIN users cb              ON cb.id = d.created_by
+        LEFT JOIN users k               ON k.id  = d.kurir_id
+        LEFT JOIN users ck              ON ck.id = d.confirmed_by_kurir
+        LEFT JOIN users cbooth          ON cbooth.id = d.confirmed_by_booth
+        WHERE d.id = ?`,
+        [id]
+    );
+
+    if (!distribution) return null;
+
+    const [items] = await db.query(
+        `SELECT 
+            di.*,
+            i.name AS item_name,
+            i.unit
+        FROM distribution_items di
+        JOIN items i ON i.id = di.item_id
+        WHERE di.distribution_id = ?`,
+        [id]
+    );
+
+    return { ...distribution, items };
+};
+module.exports = { getAll, create, getById, confirmBooth, cancel, getByKurir, getItems, pickup, getDisToday };

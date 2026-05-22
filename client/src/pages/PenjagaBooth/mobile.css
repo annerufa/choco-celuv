@@ -57,7 +57,7 @@ body {
 /* ── PHONE ── */
 .phone {
   width: 100%;
-  max-width: 430px;
+  max-width: 380px;
   height: 100dvh;
   border-radius: 0;
   margin: 0 auto;
@@ -640,6 +640,8 @@ body {
   height: 80px;
   background: var(--accentglow);
   border-radius: 50%;
+
+  pointer-events: none;
 }
 
 .clock {

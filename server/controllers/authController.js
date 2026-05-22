@@ -16,7 +16,7 @@ const login = async (req, res) => {
         const user = await findUsername(username);
 
         if (!user) return response(401, null, 'Username tidak ditemukan', res);
-
+        console.log('pass db: ', user.password);
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) return response(401, null, 'Password salah', res);
 

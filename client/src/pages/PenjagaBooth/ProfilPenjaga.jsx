@@ -2,6 +2,7 @@ import { ROLES } from "./roles";
 import { IconChevron, IconUser, IconLock, IconMonitor, IconActivity, IconLogout } from "./Icons";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+
 export default function ProfilPenjaga() {
   const r = ROLES.kasir;
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ export default function ProfilPenjaga() {
           <span>{r.init}</span>
           <div className="pava-ring" />
         </div>
-        <div className="pname">{r.name}</div>
+        <div className="pname">{user?.name}</div>
         <div>
           <span className="prole-badge" style={r.badgeStyle}>{r.badge}</span>
         </div>

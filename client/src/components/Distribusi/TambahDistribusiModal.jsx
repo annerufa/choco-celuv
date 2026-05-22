@@ -6,6 +6,7 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 
 const initialForm = {
     type: 'warehouse_to_booth',
+    from_location_id: '',   // diisi otomatis kalau warehouse, manual kalau booth_to_booth
     to_location_id: '',
     kurir_id: '',
     planned_date: new Date().toISOString().split('T')[0],
@@ -33,15 +34,31 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
     const [loadingKurir, setLoadingKurir] = useState(false);
     const [loadingItems, setLoadingItems] = useState(false);
 
+    // Reset form saat modal dibuka
     useEffect(() => {
         if (isOpen) {
-            setFormData(initialForm);
+            setFormData({ ...initialForm, from_location_id: userLocationId ?? '' });
             setErrors({});
             fetchBooth();
             fetchKurir();
-            fetchItems();
         }
     }, [isOpen]);
+
+    // Fetch items setiap kali lokasi asal berubah
+    useEffect(() => {
+        const sourceId = formData.type === 'warehouse_to_booth'
+            ? userLocationId
+            : formData.from_location_id;
+
+        if (sourceId) {
+            console.log('id asal', sourceId);
+            fetchItems(sourceId);
+        } else {
+            setItemList([]);
+        }
+        // Reset pilihan barang kalau lokasi asal berubah
+        setFormData(prev => ({ ...prev, items: [{ item_id: '', qty: '' }] }));
+    }, [formData.type, formData.from_location_id]);
 
     useEffect(() => {
         const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -52,10 +69,12 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
     async function fetchBooth() {
         setLoadingBooth(true);
         try {
-            const res = await fetch(`${BASE_URL}/booth`, { headers: authHeaders() });
+            const res = await fetch(`${BASE_URL}/booth/loc`, { headers: authHeaders() });
             const json = await res.json();
             const data = json.payload?.data ?? json.data ?? json ?? [];
+            console.log('data booth:', data);
             setBoothList(Array.isArray(data) ? data : []);
+            // console.log(boothList);
         } catch { setBoothList([]); }
         finally { setLoadingBooth(false); }
     }
@@ -71,12 +90,14 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
         finally { setLoadingKurir(false); }
     }
 
-    async function fetchItems() {
+    async function fetchItems(locationId) {
         setLoadingItems(true);
         try {
-            const res = await fetch(`${BASE_URL}/items?location_id=${userLocationId}`, { headers: authHeaders() });
+            // ✅ Fix: URL yang benar
+            const res = await fetch(`${BASE_URL}/items/perLoc?location_id=${locationId}`, { headers: authHeaders() });
             const json = await res.json();
             const data = json.payload?.data ?? json.data ?? json ?? [];
+            console.log('data items:', data);
             setItemList(Array.isArray(data) ? data : []);
         } catch { setItemList([]); }
         finally { setLoadingItems(false); }
@@ -86,6 +107,18 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+
+    function handleTypeChange(e) {
+        const type = e.target.value;
+        setFormData(prev => ({
+            ...prev,
+            type,
+            from_location_id: type === 'warehouse_to_booth' ? (userLocationId ?? '') : '',
+            to_location_id: '',
+            items: [{ item_id: '', qty: '' }],
+        }));
+        setErrors({});
     }
 
     function handleItemChange(index, field, value) {
@@ -113,19 +146,31 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
         }));
     }
 
+    // ✅ Fix: baca dari item_id (field dari getByLocation)
     function getStokItem(item_id) {
         const found = itemList.find(it => String(it.id) === String(item_id));
+        console.log('id item:', item_id, '- stok:', found?.current_stock);  // ✅ pakai optional chaining
         return found ? Number(found.current_stock ?? 0) : null;
     }
 
     function validate() {
         const errs = {};
-        if (!formData.to_location_id) errs.to_location_id = 'Pilih booth tujuan';
-        if (!formData.planned_date) errs.planned_date = 'Tanggal wajib diisi';
+
+        if (formData.type === 'booth_to_booth' && !formData.from_location_id)
+            errs.from_location_id = 'Pilih booth asal';
+        if (!formData.to_location_id)
+            errs.to_location_id = 'Pilih booth tujuan';
+        if (formData.type === 'booth_to_booth' &&
+            formData.from_location_id && formData.to_location_id &&
+            String(formData.from_location_id) === String(formData.to_location_id))
+            errs.to_location_id = 'Booth tujuan tidak boleh sama dengan booth asal';
+        if (!formData.planned_date)
+            errs.planned_date = 'Tanggal wajib diisi';
 
         formData.items.forEach((item, i) => {
-            if (!item.item_id) errs[`item_${i}`] = 'Pilih barang';
-            else if (!item.qty || Number(item.qty) <= 0) {
+            if (!item.item_id) {
+                errs[`item_${i}`] = 'Pilih barang';
+            } else if (!item.qty || Number(item.qty) <= 0) {
                 errs[`qty_${i}`] = 'Qty tidak valid';
             } else {
                 const stok = getStokItem(item.item_id);
@@ -136,7 +181,8 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
         });
 
         const ids = formData.items.map(i => i.item_id).filter(Boolean);
-        if (ids.length !== new Set(ids).size) errs.duplikat = 'Ada barang yang dipilih lebih dari sekali';
+        if (ids.length !== new Set(ids).size)
+            errs.duplikat = 'Ada barang yang dipilih lebih dari sekali';
 
         return errs;
     }
@@ -148,8 +194,13 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
 
         setLoading(true);
         try {
+            const sourceId = formData.type === 'warehouse_to_booth'
+                ? userLocationId
+                : formData.from_location_id;
+
             const payload = {
-                type: 'warehouse_to_booth',
+                type: formData.type,
+                from_location_id: Number(sourceId),
                 to_location_id: Number(formData.to_location_id),
                 kurir_id: formData.kurir_id ? Number(formData.kurir_id) : null,
                 planned_date: formData.planned_date,
@@ -178,9 +229,13 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
         }
     }
 
-    // const boothTujuan = boothList.filter(b => String(b.id) !== String(userLocationId));
-    const boothTujuan = boothList;
+    const isBoothToBooth = formData.type === 'booth_to_booth';
     const isWarehouseToBooth = formData.type === 'warehouse_to_booth';
+
+    // Booth tujuan: filter keluar booth asal kalau booth_to_booth
+    const boothTujuan = isBoothToBooth
+        ? boothList.filter(b => String(b.location_id ?? b.id) !== String(formData.from_location_id))
+        : boothList;
 
     if (!isOpen) return null;
 
@@ -205,7 +260,7 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
                         {errors.submit && <div className={styles.alertError}>{errors.submit}</div>}
 
                         {/* Tipe Distribusi */}
-                        {/* <div className={styles.formGroup}>
+                        <div className={styles.formGroup}>
                             <label className={styles.label}>Tipe Distribusi</label>
                             <div className={styles.radioGroup}>
                                 {[
@@ -221,7 +276,7 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
                                             name="type"
                                             value={opt.val}
                                             checked={formData.type === opt.val}
-                                            onChange={handleChange}
+                                            onChange={handleTypeChange}
                                             style={{ display: 'none' }}
                                         />
                                         <span className={styles.radioLabel}>{opt.label}</span>
@@ -229,11 +284,33 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
                                     </label>
                                 ))}
                             </div>
-                        </div> */}
+                        </div>
 
                         <div className={styles.formGrid}>
 
-                            {/* Tujuan */}
+                            {/* Booth Asal — hanya booth_to_booth */}
+                            {isBoothToBooth && (
+                                <div className={styles.formGroup}>
+                                    <label className={styles.label}>Booth Asal</label>
+                                    <select
+                                        name="from_location_id"
+                                        className={`${styles.input} ${errors.from_location_id ? styles.inputError : ''}`}
+                                        value={formData.from_location_id}
+                                        onChange={handleChange}
+                                        disabled={loadingBooth}
+                                    >
+                                        <option value="">{loadingBooth ? 'Memuat...' : 'Pilih booth asal...'}</option>
+                                        {boothList.map(b => (
+                                            <option key={b.location_id ?? b.id} value={b.location_id ?? b.id}>
+                                                {b.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors.from_location_id && <span className={styles.errorMsg}>{errors.from_location_id}</span>}
+                                </div>
+                            )}
+
+                            {/* Booth Tujuan */}
                             <div className={styles.formGroup}>
                                 <label className={styles.label}>Booth Tujuan</label>
                                 <select
@@ -245,7 +322,9 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
                                 >
                                     <option value="">{loadingBooth ? 'Memuat...' : 'Pilih booth tujuan...'}</option>
                                     {boothTujuan.map(b => (
-                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                        <option key={b.location_id ?? b.id} value={b.location_id ?? b.id}>
+                                            {b.name}
+                                        </option>
                                     ))}
                                 </select>
                                 {errors.to_location_id && <span className={styles.errorMsg}>{errors.to_location_id}</span>}
@@ -303,7 +382,13 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
                         </div>
 
                         {/* Item */}
-                        <div className={styles.sectionTitle}>Item yang Didistribusikan</div>
+                        <div className={styles.sectionTitle}>
+                            Item yang Didistribusikan
+                            {loadingItems && <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--brown-400)', marginLeft: 8 }}>Memuat stok...</span>}
+                            {!loadingItems && itemList.length === 0 && isBoothToBooth && !formData.from_location_id && (
+                                <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--brown-400)', marginLeft: 8 }}>Pilih booth asal dulu</span>
+                            )}
+                        </div>
 
                         {errors.duplikat && (
                             <div className={styles.alertError} style={{ marginBottom: 8 }}>{errors.duplikat}</div>
@@ -321,29 +406,35 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
                                 </thead>
                                 <tbody>
                                     {formData.items.map((item, i) => {
-                                        const stok = getStokItem(item.item_id);
-                                        const selectedItem = itemList.find(it => String(it.id) === String(item.item_id));
+                                        const stok = getStokItem(item.item_id);              // ✅ item.item_id
+                                        const selectedItem = itemList.find(it => String(it.id) === String(item.item_id)); // ✅ item.item_id
                                         return (
                                             <tr key={i}>
                                                 <td>
                                                     <select
                                                         className={`${styles.input} ${errors[`item_${i}`] ? styles.inputError : ''}`}
-                                                        value={item.item_id}
+                                                        value={item.item_id}                  // ✅ item.item_id
                                                         onChange={e => handleItemChange(i, 'item_id', e.target.value)}
                                                         disabled={loadingItems}
                                                     >
                                                         <option value="">{loadingItems ? 'Memuat...' : 'Pilih barang...'}</option>
                                                         {itemList.map(it => (
-                                                            <option key={it.id} value={it.id}>{it.name} ({it.unit})</option>
+                                                            // ✅ Fix: pakai it.item_id dan it.item_name
+                                                            <option key={it.id} value={it.id}>
+                                                                {it.name} ({it.unit})
+                                                            </option>
                                                         ))}
                                                     </select>
                                                     {errors[`item_${i}`] && <span className={styles.errorMsg}>{errors[`item_${i}`]}</span>}
                                                 </td>
                                                 <td className={styles.stokCell}>
-                                                    {item.item_id && stok !== null ? (
-                                                        <span className={stok <= 0 ? styles.stokHabis : styles.stokAda}>
-                                                            {stok} {selectedItem?.unit ?? ''}
-                                                        </span>
+                                                    {/* ✅ Fix: baca stok dari itemList via getStokItem, bukan dari item form */}
+                                                    {item.item_id ? (                         // ✅ item.item_id
+                                                        stok !== null ? (
+                                                            <span className={stok <= 0 ? styles.stokHabis : styles.stokAda}>
+                                                                {stok} {selectedItem?.unit ?? ''}
+                                                            </span>
+                                                        ) : '-'
                                                     ) : '-'}
                                                 </td>
                                                 <td>
@@ -353,6 +444,7 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
                                                         placeholder="0"
                                                         min="1"
                                                         max={stok ?? undefined}
+                                                        // ✅ Fix: value pakai item.qty bukan item.current_stock
                                                         value={item.qty}
                                                         onChange={e => handleItemChange(i, 'qty', e.target.value)}
                                                     />

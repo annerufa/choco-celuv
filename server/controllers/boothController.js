@@ -9,6 +9,14 @@ const getAllBooth = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
+const getBoothwithloc = async (req, res) => {
+    try {
+        const data = await Booth.getAllwithloc();
+        response(200, data, 'Berhasil mengambil data booth', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
 const createBooth = async (req, res) => {
     try {
         const result = await Booth.create(req.body);
@@ -41,4 +49,4 @@ const statusBooth = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
-module.exports = { getAllBooth, createBooth, updateBooth, statusBooth };
+module.exports = { getAllBooth, createBooth, updateBooth, statusBooth, getBoothwithloc };

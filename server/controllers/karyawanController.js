@@ -107,4 +107,17 @@ const statusKaryawan = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
-module.exports = { getAllKaryawan, createKaryawan, updateKaryawan, deleteKaryawan, statusKaryawan, getKurir, getPenjaga, getAllKaryawanwithJadwal };
+
+const updatePassword = async (req, res) => {
+    try {
+        const passwordd = req.body.password;
+        const hashedPassword = await bcrypt.hash(passwordd, 10);
+        console.log('id user ubah password: ', req.user.id);
+        console.log('password received:', passwordd);
+        await Karyawan.updatePassword(req.user.id, hashedPassword);
+        response(200, null, 'Password berhasil diperbarui', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+module.exports = { getAllKaryawan, createKaryawan, updateKaryawan, deleteKaryawan, statusKaryawan, getKurir, getPenjaga, getAllKaryawanwithJadwal, updatePassword };

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from './DetailBarangPage.module.css';
+import SatuanBeliSection from './SatuanBeliSection';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 
@@ -261,6 +262,8 @@ export default function DetailBarangPage() {
                         ))}
                     </div>
                 </div>
+
+                <SatuanBeliSection itemId={item.id} baseUnit={item.unit} />
 
                 {/* Riwayat Pergerakan Stok */}
                 <div className={`${styles.card} ${styles.fullWidth}`}>
