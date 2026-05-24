@@ -25,6 +25,7 @@ function formatDateTime(val) {
 const STATUS_CFG = {
     draft: { label: 'Draft', cls: 'grey', desc: 'Menunggu pickup kurir' },
     dikirim: { label: 'Dikirim', cls: 'warning', desc: 'Sedang dalam pengiriman' },
+    sampai: { label: 'Sampai', cls: 'success', desc: 'Sedang dalam pengiriman' },
     diterima: { label: 'Diterima', cls: 'success', desc: 'Barang sudah diterima booth' },
     dibatalkan: { label: 'Dibatalkan', cls: 'danger', desc: 'Distribusi dibatalkan' },
 };
@@ -38,10 +39,10 @@ const TYPE_LABEL = {
 const STEPS = [
     { key: 'draft', label: 'Dibuat' },
     { key: 'dikirim', label: 'Dikirim' },
-    { key: 'diterima', label: 'Diterima' },
+    { key: 'sampai', label: 'Telah sampai' },
 ];
 
-const STATUS_ORDER = { draft: 0, dikirim: 1, diterima: 2, dibatalkan: -1 };
+const STATUS_ORDER = { draft: 0, dikirim: 1, sampai: 2, diterima: 2, kurang: 2, dibatalkan: -1 };
 
 export default function DetailDistribusiPage() {
     const { id } = useParams();
@@ -122,8 +123,8 @@ export default function DetailDistribusiPage() {
     const statusCfg = STATUS_CFG[dist.status] ?? { label: dist.status, cls: 'grey', desc: '' };
     const currentStep = STATUS_ORDER[dist.status] ?? 0;
     const isCancelled = dist.status === 'dibatalkan';
-    const canPickup = dist.status === 'draft' && dist.kurir_id;
-    const canCancel = !['diterima', 'dibatalkan'].includes(dist.status);
+    const canPickup = dist.status === 'draft' && dist.kurir_id == null;
+    const canCancel = dist.status === 'draft'
     const canReceive = dist.status === 'dikirim';
 
     return (

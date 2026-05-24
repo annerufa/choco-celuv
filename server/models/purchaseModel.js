@@ -103,7 +103,7 @@ const create = async (data) => {
             await conn.execute(
                 `INSERT INTO stock_movements
                     (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'IN', 'purchase', ?)`,
+                 VALUES (?, ?, ?, 'IN', 'PEMBELIAN', ?)`,
                 [item_id, loc_id, stock_qty, purchase_id]
             );
 
@@ -232,7 +232,7 @@ const cancel = async (id, cancelled_by) => {
             await conn.execute(
                 `INSERT INTO stock_movements
                     (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'OUT', 'purchase_cancel', ?)`,
+                 VALUES (?, ?, ?, 'OUT', 'KOREKSI', ?)`,
                 [item.item_id, purchase.loc_id, stock_qty, id]
             );
         }

@@ -2,7 +2,9 @@ import { ROLES } from "./roles";
 import { IconChevron, IconUser, IconLock, IconMonitor, IconActivity, IconLogout } from "./Icons";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-
+function getInitial(name) {
+  return name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
 export default function ProfilPenjaga() {
   const r = ROLES.kasir;
   const navigate = useNavigate();
@@ -17,7 +19,7 @@ export default function ProfilPenjaga() {
       {/* AVATAR HEADER */}
       <div className="phead-profil">
         <div className="pava-lg" style={{ background: r.avaGrad }}>
-          <span>{r.init}</span>
+          <span>{getInitial(user?.name)}</span>
           <div className="pava-ring" />
         </div>
         <div className="pname">{user?.name}</div>

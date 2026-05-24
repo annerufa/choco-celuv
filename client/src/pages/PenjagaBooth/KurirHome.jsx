@@ -1,31 +1,38 @@
 import { useAuth } from '../../context/AuthContext';
 import { useApi } from '../../hooks/useApi';
-
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
+function getToken() { return localStorage.getItem("token"); }
 // ── Status config ────────────────────────────────────────────────────────────
 const STATUS = {
-  menunggu_pickup: {
+  draft: {
     label: 'Menunggu Pickup',
     color: 'var(--text3)',
     bg: 'var(--bg2)',
     dot: '#aaa',
   },
-  dalam_perjalanan: {
+  dikirim: {
     label: 'Dalam Perjalanan',
     color: 'var(--blue)',
     bg: 'var(--bluesoft)',
     dot: 'var(--blue)',
   },
-  sudah_sampai: {
+  sampai: {
     label: 'Sudah Sampai',
-    color: 'var(--accent)',
-    bg: 'var(--accentsoft)',
-    dot: 'var(--accent)',
-  },
-  terverifikasi: {
-    label: 'Terverifikasi',
     color: 'var(--green)',
     bg: 'var(--greensoft)',
     dot: 'var(--green)',
+  },
+  sesuai: {
+    label: 'Sesuai',
+    color: 'var(--green)',
+    bg: 'var(--greensoft)',
+    dot: 'var(--green)',
+  },
+  kurang: {
+    label: 'Kurang',
+    color: 'var(--accent)',
+    bg: 'var(--redsoft)',
+    dot: 'var(--red)',
   },
 };
 
@@ -36,7 +43,7 @@ function getInitial(name) {
 
 // ── Delivery Card ────────────────────────────────────────────────────────────
 function DeliveryCard({ delivery, onPickup, onSampai }) {
-  const st = STATUS[delivery.status] ?? STATUS.menunggu_pickup;
+  const st = STATUS[delivery.status] ?? STATUS.draft;
   const totalProduk = (delivery.items ?? []).length;
 
   return (
@@ -117,7 +124,7 @@ function DeliveryCard({ delivery, onPickup, onSampai }) {
       </div>
 
       {/* Action button */}
-      {delivery.status === 'menunggu_pickup' && (
+      {delivery.status === 'draft' && (
         <div style={{ padding: '0 14px 13px' }}>
           <button
             onClick={() => onPickup(delivery.id)}
@@ -132,7 +139,7 @@ function DeliveryCard({ delivery, onPickup, onSampai }) {
         </div>
       )}
 
-      {delivery.status === 'dalam_perjalanan' && (
+      {delivery.status === 'dikirim' && (
         <div style={{ padding: '0 14px 13px' }}>
           <button
             onClick={() => onSampai(delivery.id)}
@@ -147,17 +154,21 @@ function DeliveryCard({ delivery, onPickup, onSampai }) {
         </div>
       )}
 
-      {(delivery.status === 'sudah_sampai' || delivery.status === 'terverifikasi') && (
+      {(delivery.status === 'sampai' || delivery.status === 'kurang' || delivery.status === 'diterima') && (
         <div style={{ padding: '0 14px 13px' }}>
           <div style={{
             textAlign: 'center', fontSize: 11, fontWeight: 700,
-            color: delivery.status === 'terverifikasi' ? 'var(--green)' : 'var(--accent)',
+            color: delivery.status === 'diterima' || delivery.status === 'sesuai' ? 'var(--green)'
+              : delivery.status === 'kurang' ? 'var(--accent)'
+                : 'var(--blue)',
             padding: '8px', borderRadius: 10,
-            background: delivery.status === 'terverifikasi' ? 'var(--greensoft)' : 'var(--accentsoft)',
+            background: delivery.status === 'sampai' ? 'var(--greensoft)'
+              : delivery.status === 'kurang' ? 'var(--accentsoft)'
+                : 'var(--bluesoft)',
           }}>
-            {delivery.status === 'terverifikasi'
-              ? '✓ Stok booth sudah diperbarui'
-              : 'Menunggu verifikasi penjaga booth…'}
+            {delivery.status === 'sesuai' ? '✓ Pengiriman selesai, barang sesuai'
+              : delivery.status === 'kurang' ? '⚠ Diterima dengan catatan kurang'
+                : '🕐 Menunggu verifikasi penjaga booth…'}
           </div>
         </div>
       )}
@@ -182,33 +193,44 @@ export default function KurirHome({ setPage }) {
   // Summary counts
   const total = list.length;
   const selesai = list.filter(d =>
-    d.status === 'sudah_sampai' || d.status === 'terverifikasi'
+    d.status === 'sampai' || d.status === 'sampai' || d.status === 'kurang' || d.status === 'sesuai'
   ).length;
-  const proses = list.filter(d => d.status === 'dalam_perjalanan').length;
-  const menunggu = list.filter(d => d.status === 'menunggu_pickup').length;
+  const proses = list.filter(d => d.status === 'dikirim').length;
+  const menunggu = list.filter(d => d.status === 'draft').length;
 
   // ── Actions ──────────────────────────────────────────────────────────────
-  // Ganti endpoint sesuai API kamu
+
   async function handlePickup(id) {
+    // setPickupLoading(true);
     try {
-      await fetch(`/api/distribution/${id}/pickup`, { method: 'PATCH' });
+      const res = await fetch(`${BASE_URL}/distribution/${id}/pickup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.payload?.message ?? "Gagal konfirmasi pickup");
       refetch();
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      alert(err.message);
     }
   }
 
   async function handleSampai(id) {
     try {
-      await fetch(`/api/distribution/${id}/arrive`, { method: 'PATCH' });
+      const res = await fetch(`${BASE_URL}/distribution/${id}/arrive`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.payload?.message ?? "Gagal konfirmasi sampai");
       refetch();
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      alert(err.message);
     }
   }
 
   // ── Group by status priority ─────────────────────────────────────────────
-  const ORDER = ['dalam_perjalanan', 'menunggu_pickup', 'sudah_sampai', 'terverifikasi'];
+  const ORDER = ['dikirim', 'draft', 'sampai', 'diterima'];
   const sorted = [...list].sort(
     (a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status)
   );

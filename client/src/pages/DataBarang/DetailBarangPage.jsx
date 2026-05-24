@@ -28,8 +28,8 @@ const movementVariant = {
 };
 
 const sourceLabel = {
-    'purchase': 'Pembelian',
-    'purchase_cancel': 'Batal Beli',
+    'PEMBELIAN': 'Pembelian',
+    'KOREKSI': 'Batal Beli',
     'production': 'Produksi',
     'distribution': 'Distribusi',
     'adjustment': 'Penyesuaian',

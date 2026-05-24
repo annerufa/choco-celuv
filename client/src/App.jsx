@@ -24,6 +24,8 @@ import JadwalPage from './pages/Jadwal/JadwalPage';
 import AbsensiPage from './pages/Absensi/RekapAbsensiPage';
 
 import ResepPage from './pages/Resep/ResepPage';
+import ProduksiPage from './pages/Produksi/ProduksiPage';
+import RekapProduksiPage from './pages/Produksi/RekapProduksiPage';
 
 import ProtectedRoute from './routes/ProtectedRoute';
 
@@ -88,7 +90,8 @@ export default function App() {
 
         <Route path="/distribusi" element={<DistribusiPage />} />
         <Route path="/distribusi/:id" element={<DetailDistribusiPage />} />
-
+        <Route path="/produksi" element={<ProduksiPage />} />
+        <Route path="/produksi-rekap" element={<RekapProduksiPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

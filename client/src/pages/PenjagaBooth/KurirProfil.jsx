@@ -3,6 +3,10 @@ import { IconChevron, IconUser, IconLock, IconPin, IconActivity, IconLogout } fr
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
+function getInitial(name) {
+  return name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
+
 export default function KurirProfil() {
   const r = ROLES.kurir;
   const navigate = useNavigate();
@@ -17,16 +21,16 @@ export default function KurirProfil() {
       {/* AVATAR HEADER */}
       <div className="phead-profil">
         <div className="pava-lg" style={{ background: r.avaGrad }}>
-          <span>{r.init}</span>
+          <span>{getInitial(user?.name)}</span>
           <div className="pava-ring" />
         </div>
-        <div className="pname">{r.name}</div>
+        <div className="pname">{user?.name}</div>
         <div>
-          <span className="prole-badge" style={r.badgeStyle}>{r.badge}</span>
+          <span className="prole-badge" style={{ background: "rgba(232,160,32,.15)", color: "#5c2603" }}>🛵 Kurir</span>
         </div>
-        <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 5 }}>
+        {/* <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 5 }}>
           Shift Pagi · Bergabung Jan 2024
-        </div>
+        </div> */}
       </div>
 
       <div style={{ height: 12, background: "var(--bg1)" }} />

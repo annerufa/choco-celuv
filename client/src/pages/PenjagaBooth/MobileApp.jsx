@@ -5,15 +5,18 @@ import { useNavigate } from 'react-router-dom'; // tambah ini
 import SetPasswordModal from "./SetPasswordModal";
 import PengirimanKurir from "./PengirimanKurir";
 // icons
-import { IconHome, IconStok, IconPenjaga, IconChevron, IconCheck, IconAbsensi, IconProfil } from "./Icons";
+import { IconHome, IconStok, IconPenjaga, IconChevron, IconRekap, IconCheck, IconAbsensi, IconProfil } from "./Icons";
 
 
 // Penjaga pages
 import HomePenjaga from "./HomePenjaga";
 import KasirPenjaga from "./KasirPenjaga";
 import ProfilPenjaga from "./ProfilPenjaga";
+import DistribusiPenjaga from "./DistribusiPenjaga";
 // kurir
 import KurirHome from "./KurirHome";
+import RekapKurir from "./RekapKurir";
+import KurirProfil from "./KurirProfil";
 // shared pages
 import StokPage from "./StokPage";
 import AbsensiPage from "./AbsensiPage";
@@ -24,7 +27,7 @@ const NAV = {
   kurir: [
     { id: "home", label: "Beranda", Icon: IconHome },
     { id: "pengiriman", label: "Pengiriman", Icon: IconStok },
-    { id: "absensi", label: "Absensi", Icon: IconAbsensi },
+    { id: "rekap", label: "Rekap", Icon: IconRekap },
     { id: "profil", label: "Profil", Icon: IconProfil },
   ],
   penjaga_booth: [
@@ -40,19 +43,22 @@ const NAV = {
 
 // ── Page router ──────────────────────────────────────────────────────────────
 function PageRenderer({ role, page, setPage }) {
-  if (page === "home") {
-    if (role === "kurir") return <KurirHome setPage={setPage} />;
-    return <HomePenjaga setPage={setPage} />;
+  if (role === "kurir") {
+    if (page === "home") return <KurirHome setPage={setPage} />;
+    if (page === "profil") return <KurirProfil />;
+    if (page === "pengiriman") return <PengirimanKurir />;
+    if (page === "rekap") return <RekapKurir />;
+  } else {
+    if (page === "home") return <HomePenjaga setPage={setPage} />;
+    if (page === "stok") return <StokPage />;
+    if (page === "absensi") return <AbsensiPage />;
+    if (page === "kasir") return <KasirPenjaga />;
+    if (page === "profil") return <ProfilPenjaga />;
+    if (page === "distribusi") return <DistribusiPenjaga />;
+    if (page === "pembelian") return <div>Halaman Pembelian (belum dibuat)</div>; // placeholder 
   }
-  if (page === "stok") return <StokPage />;
-  if (page === "absensi") return <AbsensiPage />;
 
-  if (page === "home") return <HomePenjaga setPage={setPage} />;
-  if (page === "kasir") return <KasirPenjaga />;
-  if (page === "profil") return <ProfilPenjaga />;
-
-  if (role === "kurir" && page === "pengiriman") return <PengirimanKurir />;
-  return null;
+  return <div>Halaman tidak ditemukan: {page}</div>; // debug helper
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────

@@ -83,8 +83,8 @@ export const menuConfig = [
                 path: null,
                 icon: 'produksi',
                 submenu: [
-                    { label: 'Mixing', path: '/mixing' },
-                    { label: 'Adonan', path: '/adonan' },
+                    { label: 'Poduksi', path: '/produksi' },
+                    { label: 'Rekap Produksi', path: '/produksi-rekap' },
                     // { label: 'Absensi', path: '/karyawan/absen' },
                 ],
             },

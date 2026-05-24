@@ -42,6 +42,13 @@ function IconBack() {
         <polyline points="15 18 9 12 15 6" />
     </svg>;
 }
+function IconCheck() {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 15 4 10" />
+        </svg>
+    );
+}
 
 function IconChevron() {
     return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ width: 14, height: 14 }}>
@@ -53,6 +60,7 @@ function IconChevron() {
 const STATUS_CFG = {
     draft: { label: "Perlu Pickup", bg: "var(--accentsoft)", color: "var(--accent)" },
     dikirim: { label: "Dikirim", bg: "var(--bluesoft)", color: "var(--blue)" },
+    sampai: { label: "Sampai", bg: "var(--greensoft)", color: "var(--green)" },
     diterima: { label: "Diterima", bg: "var(--greensoft)", color: "var(--green)" },
     dibatalkan: { label: "Dibatalkan", bg: "var(--redsoft)", color: "var(--red)" },
 };
@@ -70,9 +78,9 @@ function StatusChip({ status }) {
 const STEPS = [
     { key: "draft", label: "Dibuat" },
     { key: "dikirim", label: "Dikirim" },
-    { key: "diterima", label: "Diterima" },
+    { key: "sampai", label: "Telah sampai" },
 ];
-const STATUS_ORDER = { draft: 0, dikirim: 1, diterima: 2, dibatalkan: -1 };
+const STATUS_ORDER = { draft: 0, dikirim: 1, sampai: 2, kurang: 2, sesuai: 2, dibatalkan: -1 };
 
 function Timeline({ status }) {
     const current = STATUS_ORDER[status] ?? 0;
@@ -138,13 +146,14 @@ function InfoRow({ label, value }) {
 }
 
 // ── Detail Page ───────────────────────────────────────────
-function DetailPage({ dist: initialDist, onBack, onPickupSuccess }) {
+export function DetailPage({ dist: initialDist, onBack, onPickupSuccess, onArriveSuccess }) {
     const [dist, setDist] = useState(initialDist);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pickupLoading, setPickupLoading] = useState(false);
+    const [sampaiLoading, setSampaiLoading] = useState(false);
 
     useEffect(() => {
         async function fetchDetail() {
@@ -184,6 +193,25 @@ function DetailPage({ dist: initialDist, onBack, onPickupSuccess }) {
             alert(err.message);
         } finally {
             setPickupLoading(false);
+        }
+    }
+
+    async function handleSampai() {
+        setSampaiLoading(true);
+        try {
+            const res = await fetch(`${BASE_URL}/distribution/${dist.id}/arrive`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.payload?.message ?? "Gagal konfirmasi sampai");
+            setConfirmOpen(false);
+            onArriveSuccess();
+            onBack();
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            setSampaiLoading(false);
         }
     }
 
@@ -279,7 +307,7 @@ function DetailPage({ dist: initialDist, onBack, onPickupSuccess }) {
                                             Yakin sudah ambil semua barang?
                                         </div>
                                         <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 16, textAlign: "center", lineHeight: 1.6 }}>
-                                            Stok gudang akan berkurang dan status berubah jadi <strong>Dikirim</strong>
+                                            Status rencana pengiriman akan berubah jadi <strong>Dikirim</strong>
                                         </div>
                                         <div style={{ display: "flex", gap: 8 }}>
                                             <button onClick={() => setConfirmOpen(false)} disabled={pickupLoading} style={{
@@ -297,6 +325,46 @@ function DetailPage({ dist: initialDist, onBack, onPickupSuccess }) {
                                                 fontFamily: "inherit", opacity: pickupLoading ? 0.6 : 1,
                                             }}>
                                                 {pickupLoading ? "Memproses..." : "Ya, Pickup Sekarang"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {dist.status === "dikirim" && (
+                            <div style={{ padding: "20px 16px" }}>
+                                {!confirmOpen ? (
+                                    <button onClick={() => setConfirmOpen(true)} style={{
+                                        width: "100%", padding: 15, borderRadius: 15, border: "none",
+                                        background: "var(--blue)", color: "#fff", fontSize: 15, fontWeight: 900,
+                                        cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 14px rgba(212,80,10,0.30)",
+                                    }}>
+                                        Konfirmasi Telah sampai
+                                    </button>
+                                ) : (
+                                    <div style={{ background: "var(--bg0)", borderRadius: 16, border: "1px solid var(--border2)", padding: 16 }}>
+                                        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text1)", marginBottom: 6, textAlign: "center" }}>
+                                            Pengiriman telah sampai?
+                                        </div>
+                                        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 16, textAlign: "center", lineHeight: 1.6 }}>
+                                            Stok pengiriman akan berkurang dan status berubah jadi <strong>Diverifikasi</strong> oleh Penjaga Booth
+                                        </div>
+                                        <div style={{ display: "flex", gap: 8 }}>
+                                            <button onClick={() => setConfirmOpen(false)} disabled={sampaiLoading} style={{
+                                                flex: 1, padding: 12, borderRadius: 12,
+                                                border: "1px solid var(--border2)", background: "var(--bg2)",
+                                                color: "var(--text1)", fontSize: 13, fontWeight: 700,
+                                                cursor: "pointer", fontFamily: "inherit",
+                                            }}>
+                                                Batal
+                                            </button>
+                                            <button onClick={handleSampai} disabled={sampaiLoading} style={{
+                                                flex: 2, padding: 12, borderRadius: 12, border: "none",
+                                                background: "var(--blue)", color: "#fff", fontSize: 13, fontWeight: 900,
+                                                cursor: sampaiLoading ? "not-allowed" : "pointer",
+                                                fontFamily: "inherit", opacity: sampaiLoading ? 0.6 : 1,
+                                            }}>
+                                                {sampaiLoading ? "Memproses..." : "Ya, telah sampai"}
                                             </button>
                                         </div>
                                     </div>
@@ -327,11 +395,17 @@ function DistCard({ dist, onClick }) {
         >
             <div style={{
                 width: 40, height: 40, borderRadius: 11, flexShrink: 0,
-                background: dist.status === "draft" ? "var(--accentsoft)" : "var(--bluesoft)",
+                background: dist.status === "draft" ? "var(--accentsoft)"
+                    : dist.status === "dikirim" ? "var(--bluesoft)"
+                        : "var(--greensoft)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                color: dist.status === "draft" ? "var(--accent)" : "var(--blue)",
+                color: dist.status === "draft" ? "var(--accent)"
+                    : dist.status === "dikirim" ? "var(--blue)"
+                        : "var(--green)",
             }}>
-                {dist.status === "draft" ? <IconBox /> : <IconTruck />}
+                {dist.status === "draft" ? <IconBox />
+                    : dist.status === "dikirim" ? <IconTruck />
+                        : <IconCheck />}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
@@ -356,6 +430,7 @@ export default function PengirimanKurir() {
     const [tab, setTab] = useState("draft");
     const [draftList, setDraftList] = useState([]);
     const [dikirimList, setDikirimList] = useState([]);
+    const [sampaiList, setSampaiList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selected, setSelected] = useState(null); // kalau ada → tampil DetailPage
@@ -365,13 +440,15 @@ export default function PengirimanKurir() {
         setError(null);
         try {
             const headers = { Authorization: `Bearer ${getToken()}` };
-            const [resDraft, resDikirim] = await Promise.all([
+            const [resDraft, resDikirim, resSampai] = await Promise.all([
                 fetch(`${BASE_URL}/distribution/my?status=draft`, { headers }),
                 fetch(`${BASE_URL}/distribution/my?status=dikirim`, { headers }),
+                fetch(`${BASE_URL}/distribution/my/sampai`, { headers }),
             ]);
-            const [jDraft, jDikirim] = await Promise.all([resDraft.json(), resDikirim.json()]);
+            const [jDraft, jDikirim, jSampai] = await Promise.all([resDraft.json(), resDikirim.json(), resSampai.json()]);
             setDraftList(Array.isArray(jDraft.payload?.data) ? jDraft.payload.data : (Array.isArray(jDraft) ? jDraft : []));
             setDikirimList(Array.isArray(jDikirim.payload?.data) ? jDikirim.payload.data : (Array.isArray(jDikirim) ? jDikirim : []));
+            setSampaiList(Array.isArray(jSampai.payload?.data) ? jSampai.payload.data : (Array.isArray(jSampai) ? jSampai : []));
         } catch (err) {
             setError(err.message);
         } finally {
@@ -388,12 +465,14 @@ export default function PengirimanKurir() {
                 dist={selected}
                 onBack={() => setSelected(null)}
                 onPickupSuccess={fetchAll}
+                onArriveSuccess={fetchAll}
             />
         );
     }
-
-    const activeList = tab === "draft" ? draftList : dikirimList;
-
+    const activeList =
+        tab === "draft" ? draftList :
+            tab === "dikirim" ? dikirimList :
+                sampaiList;
     return (
         <div className="page">
             {/* Header */}
@@ -401,7 +480,7 @@ export default function PengirimanKurir() {
                 <div className="phead-row">
                     <div>
                         <div className="ptitle">Pengiriman</div>
-                        <div className="psub">Distribusi yang ditugaskan ke kamu</div>
+                        {/* <div className="psub">Distribusi yang ditugaskan ke kamu</div> */}
                     </div>
                     <div style={{ background: "var(--orange)", color: "#fff", borderRadius: 10, padding: "4px 10px", fontSize: 12, fontWeight: 800 }}>
                         {draftList.length + dikirimList.length} total
@@ -420,6 +499,10 @@ export default function PengirimanKurir() {
                         <div style={{ fontSize: 22, fontWeight: 900, color: "var(--blue)" }}>{dikirimList.length}</div>
                         <div style={{ fontSize: 11, color: "var(--text2)", marginTop: 2 }}>Sedang Dikirim</div>
                     </div>
+                    <div style={{ flex: 1, background: "var(--greensoft)", borderRadius: 14, padding: "12px 14px", border: "1px solid rgba(37,99,168,0.15)" }}>
+                        <div style={{ fontSize: 22, fontWeight: 900, color: "var(--green)" }}>{dikirimList.length}</div>
+                        <div style={{ fontSize: 11, color: "var(--text2)", marginTop: 2 }}>Telah sampai</div>
+                    </div>
                 </div>
 
                 {/* Tabs */}
@@ -427,6 +510,7 @@ export default function PengirimanKurir() {
                     {[
                         { key: "draft", label: `Perlu Pickup (${draftList.length})` },
                         { key: "dikirim", label: `Berlangsung (${dikirimList.length})` },
+                        { key: "sampai", label: `Selesai (${sampaiList.length})` },
                     ].map(t => (
                         <button key={t.key} onClick={() => setTab(t.key)} style={{
                             flex: 1, padding: "9px 6px", borderRadius: 9, border: "none",
@@ -448,13 +532,18 @@ export default function PengirimanKurir() {
                     <div style={{ textAlign: "center", padding: "40px 0", color: "var(--red)", fontSize: 13 }}>{error}</div>
                 ) : activeList.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--text3)", fontSize: 13 }}>
-                        <div style={{ fontSize: 32, marginBottom: 10 }}>{tab === "draft" ? "📦" : "🚚"}</div>
-                        {tab === "draft" ? "Tidak ada pengiriman yang perlu di-pickup" : "Tidak ada pengiriman yang sedang berlangsung"}
+                        <div style={{ fontSize: 32, marginBottom: 10 }}>{tab === "draft" ? "📦" : tab === "dikirim" ? "🚚" : "✅"}</div>
+                        {tab === "draft"
+                            ? "Tidak ada pengiriman yang perlu di-pickup"
+                            : tab === "dikirim"
+                                ? "Tidak ada pengiriman yang sedang berlangsung"
+                                : "Tidak ada pengiriman yang selesai"}
                     </div>
                 ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {activeList.map(dist => (
-                            <DistCard key={dist.id} dist={dist} onClick={() => setSelected(dist)} />
+                            <DistCard key={dist.id} dist={dist} onClick={() => setSelected(dist)} variant={tab} />
+                            // <DistCard key={dist.id} dist={dist} onClick={() => setSelected(dist)} />
                         ))}
                     </div>
                 )}

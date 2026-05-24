@@ -24,8 +24,9 @@ const typeLabel = {
 const statusVariant = {
     'draft': 'grey',
     'dikirim': 'warning',
+    'sampai': 'success',
     'diterima': 'success',
-    'dibatalkan': 'danger',
+    'kurang': 'danger',
 };
 
 export default function DistribusiTable() {

@@ -1,3 +1,5 @@
+//distributionModel.js
+
 const db = require('../connection');
 
 const getAll = async ({ type, status, from_location_id, to_location_id, start_date, end_date, limit = 50, offset = 0 } = {}) => {
@@ -134,6 +136,8 @@ const confirmBooth = async (distribution_id, confirmed_by) => {
         if (!dist) throw new Error('Distribusi tidak ditemukan');
         if (dist.status === 'diterima') throw new Error('Sudah dikonfirmasi');
         if (dist.status === 'dibatalkan') throw new Error('Distribusi sudah dibatalkan');
+        if (dist.status !== 'dikirim') throw new Error('Status harus dikirim untuk bisa diterima');
+        if (!dist.arrived_at) throw new Error('Kurir belum konfirmasi sudah sampai');  // ✅ validasi arrived_at
 
         const [items] = await conn.execute(
             `SELECT * FROM distribution_items WHERE distribution_id = ?`, [distribution_id]
@@ -159,7 +163,9 @@ const confirmBooth = async (distribution_id, confirmed_by) => {
 
         await conn.execute(
             `UPDATE distributions
-             SET status = 'diterima', confirmed_by_booth = ?, confirmed_at_booth = NOW()
+             SET status = 'diterima',
+                 confirmed_by_booth = ?,
+                 confirmed_at_booth = NOW()
              WHERE id = ?`,
             [confirmed_by, distribution_id]
         );
@@ -172,6 +178,7 @@ const confirmBooth = async (distribution_id, confirmed_by) => {
         conn.release();
     }
 };
+
 const cancel = async (distribution_id, cancelled_by) => {
     const conn = await db.getConnection();
     try {
@@ -222,10 +229,12 @@ const cancel = async (distribution_id, cancelled_by) => {
 };
 
 
+
 const getByKurir = async (kurir_id, status) => {
     let sql = `
         SELECT 
             d.*,
+            d.arrived_at,                   -- ✅ tambah ini
             fl.name AS from_location_name,
             tl.name AS to_location_name,
             u.name  AS kurir_name
@@ -248,6 +257,30 @@ const getByKurir = async (kurir_id, status) => {
     return rows;
 };
 
+const getByBooth = async (location_id) => {
+    let sql = `
+        SELECT 
+    d.*,
+    fl.name AS from_location_name,
+    tl.name AS to_location_name,
+    u.name  AS kurir_name
+FROM distributions d
+LEFT JOIN stock_locations fl ON fl.id = d.from_location_id
+LEFT JOIN stock_locations tl ON tl.id = d.to_location_id
+LEFT JOIN users u ON u.id = d.kurir_id
+WHERE d.to_location_id = ?        -- dari token user: location_id
+  AND d.status IN ('sampai', 'diterima', 'kurang')
+ORDER BY 
+    FIELD(d.status, 'sampai', 'kurang', 'diterima'),
+    d.arrived_at DESC
+    `;
+    const params = [location_id];
+
+    const [rows] = await db.query(sql, params);
+    return rows;
+};
+
+
 const getItems = async (distribution_id) => {
     const [rows] = await db.query(
         `SELECT 
@@ -261,7 +294,29 @@ const getItems = async (distribution_id) => {
     );
     return rows;
 };
+const updateItem = async (distribution_id, item_id, qty_diterima, notes) => {
+    await db.query(
+        `UPDATE distribution_items
+         SET qty_diterima = ?,
+             notes        = ?
+         WHERE distribution_id = ?
+           AND item_id         = ?`,
+        [qty_diterima, notes, distribution_id, item_id]
+    );
 
+    const [rows] = await db.query(
+        `SELECT 
+            di.*,
+            i.name AS item_name,
+            i.unit
+         FROM distribution_items di
+         JOIN items i ON i.id = di.item_id
+         WHERE di.distribution_id = ?
+           AND di.item_id         = ?`,
+        [distribution_id, item_id]
+    );
+    return rows[0];
+};
 // Pickup: ubah status → dikirim + catat kurir + kurangi stok gudang
 const pickup = async (distribution_id, kurir_id) => {
     const conn = await db.getConnection();
@@ -294,9 +349,9 @@ const pickup = async (distribution_id, kurir_id) => {
             // 4. Catat stock movement
             await conn.execute(
                 `INSERT INTO stock_movements 
-                 (item_id, location_id, movement_type, qty, source_type, source_id, created_by)
-                 VALUES (?, ?, 'OUT', ?, 'distribution', ?, ?)`,
-                [item.item_id, dist.from_location_id, item.qty, distribution_id, kurir_id]
+                 (item_id, location_id, movement_type, qty, source_type, source_id)
+                 VALUES (?, ?, 'OUT', ?, 'distribution', ?)`,
+                [item.item_id, dist.from_location_id, item.qty, distribution_id]
             );
         }
 
@@ -322,7 +377,8 @@ const pickup = async (distribution_id, kurir_id) => {
 // Tambahkan ke distributionModel.js
 
 const getDisToday = async (kurir_id) => {
-    const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+    // const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+    const today = new Date().toLocaleDateString('en-CA');
 
     // 1. Ambil header distribusi milik kurir hari ini
     const [rows] = await db.query(
@@ -387,11 +443,33 @@ const getDisToday = async (kurir_id) => {
         items: itemMap[d.id] ?? [],
     }));
 };
+const doneDistributions = async (kurir_id) => {
+    let sql = `
+        SELECT 
+            d.*,
+            d.arrived_at,                   -- ✅ tambah ini
+            fl.name AS from_location_name,
+            tl.name AS to_location_name,
+            u.name  AS kurir_name
+        FROM distributions d
+        LEFT JOIN stock_locations fl ON fl.id = d.from_location_id
+        LEFT JOIN stock_locations tl ON tl.id = d.to_location_id
+        LEFT JOIN users u ON u.id = d.kurir_id
+        WHERE d.kurir_id = ? 
+        AND d.status NOT IN ('draft', 'dikirim')
+        ORDER BY d.planned_date ASC, d.id DESC
+    `;
+    const params = [kurir_id];
+
+    const [rows] = await db.query(sql, params);
+    return rows;
+};
 
 const getById = async (id) => {
     const [[distribution]] = await db.query(
         `SELECT 
             d.*,
+            d.arrived_at,                   -- ✅ tambah ini
             fl.name  AS from_location_name,
             tl.name  AS to_location_name,
             cb.name  AS created_by_name,
@@ -424,4 +502,152 @@ const getById = async (id) => {
 
     return { ...distribution, items };
 };
-module.exports = { getAll, create, getById, confirmBooth, cancel, getByKurir, getItems, pickup, getDisToday };
+
+
+const arrive = async (distribution_id, kurir_id) => {
+    const conn = await db.getConnection();
+    try {
+        await conn.beginTransaction();
+
+        const [[dist]] = await conn.execute(
+            `SELECT * FROM distributions WHERE id = ?`,
+            [distribution_id]
+        );
+        if (!dist) throw new Error('Distribusi tidak ditemukan');
+        if (dist.kurir_id !== kurir_id) throw new Error('Bukan kurir distribusi ini');
+        if (dist.status !== 'dikirim') throw new Error('Bukan status dikirim');
+
+        // ✅ Simpan waktu tiba di kolom arrived_at
+        await conn.execute(
+            `UPDATE distributions SET status='sampai', arrived_at = NOW() WHERE id = ?`,
+            [distribution_id]
+        );
+
+        await conn.commit();
+    } catch (err) {
+        await conn.rollback();
+        throw err;
+    } finally {
+        conn.release();
+    }
+};
+
+const updateStatus = async (distribution_id, status, user_id) => {
+    const conn = await db.getConnection();
+    try {
+        await conn.beginTransaction();
+
+        // 1. Update status distribusi — guard AND status = 'sampai'
+        const [result] = await conn.query(
+            `UPDATE distributions
+             SET status             = ?,
+                 confirmed_by_booth = ?,
+                 confirmed_at_booth = NOW()
+             WHERE id     = ?
+               AND status = 'sampai'`,
+            [status, user_id, distribution_id]
+        );
+
+        if (result.affectedRows === 0) {
+            await conn.rollback();
+            return null;
+        }
+
+        // 2. Ambil to_location_id gudang asal dan gudang tujuan + items yang diterima
+        const [[dist]] = await conn.query(
+            `SELECT to_location_id, from_location_id FROM distributions WHERE id = ?`,
+            [distribution_id]
+        );
+
+        const [items] = await conn.query(
+            `SELECT item_id,
+                    COALESCE(qty_diterima, qty) AS qty_masuk
+             FROM distribution_items
+             WHERE distribution_id = ?`,
+            [distribution_id]
+        );
+
+        // 3. Update stock_per_location + insert stock_movements per item
+        for (const item of items) {
+            const { item_id, qty_masuk } = item;
+
+            // Kurangi stok dari lokasi asal (from_location_id)
+            await conn.query(
+                `UPDATE stock_per_location
+         SET current_stock = current_stock - ?
+         WHERE item_id     = ?
+           AND location_id = ?`,
+                [qty_masuk, item_id, dist.from_location_id]
+            );
+
+            // Catat movement OUT dari lokasi asal
+            await conn.query(
+                `INSERT INTO stock_movements (item_id, location_id, qty, movement_type, source_type, source_id)
+         VALUES (?, ?, ?, 'OUT', 'DISTRIBUSI', ?)`,
+                [item_id, dist.from_location_id, qty_masuk, distribution_id]
+            );
+
+            // Tambah stok di lokasi tujuan (to_location_id)
+            await conn.query(
+                `INSERT INTO stock_per_location (item_id, location_id, current_stock)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE current_stock = current_stock + VALUES(current_stock)`,
+                [item_id, dist.to_location_id, qty_masuk]
+            );
+
+            // Catat movement IN di lokasi tujuan
+            await conn.query(
+                `INSERT INTO stock_movements (item_id, location_id, qty, movement_type, source_type, source_id)
+         VALUES (?, ?, ?, 'IN', 'DISTRIBUSI', ?)`,
+                [item_id, dist.to_location_id, qty_masuk, distribution_id]
+            );
+        }
+
+        await conn.commit();
+
+        // 4. Return data distribusi lengkap
+        const [[updated]] = await conn.query(
+            `SELECT d.*,
+                    fl.name AS from_location_name,
+                    tl.name AS to_location_name,
+                    u.name  AS kurir_name
+             FROM distributions d
+             LEFT JOIN stock_locations fl ON fl.id = d.from_location_id
+             LEFT JOIN stock_locations tl ON tl.id = d.to_location_id
+             LEFT JOIN users u ON u.id = d.kurir_id
+             WHERE d.id = ?`,
+            [distribution_id]
+        );
+        return updated;
+
+    } catch (err) {
+        await conn.rollback();
+        throw err;
+    } finally {
+        conn.release();
+    }
+};
+const getRekap = async (kurir_id, from, to) => {
+    const [rows] = await db.query(
+        `SELECT
+            d.id,
+            d.status,
+            d.planned_date,
+            d.arrived_at,
+            d.confirmed_at_booth,
+            d.to_location_id,
+            d.from_location_id,
+            tl.name AS to_location_name,
+            fl.name AS from_location_name
+         FROM distributions d
+         LEFT JOIN stock_locations tl ON tl.id = d.to_location_id
+         LEFT JOIN stock_locations fl ON fl.id = d.from_location_id
+         WHERE d.kurir_id = ?
+           AND d.status   IN ('sesuai', 'kurang')
+           AND DATE(COALESCE(d.arrived_at, d.planned_date)) BETWEEN ? AND ?
+         ORDER BY COALESCE(d.arrived_at, d.planned_date) DESC`,
+        [kurir_id, from, to]
+    );
+    return rows;
+};
+module.exports = { getAll, create, updateStatus, getRekap, getById, updateItem, confirmBooth, arrive, cancel, getByKurir, getByBooth, doneDistributions, getItems, pickup, getDisToday };
