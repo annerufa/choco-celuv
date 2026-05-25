@@ -1,5 +1,5 @@
 import { ROLES } from "./roles";
-import { IconKasir, IconStok, IconCheck, IconWarn } from "./Icons";
+import { IconKasir, IconStok, IconCheck, IconTruck, IconAbsensi, IconFlask, IconBox, IconRekap, IconProfil, IconWarn } from "./Icons";
 import { useAuth } from '../../context/AuthContext';
 import { useApi } from '../../hooks/useApi';
 
@@ -86,7 +86,7 @@ export default function HomePenjaga({ setPage }) {
             </div> */}
           </div>
         </div>
-        <div style={{ marginBottom: "10px" }}>
+        {/* <div style={{ marginBottom: "10px" }}>
           <div className="scard-row">
             <div className="scard-icon" style={{ background: openAbsen ? "var(--greensoft)" : "var(--bg2)", color: openAbsen ? "var(--green)" : "var(--text3)" }}>
               <IconKasir />
@@ -114,7 +114,7 @@ export default function HomePenjaga({ setPage }) {
               )}
             </div>
 
-            {/* Tombol absensi — selalu muncul */}
+            Tombol absensi — selalu muncul
             <button
               onClick={() => setPage("absensi")}
               style={{
@@ -134,29 +134,27 @@ export default function HomePenjaga({ setPage }) {
               Absensi
             </button>
           </div>
-        </div>
-        {/* STAT CARDS */}
-        <div className="sgrid">
-          <div className="scard" onClick={() => setPage("kasir")}>
-            <div className="sicon" style={{ background: "var(--accentsoft)", color: "var(--accent)" }}>
-              <IconKasir />
+        </div> */}
+        {/* MENU GRID */}
+        <div className="sec-title">Menu</div>
+        <div className="menu-grid">
+          {[
+            { id: "kasir", label: "Kasir", icon: <IconKasir />, bg: "var(--accentsoft)", color: "var(--accent)" },
+            { id: "stok", label: "Stok", icon: <IconStok />, bg: "var(--bluesoft)", color: "var(--blue)" },
+            { id: "adonan", label: "Adonan", icon: <IconFlask />, bg: "var(--accentsoft)", color: "var(--accent)" },
+            { id: "absensi", label: "Absensi", icon: <IconAbsensi />, bg: "var(--greensoft)", color: "var(--green)" },
+            { id: "distribusi", label: "Distribusi", icon: <IconBox />, bg: "var(--purplesoft)", color: "var(--purple)" },
+            { id: "pembelian", label: "Pembelian", icon: <IconTruck />, bg: "rgba(212,80,10,0.12)", color: "#D4500A" },
+            { id: "rekap", label: "Rekap", icon: <IconRekap />, bg: "var(--accentsoft)", color: "var(--accent)" },
+            { id: "profil", label: "Profil", icon: <IconProfil />, bg: "var(--greensoft)", color: "var(--green)" },
+          ].map(({ id, label, icon, bg, color }) => (
+            <div key={id} className="menu-item" onClick={() => setPage(id)}>
+              <div className="menu-icon" style={{ background: bg, color }}>
+                {icon}
+              </div>
+              <div className="menu-label">{label}</div>
             </div>
-            <div className="sval">31</div>
-            <div className="slbl">Transaksi</div>
-            <div className="sbadge" style={{ background: "var(--greensoft)", color: "var(--green)" }}>
-              aktif
-            </div>
-          </div>
-          <div className="scard" onClick={() => setPage("stok")}>
-            <div className="sicon" style={{ background: "var(--bluesoft)", color: "var(--blue)" }}>
-              <IconStok />
-            </div>
-            <div className="sval">142</div>
-            <div className="slbl">Produk</div>
-            <div className="sbadge" style={{ background: "var(--accentsoft)", color: "var(--accent)" }}>
-              8 menipis
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* AKTIVITAS */}

@@ -976,3 +976,50 @@ body {
   width: 13px;
   height: 13px;
 }
+
+/* ── MENU GRID (Homepage) ── */
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: var(--bg0);
+  border-radius: 14px;
+  padding: 6px 3px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.2s;
+  box-shadow: 0 1px 4px rgba(100, 70, 20, 0.06);
+}
+
+.menu-item:active {
+  border-color: var(--accent);
+}
+
+.menu-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.menu-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text2);
+  text-align: center;
+}

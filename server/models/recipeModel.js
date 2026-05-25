@@ -46,6 +46,51 @@ const getOne = async (id) => {
 
     return { ...recipe, bahan };
 };
+const getActive = async (userId) => {
+    // 1. Ambil resep aktif
+    const [[recipe]] = await db.query(`
+        SELECT r.id, r.name, r.output_qty, r.output_unit, r.notes,
+               i.name AS output_name
+        FROM recipes r
+        LEFT JOIN items i ON i.id = r.output_id
+        WHERE r.is_active = 1
+          AND r.type = 'adonan'
+        LIMIT 1
+    `);
+
+    if (!recipe) return null;
+
+    // 2. Cari location_id booth si penjaga
+    // Ambil dari employee_schedules yang aktif
+    const [[loc]] = await db.query(`
+        SELECT sl.id AS location_id
+        FROM employee_schedules es
+        JOIN stock_locations sl 
+          ON sl.booth_id = es.booth_id AND sl.type = 'booth'
+        WHERE es.employee_id = ? AND es.is_active = 1
+        LIMIT 1
+    `, [userId]);
+
+    const locationId = loc?.location_id ?? null;
+
+    // 3. Ambil bahan resep + stok di booth penjaga tersebut
+    const [bahan] = await db.query(`
+        SELECT 
+            ri.item_id AS id,
+            i.name,
+            ri.qty        AS qty_per_batch,
+            ri.unit,
+            COALESCE(spl.current_stock, 0) AS stok_tersedia
+        FROM recipe_items ri
+        JOIN items i ON i.id = ri.item_id
+        LEFT JOIN stock_per_location spl 
+          ON spl.item_id = ri.item_id 
+         AND spl.location_id = ?
+        WHERE ri.recipe_id = ?
+    `, [locationId, recipe.id]);
+
+    return { ...recipe, bahan };
+};
 
 // ─── CREATE ───────────────────────────────────────────────────
 const create = async ({ name, type, output_qty, output_unit, expiry_hours, notes, items }) => {
@@ -58,7 +103,7 @@ const create = async ({ name, type, output_qty, output_unit, expiry_hours, notes
         if (type === 'mix') {
             const [item] = await conn.query(
                 `INSERT INTO items (name, category, unit, is_active)
-             VALUES (?, 'Bahan Baku', ?, 1)`,
+             VALUES (?, 'Mixing', ?, 1)`,
                 [name, output_unit]
             );
             console.log('Created output item with ID:', item.insertId);
@@ -169,4 +214,4 @@ const statusChange = async (id, isActive) => {
     return row[0];
 };
 
-module.exports = { getAll, getOne, create, update, remove, statusChange };
+module.exports = { getAll, getActive, getOne, create, update, remove, statusChange };

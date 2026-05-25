@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { getAllItems, getMyItems, createItems, updateItems, statusItem, getUnitConversions, createUnitConversion, deleteUnitConversion, getItem, deleteItems, getBoothSettings, updateBoothSettings, getByItemOrLocation, getItemsPerLoc, getConversions } = require('../controllers/itemController');
+const { getAllItems, getBoothStock, getMyItems, createItems, updateItems, statusItem, getUnitConversions, createUnitConversion, deleteUnitConversion, getItem, deleteItems, getBoothSettings, updateBoothSettings, getByItemOrLocation, getItemsPerLoc, getConversions } = require('../controllers/itemController');
 const { trackItem } = require('../controllers/stockMovementController');
 const { getMatrix, toggleActive } = require('../controllers/matrixController');
 
@@ -9,6 +9,7 @@ router.get('/my', getMyItems);      // penjaga booth → item di lokasinya
 
 router.get('/stockPer', getByItemOrLocation); //stok 1 item d semua lokasi atau semua item di 1 lokasi, query: ?item_id= atau ?location_id=
 router.get('/perLoc', getItemsPerLoc);
+router.get('/boothStock', getBoothStock);
 router.get('/trackItem', trackItem);
 router.get('/matrix', getMatrix);
 router.get('/conversions/:item_id', getConversions);

@@ -12,7 +12,7 @@ const haversineDistance = (lat1, lon1, lat2, lon2) => {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-// ─── Helper: apakah koordinat dalam radius booth ──────────────────────────────
+// ─── Batas maksimal dari radius booth ──────────────────────────────
 const ALLOWED_RADIUS_METERS = Number(process.env.BOOTH_RADIUS_METERS) || 500;
 
 const isWithinBooth = (userLat, userLon, boothLat, boothLon) => {

@@ -73,5 +73,16 @@ const statusRecipe = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
-
-module.exports = { getAllRecipes, getRecipe, createRecipe, updateRecipe, statusRecipe };
+const getActiveRecipes = async (req, res) => {
+    try {
+        console.log("tes"); // Debug: pastikan user ID tersedia
+        console.log("User ID from token:", req.user.name); // Debug: pastikan user ID tersedia
+        console.log("Fetching active recipes for user ID:", req.user.id);
+        const data = await Recipe.getActive(req.user.id);
+        if (!data) return response(404, null, 'Resep tidak ditemukan', res);
+        response(200, data, 'Berhasil mengambil resep', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+module.exports = { getAllRecipes, getActiveRecipes, getRecipe, createRecipe, updateRecipe, statusRecipe };

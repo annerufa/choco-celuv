@@ -106,6 +106,16 @@ const getItemsPerLoc = async (req, res) => {
     }
 };
 
+const getBoothStock = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const data = await Items.getBoothStock(userId);
+        response(200, data, 'Berhasil mengambil data barang dan stok pada lokasi id', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
 
 const deleteItems = async (req, res) => {
     try {
@@ -229,4 +239,4 @@ const deleteUnitConversion = async (req, res) => {
 };
 
 
-module.exports = { getAllItems, getMyItems, createItems, statusItem, getConversions, getBoothSettings, updateBoothSettings, updateItems, deleteItems, getItem, getItemsPerLoc, getByItemOrLocation, getUnitConversions, createUnitConversion, deleteUnitConversion };
+module.exports = { getBoothStock, getAllItems, getMyItems, createItems, statusItem, getConversions, getBoothSettings, updateBoothSettings, updateItems, deleteItems, getItem, getItemsPerLoc, getByItemOrLocation, getUnitConversions, createUnitConversion, deleteUnitConversion };

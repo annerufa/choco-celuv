@@ -38,6 +38,9 @@ app.use('/api/attendance', authenticate, require('./routes/attendance'));
 app.use('/api/purchase', authenticate, requireActiveBooth, require('./routes/purchase'));
 app.use('/api/distribution', authenticate, require('./routes/distribution'));
 app.use('/api/productions', authenticate, require('./routes/productions'));
+app.use('/api/products', authenticate, require('./routes/products'));
+app.use('/api/sales', authenticate, require('./routes/sales'));
+// app.use('/api/stock', authenticate, require('./routes/stock'));
 // app.use('/api/karyawan', require('./routes/karyawan'));
 
 app.listen(port, () => {

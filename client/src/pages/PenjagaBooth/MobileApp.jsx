@@ -13,6 +13,8 @@ import HomePenjaga from "./HomePenjaga";
 import KasirPenjaga from "./KasirPenjaga";
 import ProfilPenjaga from "./ProfilPenjaga";
 import DistribusiPenjaga from "./DistribusiPenjaga";
+import BuatAdonan from "./BuatAdonan";
+
 // kurir
 import KurirHome from "./KurirHome";
 import RekapKurir from "./RekapKurir";
@@ -33,8 +35,6 @@ const NAV = {
   penjaga_booth: [
     { id: "home", label: "Beranda", Icon: IconHome },
     { id: "stok", label: "Stok", Icon: IconStok },
-    { id: "pembelian", label: "Beli", Icon: IconChevron },
-    { id: "distribusi", label: "Cek", Icon: IconCheck },
     { id: "kasir", label: "Kasir", Icon: IconPenjaga },
     { id: "absensi", label: "Absensi", Icon: IconAbsensi },
     { id: "profil", label: "Profil", Icon: IconProfil },
@@ -54,6 +54,7 @@ function PageRenderer({ role, page, setPage }) {
     if (page === "absensi") return <AbsensiPage />;
     if (page === "kasir") return <KasirPenjaga />;
     if (page === "profil") return <ProfilPenjaga />;
+    if (page === "adonan") return <BuatAdonan setPage={setPage} />;
     if (page === "distribusi") return <DistribusiPenjaga />;
     if (page === "pembelian") return <div>Halaman Pembelian (belum dibuat)</div>; // placeholder 
   }

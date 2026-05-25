@@ -30,9 +30,9 @@ const movementVariant = {
 const sourceLabel = {
     'PEMBELIAN': 'Pembelian',
     'KOREKSI': 'Batal Beli',
-    'production': 'Produksi',
-    'distribution': 'Distribusi',
-    'adjustment': 'Penyesuaian',
+    'PRODUKSI': 'Produksi',
+    'DISTRIBUSI': 'Distribusi',
+    'KOREKSI': 'Penyesuaian',
 };
 
 const stokStatusVariant = {

@@ -505,11 +505,11 @@ export default function ResepList({
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, resep: null });
 
     // Auto-select resep pertama saat data loaded
-    useEffect(() => {
-        if (resepList.length > 0 && selectedId === null) {
-            setSelectedId(resepList[0].id);
-        }
-    }, [resepList]);
+    // useEffect(() => {
+    //     if (resepList.length > 0 && selectedId === null) {
+    //         setSelectedId(resepList[0].id);
+    //     }
+    // }, [resepList]);
 
     // ── Filter ────────────────────────────────────────────────
     const filtered = useMemo(() => {
@@ -529,14 +529,14 @@ export default function ResepList({
     const selectedResep = resepList.find(r => r.id === selectedId) ?? null;
 
     const counts = {
-        semua: resepList.length,
-        mix: resepList.filter(r => r.type === 'mix').length,
-        adonan: resepList.filter(r => r.type === 'adonan').length,
+        semua: resepList.filter(r => r.is_active === 1).length,
+        mix: resepList.filter(r => r.is_active === 1 && r.type === 'mix').length,
+        adonan: resepList.filter(r => r.is_active === 1 && r.type === 'adonan').length,
         arsip: resepList.filter(r => r.is_active === 0).length,
     };
 
     const tabs = [
-        { key: 'semua', label: 'Semua Resep' },
+        { key: 'semua', label: 'Semua Resep Aktif' },
         { key: 'mix', label: 'Mixing' },
         { key: 'adonan', label: 'Adonan' },
         { key: 'arsip', label: 'Arsip' },

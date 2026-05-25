@@ -17,7 +17,7 @@ const statusVariant = {
 
 const kategoriVariant = {
     'Bahan Baku': 'warning',
-    'Hasil Mixing': 'accent',
+    'Mixing': 'accent',
     'Packaging': 'warning',
     'Lainnya': 'brown',
 };

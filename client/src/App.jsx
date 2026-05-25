@@ -26,6 +26,7 @@ import AbsensiPage from './pages/Absensi/RekapAbsensiPage';
 import ResepPage from './pages/Resep/ResepPage';
 import ProduksiPage from './pages/Produksi/ProduksiPage';
 import RekapProduksiPage from './pages/Produksi/RekapProduksiPage';
+import ProductsPage from './pages/Products/ProductsPage';
 
 import ProtectedRoute from './routes/ProtectedRoute';
 
@@ -87,6 +88,7 @@ export default function App() {
         <Route path="/karyawan-absensi" element={<AbsensiPage />} />
 
         <Route path="/resep" element={<ResepPage />} />
+        <Route path="/produk" element={<ProductsPage />} />
 
         <Route path="/distribusi" element={<DistribusiPage />} />
         <Route path="/distribusi/:id" element={<DetailDistribusiPage />} />

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import styles from './TambahBarangModal.module.css'; // pakai CSS yang sama
 
 // const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
-const KATEGORI = ['Bahan Baku', 'Hasil Mixing', 'Packaging', 'Lainnya'];
+const KATEGORI = ['Bahan Baku', 'Mixing', 'Packaging', 'Lainnya'];
 const SATUAN = ['gram', 'ml', 'pcs', 'kg', 'L'];
 
 export default function EditBarangModal({ isOpen, onClose, onSubmit, item, loading, submitError }) {

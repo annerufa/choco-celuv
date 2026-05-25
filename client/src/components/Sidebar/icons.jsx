@@ -63,7 +63,35 @@ export const icons = {
             <line x1="12" y1="20" x2="12" y2="4" />
             <line x1="6" y1="20" x2="6" y2="14" />
         </svg>
-    )
+    ),
 
+    // Tag harga — paling umum untuk "produk"
+    jual: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+            <line x1="7" y1="7" x2="7.01" y2="7" />
+        </svg>
+    ),
+
+    // Cup / minuman — kalau produknya memang minuman
+    produk: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M17 8h1a4 4 0 0 1 0 8h-1" />
+            <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z" />
+            <line x1="6" y1="2" x2="6" y2="4" />
+            <line x1="10" y1="2" x2="10" y2="4" />
+            <line x1="14" y1="2" x2="14" y2="4" />
+        </svg>
+    ),
+
+    // Grid produk — kalau mau yang lebih "catalog"
+    katalog: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <rect x="2" y="3" width="9" height="9" rx="1" />
+            <rect x="13" y="3" width="9" height="9" rx="1" />
+            <rect x="2" y="13" width="9" height="9" rx="1" />
+            <rect x="13" y="13" width="9" height="9" rx="1" />
+        </svg>
+    ),
     // dst...
 };

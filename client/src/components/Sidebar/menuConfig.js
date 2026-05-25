@@ -52,6 +52,12 @@ export const menuConfig = [
                 path: '/resep',
                 icon: 'resep',
             },
+            {
+                id: 'produk',
+                label: 'Produk',
+                path: '/produk',
+                icon: 'produk',
+            },
         ],
     },
     {
@@ -92,7 +98,7 @@ export const menuConfig = [
                 id: 'penjualan',
                 label: 'Penjualan',
                 path: '/penjualan',
-                icon: 'penjualan',
+                icon: 'jual',
             },
         ],
     },

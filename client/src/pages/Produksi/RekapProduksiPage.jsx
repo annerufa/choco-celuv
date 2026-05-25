@@ -14,17 +14,17 @@ function defaultRange() {
 }
 
 const typeVariant = { mix: 'accent', adonan: 'warning' };
-const typeLabel   = { mix: 'Mixing', adonan: 'Adonan' };
+const typeLabel = { mix: 'Mixing', adonan: 'Adonan' };
 
 export default function RekapProduksiPage() {
     const range = defaultRange();
-    const [dateFrom, setDateFrom]     = useState(range.from);
-    const [dateTo, setDateTo]         = useState(range.to);
-    const [boothId, setBoothId]       = useState('');
+    const [dateFrom, setDateFrom] = useState(range.from);
+    const [dateTo, setDateTo] = useState(range.to);
+    const [boothId, setBoothId] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
 
     // Fetch booth list untuk filter
-    const { data: boothData } = useApi('/stock-locations?type=booth');
+    const { data: boothData } = useApi('/booth/loc');
     const booths = Array.isArray(boothData) ? boothData : [];
 
     // Fetch rekap
@@ -34,7 +34,7 @@ export default function RekapProduksiPage() {
     const list = Array.isArray(data) ? data : [];
 
     const totalPages = Math.ceil(list.length / ITEMS_PER_PAGE);
-    const paginated  = list.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const paginated = list.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
         .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
         .reduce((acc, p, i, arr) => {
@@ -44,7 +44,7 @@ export default function RekapProduksiPage() {
         }, []);
 
     // Summary
-    const totalMix    = list.filter(p => p.recipe_type === 'mix').length;
+    const totalMix = list.filter(p => p.recipe_type === 'mix').length;
     const totalAdonan = list.filter(p => p.recipe_type === 'adonan').length;
 
     function handleApply() { setCurrentPage(1); refetch(); }
@@ -73,7 +73,7 @@ export default function RekapProduksiPage() {
                     <div className={styles.filterField}>
                         <label className={styles.filterLabel}>Booth</label>
                         <select className={styles.filterInput} value={boothId} onChange={e => setBoothId(e.target.value)}>
-                            <option value="">Semua Booth</option>
+                            <option value="">Semua Lokasi</option>
                             {booths.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                         </select>
                     </div>
@@ -86,9 +86,9 @@ export default function RekapProduksiPage() {
                 {!loading && list.length > 0 && (
                     <div className={styles.summaryRow}>
                         {[
-                            { label: 'Total Produksi', val: list.length,  color: 'var(--brown-900)' },
-                            { label: 'Mixing',         val: totalMix,     color: 'var(--accent)'    },
-                            { label: 'Adonan',         val: totalAdonan,  color: 'var(--warning)'   },
+                            { label: 'Total Produksi', val: list.length, color: 'var(--brown-900)' },
+                            { label: 'Mixing', val: totalMix, color: 'var(--accent)' },
+                            { label: 'Adonan', val: totalAdonan, color: 'var(--warning)' },
                         ].map(s => (
                             <div key={s.label} className={styles.summaryItem}>
                                 <span className={styles.summaryVal} style={{ color: s.color }}>{s.val}</span>

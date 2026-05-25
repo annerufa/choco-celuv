@@ -327,7 +327,31 @@ const deleteConversion = async (item_id, uc_id) => {
     if (result.affectedRows === 0) throw new Error('Konversi tidak ditemukan');
     return true;
 };
+const getBoothStock = async (userId) => {
+    const [[loc]] = await db.query(`
+        SELECT sl.id AS location_id
+        FROM employee_schedules es
+        JOIN stock_locations sl ON sl.booth_id = es.booth_id AND sl.type = 'booth'
+        WHERE es.employee_id = ? AND es.is_active = 1
+        LIMIT 1
+    `, [userId]);
+
+    if (!loc) return [];
+
+    const [rows] = await db.query(`
+        SELECT 
+            spl.item_id, sl.id AS location_id,
+            i.name, i.category, i.unit,
+            spl.current_stock, spl.safety_stock, spl.min_qty, spl.max_qty
+        FROM stock_per_location spl
+        JOIN items i ON i.id = spl.item_id
+        JOIN stock_locations sl ON sl.id = spl.location_id
+        WHERE spl.location_id = ? AND spl.is_active = 1
+        ORDER BY i.name ASC
+    `, [loc.location_id]);
+
+    return rows;
+};
 
 
-
-module.exports = { getBoothSettingsByItemId, updateBoothSettings, getAll, create, update, statusChange, removePerLoc, getAllPerLoc, getById, getMatrix, getItem, getByItemId, getByLocation, getConversions, getConversions, createConversion, deleteConversion };
+module.exports = { getBoothStock, getBoothSettingsByItemId, updateBoothSettings, getAll, create, update, statusChange, removePerLoc, getAllPerLoc, getById, getMatrix, getItem, getByItemId, getByLocation, getConversions, getConversions, createConversion, deleteConversion };

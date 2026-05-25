@@ -319,7 +319,7 @@ function DetailScreen({ dist, onBack, onSuccess }) {
                 ) : error ? (
                     <div style={{ textAlign: "center", padding: "20px 0", color: "var(--red)", fontSize: 13 }}>{error}</div>
                 ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: allSesuai ? 80 : 120 }}>
                         {items?.map(it => (
                             isFinished ? (
                                 // Read-only
@@ -376,7 +376,9 @@ function DetailScreen({ dist, onBack, onSuccess }) {
                             padding: "8px 12px", borderRadius: 10,
                             background: "var(--accentsoft)", color: "var(--accent)", fontSize: 12, fontWeight: 600,
                         }}>
-                            <IconWarn />
+                            <span style={{ width: 13, height: 13, flexShrink: 0, display: "flex" }}>
+                                <IconWarn />
+                            </span>
                             Ada item yang kurang — status akan jadi "Kurang"
                         </div>
                     )}

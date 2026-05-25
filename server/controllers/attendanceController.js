@@ -49,7 +49,7 @@ const clockIn = async (req, res) => {
             const { valid, distanceMeters } = Attendance.isWithinBooth(lat, lon, schedule.latitude, schedule.longitude);
             console.log('lokasi booth: latitudde-', schedule.latitude, ' longitude-', schedule.longitude, 'jarak ke booth:', distanceMeters)
             if (!valid) {
-                return response(400, null, `Lokasi terlalu jauh dari booth (${distanceMeters}m). Maksimal 100m.`, res);
+                return response(400, null, `Lokasi terlalu jauh dari booth (${distanceMeters}m). Maksimal 500m.`, res);
             }
         }
 

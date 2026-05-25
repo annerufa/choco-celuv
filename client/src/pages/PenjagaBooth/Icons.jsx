@@ -153,3 +153,9 @@ export const IconRekap = () => (
     <polyline points="10 9 9 9 8 9" />
   </svg>
 );
+export const IconFlask = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <path d="M9 3h6M9 3v7.6L4.5 18a2 2 0 0 0 1.8 2.8h11.4a2 2 0 0 0 1.8-2.8L15 10.6V3" />
+    <line x1="6.5" y1="14" x2="17.5" y2="14" />
+  </svg>
+);
