@@ -54,7 +54,7 @@ export default function HomePenjaga({ setPage }) {
             <div className="ptitle">Hai, {user?.name.split(" ")[0]} 👋</div>
             <div className="psub" style={{ textTransform: 'capitalize' }}>{formatRole(user?.role)}</div>
           </div>
-          <div className="ava" style={{ background: r.avaGrad, color: "#0e0a07" }}>
+          <div className="ava">
             {getInitial(user?.name)}
           </div>
         </div>
@@ -65,12 +65,12 @@ export default function HomePenjaga({ setPage }) {
         <div className="hero">
           <div className="hero-lbl">Penjualan Hari Ini</div>
           <div className="hero-val">Rp 62.000</div>
-          <div className="hero-tag">
+          {/* <div className="hero-tag">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <polyline points="20 6 9 17 4 12" />
             </svg>
             +9.3% vs kemarin
-          </div>
+          </div> */}
           <div className="hero-minis">
             <div className="hmini">
               <div className="hmini-lbl">Transaksi</div>
@@ -171,7 +171,7 @@ export default function HomePenjaga({ setPage }) {
               <div className="act-sub">QRIS · 3 item</div>
             </div>
             <div className="act-r">
-              <div className="act-amt" style={{ color: "var(--green)" }}>+Rp 95.000</div>
+              <div className="act-amt" style={{ color: "var(--green)" }}>+Rp 15.000</div>
               <div className="act-time">09:38</div>
             </div>
           </div>

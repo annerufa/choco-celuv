@@ -1,6 +1,6 @@
 // controllers/attendanceController.js
-const Attendance = require('../models/AttendanceModel');
-const Schedule = require('../models/ScheduleModel');
+const Attendance = require('../models/attendanceModel');
+const Schedule = require('../models/scheduleModel');
 const response = require('../helpers/response');
 const { get } = require('../routes/schedule');
 

@@ -1,18 +1,7 @@
 // src/components/BarangBooth/SetupBarangBoothModal.jsx
 import { useState, useEffect, useRef } from 'react';
 import styles from './SetupBarangBoothModal.module.css';
-import toast from 'react-hot-toast';
-/**
- * Props:
- *  - isOpen: boolean
- *  - onClose: () => void
- *  - onSubmit: (itemId, booths: { booth_id, min, max, is_active }[]) => void
- *  - item: { id, name, category } | null   — barang yang sedang diedit
- *  - boothSettings: {                       — data stok barang ini di tiap booth
- *      booth_id, booth_name,
- *      min, max, is_active
- *    }[]
- */
+
 export default function SetupBarangBoothModal({
     isOpen,
     onClose,
@@ -22,12 +11,10 @@ export default function SetupBarangBoothModal({
 }) {
     const [rows, setRows] = useState([]);
     const [errors, setErrors] = useState({});
-    const initialRowsRef = useRef([]); // untuk menyimpan data awal saat modal dibuka, dipakai untuk reset kalau user batal
+    const initialRowsRef = useRef([]);
 
-    // Sync state saat modal dibuka / data berubah
     useEffect(() => {
         if (isOpen && boothSettings.length) {
-            // console.log('boothSettings:', boothSettings); // ← cek ini
             const normalized = boothSettings.map(b => ({
                 booth_id: b.booth_id,
                 booth_name: b.booth_name,
@@ -35,62 +22,56 @@ export default function SetupBarangBoothModal({
                 min: parseFloat(b.min ?? 0),
                 max: parseFloat(b.max ?? 0),
                 is_active: b.is_active ?? true,
+                can_purchase: b.can_purchase ?? false, // ✅ tambah
             }));
-            // console.log('normalized:', normalized); // ← dan ini
             setRows(normalized);
-            initialRowsRef.current = normalized; // simpan untuk reset nanti
+            initialRowsRef.current = normalized;
             setErrors({});
         }
     }, [isOpen, boothSettings]);
 
     if (!isOpen || !item) return null;
 
-    // ── Helpers ──────────────────────────────────────────────
     function updateRow(booth_id, field, value) {
         setRows(prev =>
             prev.map(r => r.booth_id === booth_id ? { ...r, [field]: value } : r)
         );
-        // Hapus error field ini kalau sudah diisi
         setErrors(prev => {
             const next = { ...prev };
             delete next[`${booth_id}_${field}`];
             return next;
         });
     }
-    /** Kembalikan hanya row yang nilainya beda dari snapshot awal */
+
     function getDirtyRows() {
         return rows.filter(row => {
             const orig = initialRowsRef.current.find(r => r.booth_id === row.booth_id);
-            if (!orig) return true; // baris baru (edge case)
+            if (!orig) return true;
             return (
                 Number(row.safety_stock) !== Number(orig.safety_stock) ||
                 Number(row.min) !== Number(orig.min) ||
                 Number(row.max) !== Number(orig.max) ||
-                row.is_active !== orig.is_active
+                row.is_active !== orig.is_active ||
+                Boolean(row.can_purchase) !== Boolean(orig.can_purchase) // ✅ tambah
             );
         });
     }
 
     function validate() {
         const newErrors = {};
-        // validasi hanya untuk row yang diubah saja
         rows.forEach(r => {
-            if (!r.is_active) return; // skip validasi angka kalau booth ini dinonaktifkan 
+            if (!r.is_active) return;
             const safety_stock = Number(r.safety_stock);
             const min = Number(r.min);
             const max = Number(r.max);
-            if (r.safety_stock === '' || isNaN(safety_stock) || safety_stock < 0) {
+            if (r.safety_stock === '' || isNaN(safety_stock) || safety_stock < 0)
                 newErrors[`${r.booth_id}_safety_stock`] = 'Wajib diisi';
-            }
-            if (r.min === '' || isNaN(min) || min < 0) {
+            if (r.min === '' || isNaN(min) || min < 0)
                 newErrors[`${r.booth_id}_min`] = 'Wajib diisi';
-            }
-            if (r.max === '' || isNaN(max) || max < 0) {
+            if (r.max === '' || isNaN(max) || max < 0)
                 newErrors[`${r.booth_id}_max`] = 'Wajib diisi';
-            }
-            if (!newErrors[`${r.booth_id}_min`] && !newErrors[`${r.booth_id}_max`] && min > max) {
+            if (!newErrors[`${r.booth_id}_min`] && !newErrors[`${r.booth_id}_max`] && min > max)
                 newErrors[`${r.booth_id}_min`] = 'Min > maks';
-            }
         });
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -98,14 +79,8 @@ export default function SetupBarangBoothModal({
 
     function handleSubmit() {
         if (!validate()) return;
-
         const dirtyRows = getDirtyRows();
-
-        if (dirtyRows.length === 0) {
-            // Tidak ada yang berubah — tutup saja
-            onClose();
-            return;
-        }
+        if (dirtyRows.length === 0) { onClose(); return; }
 
         onSubmit(
             item.id,
@@ -115,17 +90,16 @@ export default function SetupBarangBoothModal({
                 min: Number(r.min),
                 max: Number(r.max),
                 is_active: r.is_active,
+                can_purchase: r.can_purchase, // ✅ tambah
             }))
         );
         onClose();
-
     }
 
     function handleBackdropClick(e) {
         if (e.target === e.currentTarget) onClose();
     }
 
-    // ── Render ────────────────────────────────────────────────
     return (
         <div className={styles.backdrop} onClick={handleBackdropClick}>
             <div className={styles.modal}>
@@ -152,6 +126,7 @@ export default function SetupBarangBoothModal({
                     <span className={styles.colMin}>Stok min</span>
                     <span className={styles.colMax}>Stok maks</span>
                     <span className={styles.colActive}>Aktif</span>
+                    <span className={styles.colCanPurchase}>Bisa Beli</span> {/* ✅ tambah */}
                 </div>
 
                 {/* ROWS */}
@@ -170,8 +145,7 @@ export default function SetupBarangBoothModal({
                             {/* Safety stok */}
                             <div className={styles.fieldWrap}>
                                 <input
-                                    type="number"
-                                    min="0"
+                                    type="number" min="0"
                                     className={`${styles.numInput} ${errors[`${row.booth_id}_safety_stock`] ? styles.inputError : ''}`}
                                     value={row.safety_stock}
                                     onChange={e => updateRow(row.booth_id, 'safety_stock', e.target.value)}
@@ -186,8 +160,7 @@ export default function SetupBarangBoothModal({
                             {/* Min */}
                             <div className={styles.fieldWrap}>
                                 <input
-                                    type="number"
-                                    min="0"
+                                    type="number" min="0"
                                     className={`${styles.numInput} ${errors[`${row.booth_id}_min`] ? styles.inputError : ''}`}
                                     value={row.min}
                                     onChange={e => updateRow(row.booth_id, 'min', e.target.value)}
@@ -202,8 +175,7 @@ export default function SetupBarangBoothModal({
                             {/* Max */}
                             <div className={styles.fieldWrap}>
                                 <input
-                                    type="number"
-                                    min="0"
+                                    type="number" min="0"
                                     className={`${styles.numInput} ${errors[`${row.booth_id}_max`] ? styles.inputError : ''}`}
                                     value={row.max}
                                     onChange={e => updateRow(row.booth_id, 'max', e.target.value)}
@@ -226,6 +198,20 @@ export default function SetupBarangBoothModal({
                                     <span className={styles.toggleThumb} />
                                 </button>
                             </div>
+
+                            {/* ✅ Toggle can_purchase */}
+                            <div className={styles.toggleWrap}>
+                                <button
+                                    type="button"
+                                    className={`${styles.toggle} ${row.can_purchase ? styles.toggleBuy : ''}`}
+                                    onClick={() => updateRow(row.booth_id, 'can_purchase', !row.can_purchase)}
+                                    disabled={!row.is_active}
+                                    aria-label={row.can_purchase ? 'Larang beli' : 'Izinkan beli'}
+                                    title={!row.is_active ? 'Aktifkan booth dulu' : row.can_purchase ? 'Klik untuk larang beli' : 'Klik untuk izinkan beli'}
+                                >
+                                    <span className={styles.toggleThumb} />
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -233,7 +219,7 @@ export default function SetupBarangBoothModal({
                 {/* FOOTER */}
                 <div className={styles.footer}>
                     <p className={styles.footerNote}>
-                        Pengaturan ini hanya berlaku untuk stok barang di masing-masing booth, bukan gudang pusat.
+                        <strong>Bisa Beli</strong>: izinkan penjaga booth membeli item ini secara mandiri.
                     </p>
                     <div className={styles.footerActions}>
                         <button className={styles.btnGhost} onClick={onClose}>Batal</button>

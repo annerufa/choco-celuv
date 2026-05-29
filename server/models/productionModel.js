@@ -602,5 +602,100 @@ const remove = async (id) => {
         conn.release();
     }
 };
+// GET produksi adonan suatu booth, beserta batch-batchnya
+const getAdonanByBooth = async (booth_id, { from, to, batch_status }) => {
+    // 1. Ambil produksi adonan di booth ini
+    const conditions = [
+        `p.booth_id = ?`,
+        `r.type = 'adonan'`,
+        `DATE(p.created_at) BETWEEN ? AND ?`,
+    ];
+    const params = [booth_id, from, to];
 
-module.exports = { create, getAll, getRekap, getRecipeById, getActiveRecipes, checkStock, getById, hasActiveBatch, update, remove };
+    const [productions] = await db.query(`
+        SELECT
+            p.id,
+            p.qty,
+            p.created_at,
+            r.name        AS recipe_name,
+            r.output_qty,
+            r.output_unit,
+            u.name        AS created_by_name
+        FROM productions p
+        JOIN recipes r ON r.id = p.recipe_id
+        JOIN users u   ON u.id = p.created_by
+        WHERE ${conditions.join(' AND ')}
+        ORDER BY p.created_at DESC
+    `, params);
+
+    if (productions.length === 0) return [];
+
+    // 2. Ambil semua batch dari produksi di atas sekaligus
+    const productionIds = productions.map(p => p.id);
+
+    const batchConditions = [`b.production_id IN (?)`];
+    const batchParams = [productionIds];
+
+    if (batch_status) {
+        batchConditions.push(`b.status = ?`);
+        batchParams.push(batch_status);
+    }
+
+    const [batches] = await db.query(`
+        SELECT
+            b.id,
+            b.production_id,
+            b.status,
+            b.total_qty,
+            b.remaining_qty,
+            b.produced_at,
+            b.expired_at,
+            b.notes
+        FROM batches b
+        WHERE ${batchConditions.join(' AND ')}
+        ORDER BY b.produced_at ASC
+    `, batchParams);
+
+    // 3. Gabungkan di JS
+    return productions.map(p => ({
+        ...p,
+        batches: batches.filter(b => b.production_id === p.id),
+    }));
+};
+const getAdonanForBooth = async (booth_id, { from, to, batch_status }) => {
+    const [productions] = await db.query(`
+        SELECT
+            p.id, p.qty, p.created_at,
+            r.name AS recipe_name,
+            r.output_qty, r.output_unit,
+            u.name AS created_by_name
+        FROM productions p
+        JOIN recipes r ON r.id = p.recipe_id
+        JOIN users u   ON u.id = p.created_by
+        WHERE p.booth_id = ?
+          AND r.type = 'adonan'
+          AND DATE(p.created_at) BETWEEN ? AND ?
+        ORDER BY p.created_at DESC
+    `, [booth_id, from, to]);
+
+    if (productions.length === 0) return [];
+
+    const productionIds = productions.map(p => p.id);
+    const batchCond = batch_status ? `AND b.status = ?` : '';
+    const batchParams = batch_status ? [productionIds, batch_status] : [productionIds];
+
+    const [batches] = await db.query(`
+        SELECT b.id, b.production_id, b.status,
+               b.total_qty, b.remaining_qty,
+               b.produced_at, b.expired_at, b.notes
+        FROM batches b
+        WHERE b.production_id IN (?) ${batchCond}
+        ORDER BY b.produced_at ASC
+    `, batchParams);
+
+    return productions.map(p => ({
+        ...p,
+        batches: batches.filter(b => b.production_id === p.id),
+    }));
+};
+module.exports = { create, getAll, getRekap, getAdonanByBooth, getAdonanForBooth, getRecipeById, getActiveRecipes, checkStock, getById, hasActiveBatch, update, remove };

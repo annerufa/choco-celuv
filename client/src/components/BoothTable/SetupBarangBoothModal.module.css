@@ -90,7 +90,7 @@
 /* ── COLUMN LABELS ────────────────────────────────────────── */
 .colLabels {
     display: grid;
-    grid-template-columns: 1fr 70px 70px 70px 53px;
+    grid-template-columns: 1fr 70px 70px 70px 53px 65px;
     gap: 8px;
     padding: 8px 20px;
     background: var(--brown-50);
@@ -125,7 +125,7 @@
 /* ── ROW ──────────────────────────────────────────────────── */
 .row {
     display: grid;
-    grid-template-columns: 1fr 70px 70px 70px 52px;
+    grid-template-columns: 1fr 70px 70px 70px 52px 52px;
     gap: 8px;
     align-items: center;
     padding: 10px 20px;
@@ -338,6 +338,21 @@
     border-color: var(--brown-300);
 }
 
+.colCanPurchase {
+    /* sama seperti .colActive */
+    width: 70px;
+    text-align: center;
+}
+
+.toggleBuy {
+    background: var(--accent);
+    /* warna beda dari toggleOn (hijau) biar beda visual */
+}
+
+.toggleBuy .toggleThumb {
+    transform: translateX(14px);
+}
+
 /* ── RESPONSIVE ───────────────────────────────────────────── */
 @media (max-width: 480px) {
     .backdrop {
@@ -352,7 +367,7 @@
 
     .colLabels,
     .row {
-        grid-template-columns: 1fr 72px 72px 44px;
+        grid-template-columns: 1fr 72px 72px 44px 44px;
         gap: 6px;
         padding-left: 14px;
         padding-right: 14px;

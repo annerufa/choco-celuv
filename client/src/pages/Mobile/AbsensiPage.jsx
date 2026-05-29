@@ -253,8 +253,8 @@ export default function AbsensiPage() {
   const jadwalAktif = Array.isArray(jadwal) ? jadwal[0] : jadwal;
   const openAbsenData = Array.isArray(openAbsen) ? openAbsen[0] : openAbsen;
   const historiList = Array.isArray(histori) ? histori : [];
-  console.log('histori raw:', histori);
-  console.log('historiList:', historiList);
+  // console.log('histori raw:', histori);
+  // console.log('historiList:', historiList);
 
 
   const sudahClockIn = Boolean(openAbsenData);

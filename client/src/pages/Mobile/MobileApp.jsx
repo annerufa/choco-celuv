@@ -1,29 +1,33 @@
 import { useState, useEffect } from "react";
 import "./mobile.css";
-import { useAuth } from '../../context/AuthContext'; // tambah ini
-import { useNavigate } from 'react-router-dom'; // tambah ini
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import SetPasswordModal from "./SetPasswordModal";
-import PengirimanKurir from "./PengirimanKurir";
+
 // icons
 import { IconHome, IconStok, IconPenjaga, IconChevron, IconRekap, IconCheck, IconAbsensi, IconProfil } from "./Icons";
 
 
+// Di PageRenderer:
+
+// PageRenderer:
 // Penjaga pages
 import HomePenjaga from "./HomePenjaga";
 import KasirPenjaga from "./KasirPenjaga";
 import ProfilPenjaga from "./ProfilPenjaga";
 import DistribusiPenjaga from "./DistribusiPenjaga";
 import BuatAdonan from "./BuatAdonan";
-
-// kurir
-import KurirHome from "./KurirHome";
-import RekapKurir from "./RekapKurir";
-import KurirProfil from "./KurirProfil";
-// shared pages
+import Adonan from "./Adonan";
 import StokPage from "./StokPage";
 import AbsensiPage from "./AbsensiPage";
+import PembelianBooth from "./PembelianBooth";
+import BatchDetail from "./BatchDetail";
+// kurir
+import KurirHome from "./KurirHome";
+import PengirimanKurir from "./PengirimanKurir";
+import RekapKurir from "./RekapKurir";
+import KurirProfil from "./KurirProfil";
 
-// Di PageRenderer tambah:
 // ── Nav config per role ──────────────────────────────────────────────────────
 const NAV = {
   kurir: [
@@ -38,11 +42,12 @@ const NAV = {
     { id: "kasir", label: "Kasir", Icon: IconPenjaga },
     { id: "absensi", label: "Absensi", Icon: IconAbsensi },
     { id: "profil", label: "Profil", Icon: IconProfil },
+
   ],
 };
 
 // ── Page router ──────────────────────────────────────────────────────────────
-function PageRenderer({ role, page, setPage }) {
+function PageRenderer({ role, page, setPage, navigate, pageParams }) {
   if (role === "kurir") {
     if (page === "home") return <KurirHome setPage={setPage} />;
     if (page === "profil") return <KurirProfil />;
@@ -54,9 +59,11 @@ function PageRenderer({ role, page, setPage }) {
     if (page === "absensi") return <AbsensiPage />;
     if (page === "kasir") return <KasirPenjaga />;
     if (page === "profil") return <ProfilPenjaga />;
-    if (page === "adonan") return <BuatAdonan setPage={setPage} />;
+    if (page === "buat-adonan") return <BuatAdonan setPage={setPage} />;
     if (page === "distribusi") return <DistribusiPenjaga />;
-    if (page === "pembelian") return <div>Halaman Pembelian (belum dibuat)</div>; // placeholder 
+    if (page === "pembelian") return <PembelianBooth setPage={setPage} />;
+    if (page === "adonan") return <Adonan setPage={setPage} navigate={navigate} />;
+    if (page === "batch-detail") return <BatchDetail setPage={setPage} batchId={pageParams.batchId} />;
   }
 
   return <div>Halaman tidak ditemukan: {page}</div>; // debug helper
@@ -65,11 +72,15 @@ function PageRenderer({ role, page, setPage }) {
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function MobileApp() {
 
-  const { user, logout, updateUser } = useAuth(); // pastikan setUser ada di context
-  const navigate = useNavigate();
+  const { user, logout, updateUser } = useAuth();
   const [role, setRole] = useState(user?.role || "");
   const [page, setPage] = useState("home");
+  const [pageParams, setPageParams] = useState({});
 
+  const navigate = (pageName, params = {}) => {
+    setPage(pageName);
+    setPageParams(params);
+  };
   // ✅ Cek is_update — tampilkan modal jika belum diupdate
   const needsPasswordUpdate = user?.is_update === 0 || user?.is_update === false;
 
@@ -88,14 +99,15 @@ export default function MobileApp() {
   }, [user]);
 
   useEffect(() => {
-    const penjagaOnlyPages = ["kasir", "stok", "pembelian", "distribusi"];
+    const penjagaOnlyPages = ["kasir", "stok", "pembelian", "distribusi", "adonan", "absensi"];
     if (role === "kurir" && penjagaOnlyPages.includes(page)) {
       setPage("home");
     }
   }, [role]);
 
   // console.log("Current role:", role, "Current page:", page);
-  // Di return MobilePenjaga, guard dulu:
+
+
   if (!role || !NAV[role]) return <div>Loading...</div>;
   return (
     <div className="phone">
@@ -105,7 +117,14 @@ export default function MobileApp() {
       )}
       {/* SCREEN */}
       <div className="screen" key={`${role}-${page}`}>
-        <PageRenderer role={role} page={page} setPage={setPage} />
+        {/* <PageRenderer role={role} page={page} setPage={setPage} /> */}
+        <PageRenderer
+          role={role}
+          page={page}
+          setPage={setPage}
+          navigate={navigate}
+          pageParams={pageParams}
+        />
       </div>
 
       {/* BOTTOM NAV */}

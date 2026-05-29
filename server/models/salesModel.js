@@ -34,7 +34,6 @@ const createSale = async (userId, payment_method, items) => {
             WHERE es.employee_id = ? AND es.is_active = 1
             LIMIT 1
         `, [userId]);
-
         if (!locRow) throw new Error('Booth penjaga tidak ditemukan');
 
         const { location_id, booth_id } = locRow;
@@ -49,24 +48,33 @@ const createSale = async (userId, payment_method, items) => {
             ORDER BY produced_at ASC
             LIMIT 1
         `, [booth_id]);
-
         if (!batch) throw new Error('Tidak ada batch adonan aktif di booth ini');
 
-        // 3. Ambil harga produk
+        // 3. Ambil harga + adonan_ml per produk
         const productIds = items.map(i => i.product_id);
         const [products] = await conn.query(
-            `SELECT id, price FROM products WHERE id IN (?)`,
+            `SELECT id, price, adonan_ml FROM products WHERE id IN (?)`,
             [productIds]
         );
-        const priceMap = {};
-        products.forEach(p => { priceMap[p.id] = Number(p.price); });
+        const productMap = {};
+        products.forEach(p => {
+            productMap[p.id] = { price: Number(p.price), adonan_ml: Number(p.adonan_ml) };
+        });
 
         // 4. Hitung grand total
         const grand_total = items.reduce((sum, it) => {
-            return sum + (priceMap[it.product_id] ?? 0) * it.qty;
+            return sum + (productMap[it.product_id]?.price ?? 0) * it.qty;
         }, 0);
 
-        // 5. Insert sales
+        // 5. Hitung total ml yang dipakai — validasi batch mencukupi
+        const totalMlUsed = items.reduce((sum, it) => {
+            return sum + (productMap[it.product_id]?.adonan_ml ?? 0) * it.qty;
+        }, 0);
+        if (batch.remaining_qty < totalMlUsed) {
+            throw new Error(`Adonan tidak cukup. Tersisa ${batch.remaining_qty} ml, dibutuhkan ${totalMlUsed} ml`);
+        }
+
+        // 6. Insert sales
         const [saleResult] = await conn.query(`
             INSERT INTO sales (booth_id, batch_id, created_by, payment_method, grand_total)
             VALUES (?, ?, ?, ?, ?)
@@ -74,40 +82,33 @@ const createSale = async (userId, payment_method, items) => {
 
         const sale_id = saleResult.insertId;
 
-        // 6. Insert sale_items + kurangi stok per item
+        // 7. Insert sale_items + kurangi stok bahan per item
         for (const it of items) {
-            const unit_price = priceMap[it.product_id] ?? 0;
+            const unit_price = productMap[it.product_id]?.price ?? 0;
             const total_price = unit_price * it.qty;
 
-            // Insert sale_item
             await conn.query(`
                 INSERT INTO sale_items (sale_id, product_id, qty, is_less_ice, unit_price, total_price)
                 VALUES (?, ?, ?, ?, ?, ?)
             `, [sale_id, it.product_id, it.qty, it.is_less_ice ? 1 : 0, unit_price, total_price]);
 
-            // Ambil komponen bahan sesuai is_less_ice
-            // applies_to 'all' selalu dikurangi
-            // applies_to 'less_ice' hanya kalau is_less_ice = 1
-            // applies_to 'regular'  hanya kalau is_less_ice = 0
+            // Kurangi stok bahan via product_components
             const applies = it.is_less_ice ? ['all', 'less_ice'] : ['all', 'regular'];
             const [components] = await conn.query(`
                 SELECT item_id, qty
                 FROM product_components
-                WHERE product_id = ?
-                  AND applies_to IN (?)
+                WHERE product_id = ? AND applies_to IN (?)
             `, [it.product_id, applies]);
 
             for (const comp of components) {
                 const totalQty = Number(comp.qty) * it.qty;
 
-                // Kurangi stock_per_location (tidak bisa minus)
                 await conn.query(`
                     UPDATE stock_per_location
                     SET current_stock = GREATEST(0, current_stock - ?)
                     WHERE item_id = ? AND location_id = ?
                 `, [totalQty, comp.item_id, location_id]);
 
-                // Catat stock_movements OUT
                 await conn.query(`
                     INSERT INTO stock_movements 
                         (item_id, location_id, qty, movement_type, source_type, source_id)
@@ -116,13 +117,12 @@ const createSale = async (userId, payment_method, items) => {
             }
         }
 
-        // 7. Kurangi remaining_qty batch
-        const totalQtySold = items.reduce((sum, it) => sum + it.qty, 0);
+        // 8. Kurangi remaining_qty batch dalam ml
         await conn.query(`
             UPDATE batches
             SET remaining_qty = GREATEST(0, remaining_qty - ?)
             WHERE id = ?
-        `, [totalQtySold, batch.id]);
+        `, [totalMlUsed, batch.id]);
 
         // Auto SOLD_OUT kalau remaining habis
         await conn.query(`
@@ -141,4 +141,62 @@ const createSale = async (userId, payment_method, items) => {
     }
 };
 
-module.exports = { getProducts, createSale };
+// ── GET /sales/rekap ─────────────────────────────────────────
+const getRekap = async ({ from, to, booth_id, method }) => {
+    const conditions = [
+        's.created_at >= ?',
+        's.created_at < DATE_ADD(?, INTERVAL 1 DAY)',
+    ];
+    const params = [from, to];
+
+    if (booth_id) { conditions.push('s.booth_id = ?'); params.push(booth_id); }
+    if (method) { conditions.push('s.payment_method = ?'); params.push(method); }
+
+    const where = conditions.join(' AND ');
+
+    const [sales] = await db.query(`
+        SELECT
+            s.id,
+            s.created_at,
+            s.payment_method,
+            s.grand_total,
+            b.name               AS booth_name,
+            u.name               AS kasir_name,
+            COUNT(si.product_id) AS total_item
+        FROM sales s
+        JOIN booth b            ON b.id = s.booth_id
+        JOIN users u            ON u.id = s.created_by
+        LEFT JOIN sale_items si ON si.sale_id = s.id
+        WHERE ${where}
+        GROUP BY s.id
+        ORDER BY s.created_at DESC
+    `, params);
+
+    if (sales.length === 0) return [];
+
+    const saleIds = sales.map(s => s.id);
+    const [items] = await db.query(`
+        SELECT
+            si.sale_id,
+            si.qty,
+            si.is_less_ice,
+            si.unit_price,
+            si.total_price,
+            p.name AS product_name,
+            p.size
+        FROM sale_items si
+        JOIN products p ON p.id = si.product_id
+        WHERE si.sale_id IN (?)
+        ORDER BY si.sale_id, p.name
+    `, [saleIds]);
+
+    const itemMap = {};
+    items.forEach(it => {
+        if (!itemMap[it.sale_id]) itemMap[it.sale_id] = [];
+        itemMap[it.sale_id].push(it);
+    });
+
+    return sales.map(s => ({ ...s, items: itemMap[s.id] ?? [] }));
+};
+
+module.exports = { getProducts, createSale, getRekap };

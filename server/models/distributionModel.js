@@ -318,54 +318,57 @@ const updateItem = async (distribution_id, item_id, qty_diterima, notes) => {
     return rows[0];
 };
 // Pickup: ubah status → dikirim + catat kurir + kurangi stok gudang
-const pickup = async (distribution_id, kurir_id) => {
+const pickup = async (distribution_id, user_id) => {
     const conn = await db.getConnection();
     try {
         await conn.beginTransaction();
 
         // 1. Cek distribusi valid & masih draft
         const [[dist]] = await conn.execute(
-            `SELECT * FROM distributions WHERE id = ? AND kurir_id = ?`,
-            [distribution_id, kurir_id]
+            `SELECT * FROM distributions WHERE id = ? AND status = 'draft'`,
+            [distribution_id]
         );
-        if (!dist) throw new Error('Distribusi tidak ditemukan atau bukan milik kamu');
-        if (dist.status !== 'draft') throw new Error('Distribusi bukan draft, tidak bisa di-pickup');
+        if (!dist) throw new Error('Distribusi tidak ditemukan');
 
-        // 2. Ambil semua item distribusi
+        // 2. Validasi akses — kurir internal harus match, external/pemilik bebas
+        if (dist.kurir_id !== null && dist.kurir_id !== user_id) {
+            throw new Error('Distribusi ini bukan milik kamu');
+        }
+
+        // 3. Kurangi stok gudang (sama untuk semua)
         const [items] = await conn.execute(
             `SELECT * FROM distribution_items WHERE distribution_id = ?`,
             [distribution_id]
         );
-
-        // 3. Kurangi stok di gudang asal (from_location_id)
         for (const item of items) {
             await conn.execute(
                 `UPDATE stock_per_location 
-                 SET current_stock = current_stock - ?
+                 SET current_stock = GREATEST(0, current_stock - ?)
                  WHERE item_id = ? AND location_id = ?`,
                 [item.qty, item.item_id, dist.from_location_id]
             );
-
-            // 4. Catat stock movement
             await conn.execute(
                 `INSERT INTO stock_movements 
-                 (item_id, location_id, movement_type, qty, source_type, source_id)
-                 VALUES (?, ?, 'OUT', ?, 'distribution', ?)`,
+                    (item_id, location_id, qty, movement_type, source_type, source_id)
+                 VALUES (?, ?, ?, 'OUT', 'DISTRIBUSI', ?)`,
                 [item.item_id, dist.from_location_id, item.qty, distribution_id]
             );
         }
 
-        // 5. Update status distribusi → dikirim
+        // 4. Update status — sama untuk semua
         await conn.execute(
             `UPDATE distributions 
              SET status = 'dikirim',
                  confirmed_by_kurir = ?,
                  confirmed_at_kurir = NOW()
              WHERE id = ?`,
-            [kurir_id, distribution_id]
+            [user_id, distribution_id]
         );
 
         await conn.commit();
+        // Return data terbaru dengan nama — pakai db biasa (bukan conn)
+        const data = await getById(distribution_id);
+        return data;
     } catch (err) {
         await conn.rollback();
         throw err;
@@ -466,57 +469,36 @@ const doneDistributions = async (kurir_id) => {
 };
 
 const getById = async (id) => {
-    const [[distribution]] = await db.query(
-        `SELECT 
+    const [[dist]] = await db.query(`
+        SELECT 
             d.*,
-            d.arrived_at,                   -- ✅ tambah ini
-            fl.name  AS from_location_name,
-            tl.name  AS to_location_name,
-            cb.name  AS created_by_name,
-            k.name   AS kurir_name,
-            ck.name  AS confirmed_by_kurir_name,
-            cbooth.name AS confirmed_by_booth_name
+            u_kurir.name  AS confirmed_by_kurir_name,
+            u_booth.name  AS confirmed_by_booth_name,
+            u_created.name AS created_by_name
         FROM distributions d
-        LEFT JOIN stock_locations fl    ON fl.id = d.from_location_id
-        LEFT JOIN stock_locations tl    ON tl.id = d.to_location_id
-        LEFT JOIN users cb              ON cb.id = d.created_by
-        LEFT JOIN users k               ON k.id  = d.kurir_id
-        LEFT JOIN users ck              ON ck.id = d.confirmed_by_kurir
-        LEFT JOIN users cbooth          ON cbooth.id = d.confirmed_by_booth
-        WHERE d.id = ?`,
-        [id]
-    );
-
-    if (!distribution) return null;
-
-    const [items] = await db.query(
-        `SELECT 
-            di.*,
-            i.name AS item_name,
-            i.unit
-        FROM distribution_items di
-        JOIN items i ON i.id = di.item_id
-        WHERE di.distribution_id = ?`,
-        [id]
-    );
-
-    return { ...distribution, items };
+        LEFT JOIN users u_kurir   ON u_kurir.id  = d.confirmed_by_kurir
+        LEFT JOIN users u_booth   ON u_booth.id  = d.confirmed_by_booth
+        LEFT JOIN users u_created ON u_created.id = d.created_by
+        WHERE d.id = ?
+    `, [id]);
+    return dist ?? null;
 };
 
-
-const arrive = async (distribution_id, kurir_id) => {
+const arrive = async (distribution_id, user_id) => {
     const conn = await db.getConnection();
     try {
         await conn.beginTransaction();
-
+        // 1. Cek distribusi valid & masih draft
         const [[dist]] = await conn.execute(
-            `SELECT * FROM distributions WHERE id = ?`,
+            `SELECT * FROM distributions WHERE id = ? AND status = 'dikirim'`,
             [distribution_id]
         );
         if (!dist) throw new Error('Distribusi tidak ditemukan');
-        if (dist.kurir_id !== kurir_id) throw new Error('Bukan kurir distribusi ini');
-        if (dist.status !== 'dikirim') throw new Error('Bukan status dikirim');
 
+        // 2. Validasi akses — kurir internal harus match, external/pemilik bebas
+        if (dist.kurir_id !== null && dist.kurir_id !== user_id) {
+            throw new Error('Distribusi ini bukan milik kamu');
+        }
         // ✅ Simpan waktu tiba di kolom arrived_at
         await conn.execute(
             `UPDATE distributions SET status='sampai', arrived_at = NOW() WHERE id = ?`,
@@ -524,6 +506,9 @@ const arrive = async (distribution_id, kurir_id) => {
         );
 
         await conn.commit();
+        // Return data terbaru dengan nama — pakai db biasa (bukan conn)
+        const data = await getById(distribution_id);
+        return data;
     } catch (err) {
         await conn.rollback();
         throw err;

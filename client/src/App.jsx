@@ -28,12 +28,14 @@ import ProduksiPage from './pages/Produksi/ProduksiPage';
 import RekapProduksiPage from './pages/Produksi/RekapProduksiPage';
 import ProductsPage from './pages/Products/ProductsPage';
 
+import RekapPenjualanPage from './pages/Penjualan/RekapPenjualanPage';
+import ChartPage from './pages/Dashboard/ChartPage';
 import ProtectedRoute from './routes/ProtectedRoute';
 
 // import HomePenjaga from './pages/Penjaga/Home';
 import HomeKurir from './pages/Mobileapp/MobileApp3';
 
-import HomeKaryawan from './pages/PenjagaBooth/MobileApp';
+import HomeKaryawan from './pages/Mobile/MobileApp';
 export default function App() {
   // console.log(import.meta.env.VITE_API_URL)
   return (
@@ -94,6 +96,8 @@ export default function App() {
         <Route path="/distribusi/:id" element={<DetailDistribusiPage />} />
         <Route path="/produksi" element={<ProduksiPage />} />
         <Route path="/produksi-rekap" element={<RekapProduksiPage />} />
+        <Route path="/penjualan-rekap" element={<RekapPenjualanPage />} />
+        <Route path="/chart" element={<ChartPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

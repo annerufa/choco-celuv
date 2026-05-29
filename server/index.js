@@ -23,7 +23,7 @@ app.use("/api/items", authenticate, require("./routes/items"));
 
 
 app.use("/api/booth", require("./routes/booth"));
-app.use("/api/recipes", require("./routes/resep"));
+app.use("/api/recipes", require("./routes/recipes"));
 // app.use("/api/stock-per-location", require("./routes/stockLoc"));
 // app.use('/api/stock/matrix', require('./routes/items'));
 
@@ -42,7 +42,7 @@ app.use('/api/products', authenticate, require('./routes/products'));
 app.use('/api/sales', authenticate, require('./routes/sales'));
 // app.use('/api/stock', authenticate, require('./routes/stock'));
 // app.use('/api/karyawan', require('./routes/karyawan'));
-
+app.use('/api/batches', authenticate, require('./routes/batches'));
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });

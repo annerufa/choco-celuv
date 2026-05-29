@@ -97,7 +97,7 @@ export const menuConfig = [
             {
                 id: 'penjualan',
                 label: 'Penjualan',
-                path: '/penjualan',
+                path: '/penjualan-rekap',
                 icon: 'jual',
             },
         ],

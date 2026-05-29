@@ -452,7 +452,7 @@ function Overlay({ onClose, children }) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: "100%", maxWidth: 380,
+          width: "100%", maxWidth: 330,
           background: "var(--bg0)", borderRadius: "20px 20px 0 0",
           padding: "20px 20px calc(24px + env(safe-area-inset-bottom))",
           animation: "slideUp 0.22s ease",

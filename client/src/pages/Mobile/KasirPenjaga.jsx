@@ -1,8 +1,8 @@
-
 // src/pages/Mobile/KasirPenjaga.jsx
 import { useState } from "react";
 import { useApi } from "../../hooks/useApi";
 import axios from "axios";
+import { IconCart, IconBack, IconCheck, IconCup } from "./Icons";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
 function getToken() { return localStorage.getItem("token"); }
@@ -10,31 +10,6 @@ const authHeader = () => ({ Authorization: `Bearer ${getToken()}` });
 
 function formatRp(val) {
   return "Rp " + Number(val).toLocaleString("id");
-}
-
-// ── Icons ────────────────────────────────────────────────────
-function IconCart() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
-    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-  </svg>;
-}
-function IconBack() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <polyline points="15 18 9 12 15 6" />
-  </svg>;
-}
-function IconCheck() {
-  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>;
-}
-function IconCup() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M17 8h1a4 4 0 0 1 0 8h-1" />
-    <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z" />
-    <line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="2" x2="14" y2="4" />
-  </svg>;
 }
 
 // ── Size Chip ─────────────────────────────────────────────────
@@ -364,9 +339,9 @@ function CartScreen({ cart, products, onBack, onSuccess }) {
       </div>
 
       <div style={{
-        position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
-        width: "100%", maxWidth: 380,
-        padding: "12px 20px calc(12px + env(safe-area-inset-bottom))",
+        position: "fixed", bottom: 60, left: "50%", transform: "translateX(-50%)",
+        width: "100%", maxWidth: 330,
+        padding: "5px 10px calc(5px + env(safe-area-inset-bottom))",
         background: "var(--bg1)", borderTop: "1px solid var(--border)",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
@@ -377,7 +352,7 @@ function CartScreen({ cart, products, onBack, onSuccess }) {
           onClick={handleCheckout}
           disabled={loading}
           style={{
-            width: "100%", padding: 15, borderRadius: 15, border: "none",
+            width: "100%", padding: 8, borderRadius: 15, border: "none",
             background: "var(--accent)", color: "#fff", fontSize: 15, fontWeight: 900,
             cursor: loading ? "not-allowed" : "pointer",
             fontFamily: "inherit", opacity: loading ? 0.7 : 1,
@@ -443,9 +418,14 @@ export default function KasirPenjaga() {
     <div className="page">
       <div className="phead">
         <div className="phead-row">
-          <div>
-            <div className="ptitle">Kasir</div>
-            <div className="psub">Atur jumlah langsung di produk</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button onClick={() => setPage?.("home")} className="btnBack">
+              <IconBack />
+            </button>
+            <div>
+              <div className="ptitle">Kasir</div>
+              <div className="psub">Atur jumlah langsung di produk</div>
+            </div>
           </div>
           {cartCount > 0 && (
             <button
@@ -501,17 +481,17 @@ export default function KasirPenjaga() {
 
       {cartCount > 0 && (
         <div style={{
-          position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
-          width: "100%", maxWidth: 380,
-          padding: "10px 16px calc(10px + env(safe-area-inset-bottom))",
-          background: "var(--bg1)", borderTop: "1px solid var(--border)",
+          position: "fixed", bottom: 60, left: "50%", transform: "translateX(-50%)",
+          width: "100%", maxWidth: 320,
+          padding: "5px 5px calc(8px + env(safe-area-inset-bottom))",
+          backgroundColor: " rgba(0, 0, 0, 0.0)",
         }}>
           <button
             onClick={() => setShowCart(true)}
             style={{
-              width: "100%", padding: 14, borderRadius: 14, border: "none",
+              width: "100%", padding: 10, borderRadius: 14, border: "none",
               background: "var(--accent)", color: "#fff",
-              fontSize: 14, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
+              fontSize: 12, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
               display: "flex", alignItems: "center", justifyContent: "space-between",
               boxShadow: "0 4px 14px rgba(196,123,16,0.25)",
             }}
@@ -527,3 +507,10 @@ export default function KasirPenjaga() {
     </div>
   );
 }
+// ── Shared style ──────────────────────────────────────────────
+const btnBack = {
+  width: 36, height: 36, borderRadius: 10,
+  border: "1px solid var(--border2)", background: "var(--bg0)",
+  display: "flex", alignItems: "center", justifyContent: "center",
+  color: "var(--text1)", cursor: "pointer", flexShrink: 0,
+};

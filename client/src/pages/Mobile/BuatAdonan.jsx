@@ -177,7 +177,7 @@ function SuksesModal({ batch, resepNama, onClose }) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: "100%", maxWidth: 380,
+          width: "100%", maxWidth: 330,
           background: "var(--bg0)", borderRadius: "20px 20px 0 0",
           padding: "24px 24px calc(32px + env(safe-area-inset-bottom))",
           animation: "slideUp 0.22s ease",
@@ -236,10 +236,15 @@ export default function BuatAdonan({ setPage }) {
     if (!allCukup) return;
     setLoading(true);
     setError(null);
+
+    // Debug: cek nilai sebelum kirim
+    console.log("resep.id:", resep?.id);
+    console.log("batch:", batch);
+    console.log("Data yang dikirim:", { recipe_id: resep?.id, batch });
     try {
       await axios.post(
-        `${BASE_URL}/recipe/make`,
-        { recipe_id: resep.id, batch },
+        `${BASE_URL}/productions`,
+        { recipe_id: resep.id, qty: batch },
         { headers: authHeader() }
       );
       setSukses(true);
@@ -262,7 +267,7 @@ export default function BuatAdonan({ setPage }) {
       <div className="page">
         <div className="phead">
           <div className="phead-row">
-            <button onClick={() => setPage?.("home")} style={btnBack}>
+            <button onClick={() => setPage?.("adonan")} style={btnBack}>
               <IconBack />
             </button>
             <div>
@@ -284,7 +289,7 @@ export default function BuatAdonan({ setPage }) {
       <div className="page">
         <div className="phead">
           <div className="phead-row">
-            <button onClick={() => setPage?.("home")} style={btnBack}><IconBack /></button>
+            <button onClick={() => setPage?.("adonan")} style={btnBack}><IconBack /></button>
             <div>
               <div className="ptitle">Buat Adonan</div>
               <div className="psub">Resep tidak tersedia</div>
@@ -304,7 +309,7 @@ export default function BuatAdonan({ setPage }) {
       {/* HEADER */}
       <div className="phead">
         <div className="phead-row">
-          <button onClick={() => setPage?.("home")} style={btnBack}><IconBack /></button>
+          <button onClick={() => setPage?.("adonan")} className="btnBack"><IconBack /></button>
           <div style={{ flex: 1 }}>
             <div className="ptitle">Buat Adonan</div>
             <div className="psub">Cek ketersediaan bahan</div>
@@ -419,16 +424,16 @@ export default function BuatAdonan({ setPage }) {
 
       {/* FOOTER CTA */}
       <div style={{
-        position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
-        width: "100%", maxWidth: 380,
-        padding: "12px 20px calc(12px + env(safe-area-inset-bottom))",
+        position: "fixed", bottom: 60, left: "50%", transform: "translateX(-50%)",
+        width: "100%", maxWidth: 330,
+        padding: "8px 10px calc(8px + env(safe-area-inset-bottom))",
         background: "var(--bg1)", borderTop: "1px solid var(--border)",
       }}>
         <button
           onClick={handleBuat}
           disabled={loading || !allCukup}
           style={{
-            width: "100%", padding: 15, borderRadius: 15, border: "none",
+            width: "100%", padding: 8, borderRadius: 15, border: "none",
             background: allCukup ? "var(--accent)" : "var(--bg3)",
             color: allCukup ? "#fff" : "var(--text3)",
             fontSize: 15, fontWeight: 900,

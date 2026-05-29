@@ -76,11 +76,10 @@ const updateDistributionItem = async (req, res) => {
 // → ubah status draft → dikirim, kurangi stok gudang
 const pickupDistribution = async (req, res) => {
     try {
-        const kurir_id = req.user.id;
+        const userId = req.user.id;
         const { id } = req.params;
-
-        await distributions.pickup(id, kurir_id);
-        response(200, null, 'Pickup berhasil, status menjadi dikirim', res);
+        const result = await distributions.pickup(id, userId);
+        response(200, result, 'Berhasil pickup distribusi', res);
     } catch (err) {
         if (err.message.includes('tidak ditemukan') || err.message.includes('bukan draft')) {
             return response(400, null, err.message, res);
@@ -140,8 +139,8 @@ const arriveDistribution = async (req, res) => {
     try {
         const kurir_id = req.user.id;
         const { id } = req.params;
-        await distributions.arrive(id, kurir_id);
-        response(200, null, 'Berhasil dikonfirmasi, menunggu penjaga booth', res);
+        const result = await distributions.arrive(id, kurir_id);
+        response(200, result, 'Berhasil dikonfirmasi, menunggu penjaga booth', res);
     } catch (err) {
         if ([
             'Distribusi tidak ditemukan',

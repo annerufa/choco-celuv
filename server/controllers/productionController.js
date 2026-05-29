@@ -3,8 +3,8 @@
 // ═══════════════════════════════════════════════════════════════
 const production = require('../models/productionModel');
 const db = require('../connection');
-
 const response = require('../helpers/response');
+
 // GET /api/productions
 const getProductions = async (req, res) => {
     try {
@@ -41,7 +41,8 @@ const getActiveRecipes = async (req, res) => {
 // POST /api/productions
 const createProduction = async (req, res) => {
     try {
-        const { recipe_id, qty } = req.body; // qty = jumlah batch
+        const { recipe_id, qty } = req.body;
+        const { location_id, booth_id } = req.userLocation; // ← tinggal destructure
 
         if (!recipe_id || !qty || qty < 1) {
             return response(400, null, 'recipe_id dan qty wajib diisi', res);
@@ -57,14 +58,13 @@ const createProduction = async (req, res) => {
         if (!cukup) {
             return response(400, { kurang }, 'Stok bahan tidak mencukupi', res);
         }
-
         // Simpan produksi
         const data = await production.create({
             recipe_id,
             qty,
             created_by: req.user.id,
-            loc_id: req.user.location_id,
-            booth_id: req.user.booth_id ?? null,
+            loc_id: location_id,
+            booth_id,
         });
 
         response(201, data, 'Produksi berhasil dibuat', res);
@@ -138,4 +138,19 @@ const deleteProduction = async (req, res) => {
 };
 
 
-module.exports = { createProduction, getActiveRecipes, getRekapProduksi, getProductions, updateProduction, deleteProduction };
+const getAdonanBooth = async (req, res) => {
+    try {
+        const booth_id = req.userLocation.booth_id; // dari middleware
+        const { batch_status } = req.query;
+
+        // default: 7 hari ke belakang s/d hari ini
+        const to = req.query.to ?? new Date().toISOString().slice(0, 10);
+        const from = req.query.from ?? new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+
+        const data = await production.getAdonanForBooth(booth_id, { from, to, batch_status });
+        response(200, data, 'Berhasil', res);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+module.exports = { createProduction, getAdonanBooth, getActiveRecipes, getRekapProduksi, getProductions, updateProduction, deleteProduction };

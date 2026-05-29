@@ -1,0 +1,118 @@
+/* src/pages/Analitik/Analitik.module.css */
+/* Sama strukturnya dengan Produksi.module.css */
+
+.page {
+    padding: 24px;
+    max-width: 1100px;
+}
+
+.pageHeader { margin-bottom: 24px; }
+
+.pageTitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--brown-900);
+    margin-bottom: 4px;
+}
+
+.pageSubtitle {
+    font-size: 13px;
+    color: var(--brown-500);
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--brown-400);
+    margin-bottom: 8px;
+}
+.breadcrumb span { color: var(--brown-600); }
+
+.filterCard {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--brown-100);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.filterRow {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.filterField {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 140px;
+}
+
+.filterLabel {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--brown-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.filterInput {
+    padding: 8px 10px;
+    border: 1px solid var(--brown-200);
+    border-radius: 8px;
+    font-family: var(--font);
+    font-size: 13px;
+    color: var(--brown-900);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.filterInput:focus { border-color: var(--accent); }
+
+.btnApply {
+    padding: 9px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-end;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+.btnApply:hover { background: var(--accent-light); }
+
+.summaryRow {
+    display: flex;
+    gap: 32px;
+    padding-top: 12px;
+    border-top: 1px solid var(--brown-100);
+    flex-wrap: wrap;
+}
+
+.summaryItem {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.summaryVal {
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.summaryLbl {
+    font-size: 11px;
+    color: var(--brown-400);
+}

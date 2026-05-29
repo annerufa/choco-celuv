@@ -85,4 +85,19 @@ const getActiveRecipes = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
-module.exports = { getAllRecipes, getActiveRecipes, getRecipe, createRecipe, updateRecipe, statusRecipe };
+
+const makeAdonan = async (req, res) => {
+    try {
+        const { recipe_id, batch } = req.body;
+        if (!recipe_id || !batch || batch < 1)
+            return response(400, null, 'recipe_id dan batch wajib diisi', res);
+
+        const data = await Recipe.make(req.user.id, recipe_id, Number(batch));
+        response(200, data, `Berhasil membuat ${batch} batch adonan`, res);
+    } catch (err) {
+        // Error stok kurang dll langsung ke frontend
+        response(500, null, err.message, res);
+    }
+};
+
+module.exports = { getAllRecipes, makeAdonan, getActiveRecipes, getRecipe, createRecipe, updateRecipe, statusRecipe };

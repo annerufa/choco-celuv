@@ -16,7 +16,8 @@ const getAllPerLoc = async (loc_id) => {
             sl.safety_stock,
             sl.min_qty,
             sl.max_qty,
-            sl.is_active AS stock_active
+            sl.is_active AS stock_active,
+            sl.can_purchase
          FROM items i
          JOIN stock_per_location sl ON i.id = sl.item_id
          WHERE sl.location_id = ?
@@ -182,7 +183,7 @@ const getMatrix = async () => {
 const getItem = async (id, location_id) => {
 
     const [rows] = await db.query(
-        `SELECT i.*, spl.current_stock, spl.min_qty, spl.max_qty, spl.safety_stock FROM items i JOIN stock_per_location spl ON i.id = spl.item_id
+        `SELECT i.*, spl.current_stock, spl.min_qty, spl.max_qty, spl.safety_stock, spl.can_purchase FROM items i JOIN stock_per_location spl ON i.id = spl.item_id
         WHERE i.id = ? AND location_id = ?`, [id, location_id]
     );
     return rows[0];
@@ -210,7 +211,8 @@ const getByLocation = async (location_id) => {
             sl.safety_stock,
             sl.min_qty,
             sl.max_qty,
-            sl.is_active AS stock_active
+            sl.is_active AS stock_active,
+            sl.can_purchase
          FROM items i
          JOIN stock_per_location sl ON i.id = sl.item_id
          WHERE sl.location_id = ?
@@ -227,6 +229,7 @@ const getById = async (loc_id) => {
             sl.min_qty,
             sl.max_qty,
             sl.safety_stock
+            , sl.can_purchase
          FROM items i
          JOIN stock_per_location sl ON i.id = sl.item_id
          WHERE sl.location_id = ?
@@ -263,7 +266,8 @@ const getBoothSettingsByItemId = async (item_id) => {
             spl.safety_stock,
             spl.min_qty AS min,
             spl.max_qty AS max,
-            spl.is_active
+            spl.is_active,
+            spl.can_purchase
          FROM stock_locations sl
          JOIN booth b ON b.id = sl.booth_id
          LEFT JOIN stock_per_location spl 
@@ -290,10 +294,11 @@ const updateBoothSettings = async (item_id, booths) => {
                  SET safety_stock = ?,
                      min_qty      = ?,
                      max_qty      = ?,
-                     is_active    = ?
+                     is_active    = ?,
+                     can_purchase = ?
                  WHERE item_id     = ?
                    AND location_id = ?`,
-                [b.safety_stock, b.min, b.max, b.is_active ? 1 : 0, item_id, b.booth_id]
+                [b.safety_stock, b.min, b.max, b.is_active ? 1 : 0, b.can_purchase ? 0 : 1, item_id, b.booth_id]
             );
         }
 
@@ -342,7 +347,7 @@ const getBoothStock = async (userId) => {
         SELECT 
             spl.item_id, sl.id AS location_id,
             i.name, i.category, i.unit,
-            spl.current_stock, spl.safety_stock, spl.min_qty, spl.max_qty
+            spl.current_stock, spl.safety_stock, spl.min_qty, spl.max_qty, spl.can_purchase
         FROM stock_per_location spl
         JOIN items i ON i.id = spl.item_id
         JOIN stock_locations sl ON sl.id = spl.location_id

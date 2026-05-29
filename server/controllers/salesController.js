@@ -31,4 +31,24 @@ const createSale = async (req, res) => {
     }
 };
 
-module.exports = { getProducts, createSale };
+// GET /sales/rekap?from=&to=&booth_id=&method=
+const getRekap = async (req, res) => {
+    try {
+
+        if (req.user.role !== 'pemilik')
+            return response(403, null, 'Akses ditolak', res);
+
+        const { from, to, booth_id, method } = req.query;
+
+        if (!from || !to)
+            return response(400, null, 'Parameter from dan to wajib diisi', res);
+
+        const data = await Sale.getRekap({ from, to, booth_id, method });
+        response(200, data, 'Berhasil mengambil rekap penjualan', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+
+module.exports = { getProducts, createSale, getRekap };

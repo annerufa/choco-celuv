@@ -25,7 +25,7 @@ function formatDateTime(val) {
 const STATUS_CFG = {
     draft: { label: 'Draft', cls: 'grey', desc: 'Menunggu pickup kurir' },
     dikirim: { label: 'Dikirim', cls: 'warning', desc: 'Sedang dalam pengiriman' },
-    sampai: { label: 'Sampai', cls: 'success', desc: 'Sedang dalam pengiriman' },
+    sampai: { label: 'Sampai', cls: 'success', desc: 'Barang sudah diterima booth' },
     diterima: { label: 'Diterima', cls: 'success', desc: 'Barang sudah diterima booth' },
     dibatalkan: { label: 'Dibatalkan', cls: 'danger', desc: 'Distribusi dibatalkan' },
 };
@@ -124,8 +124,8 @@ export default function DetailDistribusiPage() {
     const currentStep = STATUS_ORDER[dist.status] ?? 0;
     const isCancelled = dist.status === 'dibatalkan';
     const canPickup = dist.status === 'draft' && dist.kurir_id == null;
-    const canCancel = dist.status === 'draft'
-    const canReceive = dist.status === 'dikirim';
+    const canCancel = dist.status === 'draft';
+    const canReceive = dist.status === 'dikirim' && dist.kurir_id == null;
 
     return (
         <div className={styles.page} >
@@ -182,11 +182,11 @@ export default function DetailDistribusiPage() {
                         </button >
                     )}
                     {canReceive && (
-                        <button className={styles.btnReceive} onClick={() => setConfirmAction('receive')} >
+                        <button className={styles.btnReceive} onClick={() => setConfirmAction('arrive')} >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" >
                                 <polyline points="20 6 9 17 4 12" />
                             </svg >
-                            Terima Barang
+                            Barang Sampai
                         </button >
                     )}
                     {canCancel && (
@@ -341,14 +341,14 @@ export default function DetailDistribusiPage() {
                             <div className={styles.confirmTitle} >Konfirmasi Pickup? </div >
                             <div className={styles.confirmDesc} >Stok gudang akan berkurang dan status berubah menjadi  <strong >Dikirim </strong >. </div >
                         </ >}
-                        {confirmAction === 'receive' && < >
+                        {confirmAction === 'arrive' && < >
                             <div className={styles.confirmIcon} style={{ background: '#D1FAE5', color: 'var(--success)' }} >
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24" >
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg >
                             </div >
-                            <div className={styles.confirmTitle} >Terima Barang? </div >
-                            <div className={styles.confirmDesc} >Stok booth akan bertambah dan status berubah menjadi  <strong >Diterima </strong >. </div >
+                            <div className={styles.confirmTitle} >Barang telah sampai? </div >
+                            <div className={styles.confirmDesc} >Barang telah sampai, pastikan jumlah barang yang dikirim telah  <strong >Sesuai </strong >. </div >
                         </ >}
                         {confirmAction === 'cancel' && < >
                             <div className={styles.confirmIcon} style={{ background: '#FEE2E2', color: 'var(--danger)' }} >
@@ -374,7 +374,7 @@ export default function DetailDistribusiPage() {
                             >
                                 {actionLoading === confirmAction ? 'Memproses...' : (
                                     confirmAction === 'pickup' ? 'Ya, Pickup' :
-                                        confirmAction === 'receive' ? 'Ya, Terima' : 'Ya, Batalkan'
+                                        confirmAction === 'arrive' ? 'Ya, Sampai' : 'Ya, Batalkan'
                                 )}
                             </button >
                         </div >
