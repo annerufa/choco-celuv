@@ -29,7 +29,7 @@ export default function DataBarangPage() {
         const unitMap = { ml: 'L', gram: 'kg' };
         // const unitMap = { ml: 'L', gram: 'kg' };
         const items = Array.isArray(stokData) ? stokData : (stokData.payload?.data ?? []);
-        console.log('stok: ', items);
+        // console.log('stok: ', items);
 
         const processed = items.map(item => {
             const divisor = unitMap[item.unit] ? 1000 : 1;
