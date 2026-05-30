@@ -293,22 +293,33 @@ const create = async ({ recipe_id, qty, created_by, loc_id, booth_id }) => {
         // 4. Kalau adonan → insert ke batches
         if (recipe.type === 'adonan') {
             const now = new Date();
-            const expiredAt = recipe.expiry_hours
-                ? new Date(now.getTime() + recipe.expiry_hours * 60 * 60 * 1000)
+            console.log('Node now:', now.toISOString());
+            console.log('expired:', recipe.expiry_hours);
+
+            console.log('expiry_hours raw:', recipe.expiry_hours, typeof recipe.expiry_hours);
+
+            // Pastikan parse ke Number, antisipasi string "6" atau 0
+            const expiryHours = Number(recipe.expiry_hours);
+            const expiredAt = expiryHours > 0
+                ? new Date(now.getTime() + expiryHours * 60 * 60 * 1000)
+                    .toISOString()
+                    .slice(0, 19)
+                    .replace("T", " ")
                 : null;
 
+            console.log('expiredAt result:', expiredAt);
             // Tiap batch = 1 row di tabel batches
             for (let i = 0; i < qty; i++) {
                 await conn.query(
                     `INSERT INTO batches
                         (production_id, location_id, booth_id, recipe_id,
-                         produced_at, expired_at, total_qty, remaining_qty, status)
-                     VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, 'ACTIVE')`,
+                        produced_at, expired_at, total_qty, remaining_qty, status)
+                    VALUES (?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? HOUR), ?, ?, 'ACTIVE')`,
                     [
                         production_id, loc_id, booth_id, recipe_id,
-                        expiredAt,
-                        recipe.output_qty,  // total_qty per batch
-                        recipe.output_qty,  // remaining_qty = total saat baru dibuat
+                        expiryHours,        // ← interval jam langsung ke MySQL
+                        recipe.output_qty,
+                        recipe.output_qty,
                     ]
                 );
             }
@@ -682,20 +693,29 @@ const getAdonanForBooth = async (booth_id, { from, to, batch_status }) => {
 
     const productionIds = productions.map(p => p.id);
     const batchCond = batch_status ? `AND b.status = ?` : '';
-    const batchParams = batch_status ? [productionIds, batch_status] : [productionIds];
+
+    // ✅ Fix: flatten params dengan benar
+    const batchParams = batch_status
+        ? [...productionIds, batch_status]  // spread, bukan nested array
+        : [...productionIds];
+
+    const placeholders = productionIds.map(() => '?').join(',');
 
     const [batches] = await db.query(`
         SELECT b.id, b.production_id, b.status,
                b.total_qty, b.remaining_qty,
                b.produced_at, b.expired_at, b.notes
         FROM batches b
-        WHERE b.production_id IN (?) ${batchCond}
+        WHERE b.production_id IN (${placeholders}) ${batchCond}
         ORDER BY b.produced_at ASC
     `, batchParams);
 
-    return productions.map(p => ({
-        ...p,
-        batches: batches.filter(b => b.production_id === p.id),
-    }));
+    // ✅ Fix: filter out productions yang batchnya kosong setelah filter status
+    return productions
+        .map(p => ({
+            ...p,
+            batches: batches.filter(b => b.production_id === p.id),
+        }))
+        .filter(p => p.batches.length > 0); // ← buang produksi tanpa batch yang cocok
 };
 module.exports = { create, getAll, getRekap, getAdonanByBooth, getAdonanForBooth, getRecipeById, getActiveRecipes, checkStock, getById, hasActiveBatch, update, remove };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useApi } from "../../hooks/useApi";
 import axios from 'axios';
 
@@ -38,7 +38,6 @@ const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 
 const token = localStorage.getItem('token');
 const headers = { Authorization: `Bearer ${token}` };
-
 export default function Adonan({ setPage, navigate }) {
     const today = toDateStr(new Date());
     const weekAgo = toDateStr(new Date(Date.now() - 6 * 86400000));
@@ -46,42 +45,68 @@ export default function Adonan({ setPage, navigate }) {
     const [from, setFrom] = useState(weekAgo);
     const [to, setTo] = useState(today);
     const [status, setStatus] = useState("");
+    const [now, setNow] = useState(Date.now());           // ← jam sekarang (reaktif)
+    const [expiringWarning, setExpiringWarning] = useState([]); // batch yang mau expired
 
-    // Bangun query string
-    const params = new URLSearchParams({ from, to });
-    if (status) params.set("batch_status", status);
+    // Jadi ini:
+    const queryString = useMemo(() => {
+        const params = new URLSearchParams({ from, to });
+        if (status) params.set("batch_status", status);
+        return params.toString();
+    }, [from, to, status]);
 
-    const { data: result, loading, error, fetchData } = useApi(`/productions/adonan?${params}`);
-    // console.log('result mentah:', result);
+    const { data: result, loading, error, fetchData } = useApi(`/productions/adonan?${queryString}`);
     const adonanList = result ?? [];
-    // console.log('data: ', adonanList);
 
-    // Tambah di dalam komponen Adonan, setelah deklarasi adonanList:
-    const [damageModal, setDamageModal] = useState(null); // { batchId }
+    const [damageModal, setDamageModal] = useState(null);
     const [damageNote, setDamageNote] = useState("");
-    const [loadingAction, setLoadingAction] = useState(null); // batchId yang sedang diproses
-    // Tambah state ini di dalam komponen
-    const [selectedBatch, setSelectedBatch] = useState(null);
+    const [loadingAction, setLoadingAction] = useState(null);
 
-    // Hitung total batch aktif untuk summary
     const totalAktif = adonanList.reduce(
         (acc, p) => acc + p.batches.filter(b => b.status === "ACTIVE").length, 0
     );
 
+    // ── Auto-refresh tiap 30 menit + update jam sekarang ──────
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setNow(Date.now());
+            fetchData(); // re-fetch → server akan return status terbaru (EXPIRED jika sudah lewat)
+        }, 30 * 60 * 1000); // 30 menit
+
+        return () => clearInterval(interval);
+    }, []);
+
+    // ── Cek warning batch mendekati expired ───────────────────
+    useEffect(() => {
+        const WARN_MS = 30 * 60 * 1000; // 30 menit
+        const warnings = [];
+
+        adonanList.forEach(prod => {
+            prod.batches.forEach(b => {
+                if (b.status !== "ACTIVE" || !b.expired_at) return;
+                const msLeft = new Date(b.expired_at) - now;
+                if (msLeft > 0 && msLeft <= WARN_MS) {
+                    const minsLeft = Math.ceil(msLeft / 60000);
+                    warnings.push({ batchId: b.id, recipeName: prod.recipe_name, minsLeft });
+                }
+            });
+        });
+
+        setExpiringWarning(warnings);
+    }, [adonanList, now]);
+
+    // Helper: apakah batch sudah expired secara waktu (meski status belum diupdate server)
+    function isExpiredByTime(b) {
+        return b.expired_at && new Date(b.expired_at) <= now;
+    }
 
     const handleFreeze = async (batchId) => {
         setLoadingAction(batchId);
-        console.log('API base:', API);
         try {
-            // console.log('headers:', headers);
-            // console.log('token:', token);
             await axios.patch(`${API}/batches/${batchId}/freeze`, {}, { headers });
-            fetchData(); // re-fetch list
+            fetchData();
         } catch (err) {
             alert(err.response?.data?.payload?.message || 'Gagal freeze batch');
-            // console.log('status:', err.response?.status);
-            // console.log('message:', err.message);
-            // console.log('data:', err.response?.data);
         } finally {
             setLoadingAction(null);
         }
@@ -115,6 +140,7 @@ export default function Adonan({ setPage, navigate }) {
             setLoadingAction(null);
         }
     };
+
     return (
         <div className="page">
             {/* HEADER */}
@@ -144,40 +170,43 @@ export default function Adonan({ setPage, navigate }) {
                 </div>
             </div>
 
-            {/* FILTER BAR */}
-            <div style={{
-                padding: "10px 16px 0",
-                display: "flex", flexDirection: "column", gap: 8,
-            }}>
-                {/* Tanggal */}
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <input
-                        type="date" value={from} max={to}
-                        onChange={e => setFrom(e.target.value)}
-                        style={inputStyle}
-                    />
-                    <span style={{ color: "var(--text3)", fontSize: 12 }}>–</span>
-                    <input
-                        type="date" value={to} min={from} max={today}
-                        onChange={e => setTo(e.target.value)}
-                        style={inputStyle}
-                    />
+            {/* ── Warning banner batch mau expired ── */}
+            {expiringWarning.length > 0 && (
+                <div style={{
+                    margin: "10px 16px 0",
+                    background: "#fff3cd", border: "1px solid #ffc107",
+                    borderRadius: 12, padding: "10px 14px",
+                    display: "flex", flexDirection: "column", gap: 4,
+                }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#856404", marginBottom: 2 }}>
+                        ⚠ Adonan hampir expired!
+                    </div>
+                    {expiringWarning.map(w => (
+                        <div key={w.batchId} style={{ fontSize: 11, color: "#856404" }}>
+                            Adonan ke #{w.batchId} · {w.recipeName} — sisa <strong>{w.minsLeft} menit</strong>
+                        </div>
+                    ))}
                 </div>
+            )}
 
-                {/* Status chips */}
+            {/* FILTER BAR */}
+            <div style={{ padding: "10px 16px 0", display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <input type="date" value={from} max={to} onChange={e => setFrom(e.target.value)} style={inputStyle} />
+                    <span style={{ color: "var(--text3)", fontSize: 12 }}>–</span>
+                    <input type="date" value={to} min={from} max={today} onChange={e => setTo(e.target.value)} style={inputStyle} />
+                </div>
                 <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
                     {STATUS_OPTIONS.map(opt => (
                         <button
                             key={opt.value}
                             onClick={() => setStatus(opt.value)}
                             style={{
-                                flexShrink: 0,
-                                padding: "5px 12px", borderRadius: 20,
+                                flexShrink: 0, padding: "5px 12px", borderRadius: 20,
                                 border: status === opt.value ? "none" : "1px solid var(--border)",
                                 background: status === opt.value ? "var(--accent)" : "var(--bg0)",
                                 color: status === opt.value ? "#fff" : "var(--text2)",
-                                fontSize: 12, fontWeight: 600, cursor: "pointer",
-                                fontFamily: "inherit",
+                                fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
                             }}
                         >
                             {opt.label}
@@ -188,16 +217,8 @@ export default function Adonan({ setPage, navigate }) {
 
             {/* LIST */}
             <div className="pbody" style={{ paddingBottom: 100 }}>
-                {loading && (
-                    <div style={{ textAlign: "center", color: "var(--text3)", fontSize: 13, marginTop: 40 }}>
-                        Memuat data adonan...
-                    </div>
-                )}
-                {error && (
-                    <div style={{ textAlign: "center", color: "var(--red)", fontSize: 13, marginTop: 40 }}>
-                        Gagal memuat data.
-                    </div>
-                )}
+                {loading && <div style={{ textAlign: "center", color: "var(--text3)", fontSize: 13, marginTop: 40 }}>Memuat data adonan...</div>}
+                {error && <div style={{ textAlign: "center", color: "var(--red)", fontSize: 13, marginTop: 40 }}>Gagal memuat data.</div>}
                 {!loading && !error && adonanList.length === 0 && (
                     <div style={{ textAlign: "center", color: "var(--text3)", fontSize: 13, marginTop: 60 }}>
                         <div style={{ fontSize: 36, marginBottom: 10 }}>🧪</div>
@@ -209,15 +230,11 @@ export default function Adonan({ setPage, navigate }) {
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         {adonanList.map(prod => (
                             <div key={prod.id} style={{
-                                background: "var(--bg0)",
-                                borderRadius: 16,
-                                border: "1px solid var(--border)",
-                                overflow: "hidden",
+                                background: "var(--bg0)", borderRadius: 16,
+                                border: "1px solid var(--border)", overflow: "hidden",
                             }}>
-                                {/* Header produksi */}
                                 <div style={{
-                                    padding: "12px 16px",
-                                    display: "flex", alignItems: "center", gap: 10,
+                                    padding: "12px 16px", display: "flex", alignItems: "center", gap: 10,
                                     borderBottom: prod.batches.length > 0 ? "1px solid var(--border)" : "none",
                                 }}>
                                     <div style={{
@@ -238,25 +255,32 @@ export default function Adonan({ setPage, navigate }) {
                                     </div>
                                 </div>
 
-                                {/* Batch list */}
                                 {prod.batches.length > 0 && (
                                     <div style={{ padding: "8px 16px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
                                         {prod.batches.map(b => {
-                                            const sc = STATUS_COLOR[b.status] ?? { bg: "#f0f0f0", color: "#888" };
-                                            const expiring = b.status === "ACTIVE" && b.expired_at &&
-                                                new Date(b.expired_at) - Date.now() < 60 * 60 * 1000;
+                                            // Expired by time tapi server belum update → tampilkan sebagai EXPIRED
+                                            const effectiveStatus = (b.status === "ACTIVE" && isExpiredByTime(b))
+                                                ? "EXPIRED"
+                                                : b.status;
+
+                                            const sc = STATUS_COLOR[effectiveStatus] ?? { bg: "#f0f0f0", color: "#888" };
+                                            const msLeft = b.expired_at ? new Date(b.expired_at) - now : Infinity;
+                                            const expiringSoon = b.status === "ACTIVE" && msLeft > 0 && msLeft <= 30 * 60 * 1000;
                                             const isLoading = loadingAction === b.id;
+
+                                            // Tombol aksi hanya muncul kalau ACTIVE/FROZEN DAN belum lewat expired
+                                            const showActions = (b.status === "ACTIVE" || b.status === "FROZEN")
+                                                && !isExpiredByTime(b);
 
                                             return (
                                                 <div key={b.id}
                                                     onClick={() => navigate("batch-detail", { batchId: b.id })}
                                                     style={{
                                                         borderRadius: 10,
-                                                        background: expiring ? "#fff8e1" : "var(--bg1)",
-                                                        border: expiring ? "1px solid #ffd54f" : "1px solid var(--border)",
+                                                        background: expiringSoon ? "#fff8e1" : "var(--bg1)",
+                                                        border: expiringSoon ? "1px solid #ffd54f" : "1px solid var(--border)",
                                                         overflow: "hidden",
                                                     }}>
-                                                    {/* Info batch */}
                                                     <div style={{
                                                         display: "flex", alignItems: "center",
                                                         justifyContent: "space-between",
@@ -264,8 +288,12 @@ export default function Adonan({ setPage, navigate }) {
                                                     }}>
                                                         <div>
                                                             <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text1)" }}>
-                                                                Batch #{b.id}
-                                                                {expiring && <span style={{ color: "#e65100", marginLeft: 6, fontSize: 11 }}>⚠ Hampir exp!</span>}
+                                                                Adonan ke - {b.id}
+                                                                {expiringSoon && (
+                                                                    <span style={{ color: "#e65100", marginLeft: 6, fontSize: 11 }}>
+                                                                        ⚠ {Math.ceil(msLeft / 60000)} menit lagi!
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 1 }}>
                                                                 Sisa {b.remaining_qty}/{b.total_qty} {prod.output_unit}
@@ -278,18 +306,16 @@ export default function Adonan({ setPage, navigate }) {
                                                             padding: "3px 9px", borderRadius: 20,
                                                             background: sc.bg, color: sc.color,
                                                         }}>
-                                                            {b.status}
+                                                            {effectiveStatus}
                                                         </span>
                                                     </div>
 
-                                                    {/* Tombol aksi — hanya untuk ACTIVE atau FROZEN */}
-                                                    {(b.status === "ACTIVE" || b.status === "FROZEN") && (
-                                                        <div style={{
-                                                            display: "flex", gap: 6, padding: "0 10px 8px",
-                                                        }}>
+                                                    {/* Tombol aksi — HANYA jika belum expired */}
+                                                    {showActions && (
+                                                        <div style={{ display: "flex", gap: 6, padding: "0 10px 8px" }}>
                                                             {b.status === "ACTIVE" && (
                                                                 <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleFreeze(b.id) }}
+                                                                    onClick={(e) => { e.stopPropagation(); handleFreeze(b.id); }}
                                                                     disabled={isLoading}
                                                                     style={btnStyle("#e8f0fe", "#3b6fd4")}
                                                                 >
@@ -298,7 +324,7 @@ export default function Adonan({ setPage, navigate }) {
                                                             )}
                                                             {b.status === "FROZEN" && (
                                                                 <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleThaw(b.id) }}
+                                                                    onClick={(e) => { e.stopPropagation(); handleThaw(b.id); }}
                                                                     disabled={isLoading}
                                                                     style={btnStyle("#e6f9ee", "#1a9449")}
                                                                 >
@@ -324,6 +350,8 @@ export default function Adonan({ setPage, navigate }) {
                     </div>
                 )}
             </div>
+
+            {/* Modal Damage — sama seperti sebelumnya */}
             {damageModal && (
                 <div style={{
                     position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",

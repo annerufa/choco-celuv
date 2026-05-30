@@ -108,7 +108,7 @@ function RekapPenjualan({ onBack }) {
 
 function RekapPembelian({ onBack }) {
     const [range, setRange] = useState(defaultRange());
-    const { data, loading } = useApi(`/purchases/rekap/pembelian?start=${range.start}&end=${range.end}`);
+    const { data, loading } = useApi(`/sales/rekap/pembelian?start=${range.start}&end=${range.end}`);
     const summary = data?.summary ?? {};
     const list = Array.isArray(data?.list) ? data.list : [];
 
@@ -167,7 +167,7 @@ function RekapPembelian({ onBack }) {
 
 function RekapDistribusi({ onBack }) {
     const [range, setRange] = useState(defaultRange());
-    const { data, loading } = useApi(`/distributions/rekap/distribusi?start=${range.start}&end=${range.end}`);
+    const { data, loading } = useApi(`/sales/rekap/distribusi?start=${range.start}&end=${range.end}`);
     const summary = data?.summary ?? {};
     const list = Array.isArray(data?.list) ? data.list : [];
 

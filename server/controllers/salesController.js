@@ -85,7 +85,14 @@ const getRekapPenjualan = async (req, res) => {
 const getRekapPembelian = async (req, res) => {
     try {
         const { startDate, endDate } = getDateRange(req);
-        const data = await Purchase.getRekapPembelian(req.user.id, startDate, endDate);
+        const { loc_id: locId, status } = req.query;
+
+        const data = await Sale.getRekapPembelian({
+            startDate,
+            endDate,
+            locId: locId || null,
+            status: status || null,
+        });
         response(200, data, 'Berhasil', res);
     } catch (err) {
         response(500, null, err.message, res);
@@ -95,7 +102,7 @@ const getRekapPembelian = async (req, res) => {
 const getRekapDistribusi = async (req, res) => {
     try {
         const { startDate, endDate } = getDateRange(req);
-        const data = await Distribution.getRekapDistribusi(req.user.id, startDate, endDate);
+        const data = await Sale.getRekapDistribusi(req.user.id, startDate, endDate);
         response(200, data, 'Berhasil', res);
     } catch (err) {
         response(500, null, err.message, res);

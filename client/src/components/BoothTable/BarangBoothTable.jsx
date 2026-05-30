@@ -15,19 +15,26 @@ export default function BarangBoothTable({ items, boothList, loading, error }) {
         const settings = boothList.map(booth => ({
             booth_id: booth.id,
             booth_name: booth.name,
-            // Ambil setting yang sudah ada, atau default 0 / aktif
+            safety_stock: item.boothSettings?.[booth.id]?.safety_stock ?? 0,
             min: item.boothSettings?.[booth.id]?.min ?? 0,
             max: item.boothSettings?.[booth.id]?.max ?? 0,
             is_active: item.boothSettings?.[booth.id]?.is_active ?? true,
+            can_purchase: item.boothSettings?.[booth.id]?.can_purchase ?? false, // ✅ ini yang hilang
         }));
         setSetupModal({ open: true, item, settings });
     }
 
-    function handleSetupSubmit(itemId, updatedBooths) {
-        // TODO: panggil API patch/put ke endpoint stok per booth
-        // updatedBooths = [{ booth_id, min, max, is_active }, ...]
-        console.log('Update stok booth:', itemId, updatedBooths);
-        toast.success('Pengaturan booth berhasil disimpan');
+    async function handleSetupSubmit(itemId, updatedBooths) {
+        try {
+            await fetch(`/api/items/${itemId}/booth-settings`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ booths: updatedBooths }),
+            });
+            toast.success('Pengaturan booth berhasil disimpan');
+        } catch (err) {
+            toast.error('Gagal menyimpan pengaturan');
+        }
     }
 
     if (loading) return <div className={styles.stateMsg}>Memuat data barang...</div>;

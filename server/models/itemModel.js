@@ -298,7 +298,7 @@ const updateBoothSettings = async (item_id, booths) => {
                      can_purchase = ?
                  WHERE item_id     = ?
                    AND location_id = ?`,
-                [b.safety_stock, b.min, b.max, b.is_active ? 1 : 0, b.can_purchase ? 0 : 1, item_id, b.booth_id]
+                [b.safety_stock, b.min, b.max, b.is_active ? 1 : 0, b.can_purchase ? 1 : 0, item_id, b.booth_id]
             );
         }
 

@@ -29,6 +29,7 @@ import RekapProduksiPage from './pages/Produksi/RekapProduksiPage';
 import ProductsPage from './pages/Products/ProductsPage';
 
 import RekapPenjualanPage from './pages/Penjualan/RekapPenjualanPage';
+import RekapPembelianPage from './pages/Pembelian/RekapPembelianPage';
 import ChartPage from './pages/Dashboard/ChartPage';
 import ProtectedRoute from './routes/ProtectedRoute';
 
@@ -76,6 +77,7 @@ export default function App() {
 
 
         <Route path="/pembelian" element={<PurchasePage />} />
+        <Route path="/rekap-pembelian" element={<RekapPembelianPage />} />
         <Route path="/pembelian/:id" element={<DetailPembelianPage />} />
         <Route path="/barang" element={<DataBarangPage />} />
         <Route path="/barang/:id" element={<DetailBarangPage />} />

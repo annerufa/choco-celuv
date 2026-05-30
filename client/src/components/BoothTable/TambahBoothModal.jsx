@@ -1,6 +1,7 @@
 // src/components/BoothTable/TambahBoothModal.jsx
-import { useState, lazy, Suspense } from 'react';
+// import { useState, lazy, Suspense } from 'react';
 import styles from './BoothModal.module.css';
+import { useState, useEffect, lazy, Suspense } from 'react';
 
 // Lazy load MapPicker — Leaflet tidak support SSR (penting untuk Next.js)
 // Kalau pakai Vite/CRA, bisa import biasa: 
@@ -23,6 +24,26 @@ export default function TambahBoothModal({ isOpen, onClose, onSubmit }) {
     const [form, setForm] = useState(INITIAL_FORM);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
+    // Auto-detect lokasi user saat modal dibuka
+    useEffect(() => {
+        if (!isOpen) return;
+        if (!navigator.geolocation) return;
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setForm(f => ({
+                    ...f,
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude,
+                }));
+            },
+            (err) => {
+                // Kalau ditolak/gagal, biarkan kosong — user pin manual
+                console.warn("Geolocation ditolak:", err.message);
+            },
+            { enableHighAccuracy: true, timeout: 8000 }
+        );
+    }, [isOpen]); // ← hanya jalan saat modal baru dibuka
 
     if (!isOpen) return null;
 

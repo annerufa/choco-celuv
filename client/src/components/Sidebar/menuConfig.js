@@ -66,12 +66,12 @@ export const menuConfig = [
             {
                 id: 'pembelian',
                 label: 'Pembelian',
-                path: '/pembelian',           // null = punya submenu, tidak langsung navigate
+                path: null,           // null = punya submenu, tidak langsung navigate
                 icon: 'pembelian',
-                // submenu: [
-                //   { label: 'Pembelian', path: '/pembelian' },
-                //   { label: 'Barang Booth', path: '/barang/booth' },
-                // ],
+                submenu: [
+                    { label: 'Pembelian', path: '/pembelian' },
+                    { label: 'Rekap Pembelian', path: '/rekap-pembelian' },
+                ],
             },
             {
                 id: 'distribusi',

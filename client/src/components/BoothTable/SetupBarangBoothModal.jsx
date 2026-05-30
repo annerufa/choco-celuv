@@ -52,7 +52,7 @@ export default function SetupBarangBoothModal({
                 Number(row.min) !== Number(orig.min) ||
                 Number(row.max) !== Number(orig.max) ||
                 row.is_active !== orig.is_active ||
-                Boolean(row.can_purchase) !== Boolean(orig.can_purchase) // ✅ tambah
+                row.can_purchase !== orig.can_purchase // ✅ tambah
             );
         });
     }
@@ -205,7 +205,7 @@ export default function SetupBarangBoothModal({
                                     type="button"
                                     className={`${styles.toggle} ${row.can_purchase ? styles.toggleBuy : ''}`}
                                     onClick={() => updateRow(row.booth_id, 'can_purchase', !row.can_purchase)}
-                                    disabled={!row.is_active}
+                                    disabled={!row.is_active}   // ✅ disable kalau boothnya nonaktif, bukan kalau can_purchase = false
                                     aria-label={row.can_purchase ? 'Larang beli' : 'Izinkan beli'}
                                     title={!row.is_active ? 'Aktifkan booth dulu' : row.can_purchase ? 'Klik untuk larang beli' : 'Klik untuk izinkan beli'}
                                 >

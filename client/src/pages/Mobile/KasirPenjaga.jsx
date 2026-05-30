@@ -1,5 +1,5 @@
 // src/pages/Mobile/KasirPenjaga.jsx
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useApi } from "../../hooks/useApi";
 import axios from "axios";
 import { IconCart, IconBack, IconCheck, IconCup } from "./Icons";
@@ -29,8 +29,35 @@ function SizeChip({ size }) {
 
 // ── Mini Stepper ──────────────────────────────────────────────
 function Stepper({ value, onChange, accent }) {
+  const [editing, setEditing] = useState(false);
+  const [raw, setRaw] = useState("");
+  const inputRef = useRef(null);
+
   const color = accent ?? "var(--accent)";
   const softBg = accent ? "rgba(37,99,168,0.12)" : "var(--accentsoft)";
+
+  function startEdit() {
+    setRaw(value > 0 ? String(value) : "");
+    setEditing(true);
+    setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }, 0);
+  }
+
+  function commitEdit() {
+    const parsed = parseInt(raw, 10);
+    if (!isNaN(parsed) && parsed >= 0) onChange(parsed);
+    else onChange(value);
+    setEditing(false);
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === "Enter") commitEdit();
+    if (e.key === "Escape") setEditing(false);
+    if (e.key === "ArrowUp") { e.preventDefault(); setRaw(String(Math.max(0, (parseInt(raw) || 0) + 1))); }
+    if (e.key === "ArrowDown") { e.preventDefault(); setRaw(String(Math.max(0, (parseInt(raw) || 0) - 1))); }
+  }
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
@@ -44,16 +71,49 @@ function Stepper({ value, onChange, accent }) {
           display: "flex", alignItems: "center", justifyContent: "center",
         }}
       >−</button>
-      <div style={{
-        width: 34, height: 30, border: "1px solid var(--border2)",
-        background: value > 0 ? softBg : "var(--bg1)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 14, fontWeight: 900,
-        color: value > 0 ? color : "var(--text3)",
-        transition: "all 0.15s",
-      }}>
-        {value}
-      </div>
+
+      {editing ? (
+        <input
+          ref={inputRef}
+          type="number"
+          min="0"
+          value={raw}
+          onChange={e => setRaw(e.target.value)}
+          onBlur={commitEdit}
+          onKeyDown={handleKeyDown}
+          style={{
+            width: 34, height: 30,
+            border: "1px solid var(--border2)",
+            borderLeft: `1.5px solid ${color}`,
+            borderRight: `1.5px solid ${color}`,
+            background: softBg,
+            textAlign: "center",
+            fontSize: 14, fontWeight: 900,
+            color: color,
+            outline: "none",
+            padding: 0,
+            MozAppearance: "textfield",
+          }}
+        />
+      ) : (
+        <div
+          onClick={startEdit}
+          title="Klik untuk isi angka langsung"
+          style={{
+            width: 34, height: 30, border: "1px solid var(--border2)",
+            background: value > 0 ? softBg : "var(--bg1)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 900,
+            color: value > 0 ? color : "var(--text3)",
+            cursor: "text",
+            transition: "all 0.15s",
+            userSelect: "none",
+          }}
+        >
+          {value}
+        </div>
+      )}
+
       <button
         onClick={() => onChange(value + 1)}
         style={{
@@ -69,7 +129,6 @@ function Stepper({ value, onChange, accent }) {
     </div>
   );
 }
-
 // ── Product Card ──────────────────────────────────────────────
 // entry: { qty: number, lessIceQty: number }
 function ProductCard({ product, entry, onChange }) {
@@ -80,6 +139,7 @@ function ProductCard({ product, entry, onChange }) {
   function setQty(val) { onChange(product, val, lessIceQty); }
   function setLessIceQty(val) { onChange(product, qty, val); }
 
+  function clearAll() { onChange(product, 0, 0); } // ← tambah ini
   return (
     <div style={{
       background: "var(--bg0)", borderRadius: 14,
@@ -109,7 +169,8 @@ function ProductCard({ product, entry, onChange }) {
         </div>
 
         {/* Kalau belum ada qty — tombol + saja */}
-        {!active && (
+        {!active ? (
+          // Tombol + kalau belum ada item
           <button
             onClick={() => setQty(1)}
             style={{
@@ -120,6 +181,21 @@ function ProductCard({ product, entry, onChange }) {
               flexShrink: 0,
             }}
           >+</button>
+        ) : (
+          // Tombol hapus kalau sudah ada item
+          <button
+            onClick={clearAll}
+            title="Hapus dari keranjang"
+            style={{
+              width: 32, height: 32, borderRadius: 9,
+              border: "1px solid var(--border2)",
+              background: "var(--bg1)", color: "var(--text3)",
+              fontSize: 15, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+              transition: "all 0.15s",
+            }}
+          >🗑</button>
         )}
       </div>
 

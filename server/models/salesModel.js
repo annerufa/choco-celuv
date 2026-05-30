@@ -243,25 +243,74 @@ const getRekapPenjualan = async (userId, startDate, endDate) => {
 };
 
 // purchasesModel.js
-const getRekapPembelian = async (userId, startDate, endDate) => {
+const getRekapPembelian = async ({ startDate, endDate, locId, status }) => {
+    const conditions = [
+        `DATE(p.date) BETWEEN ? AND ?`,
+        `p.loc_id != 1`  // ← exclude gudang (loc_id = 1)
+    ];
+    const params = [startDate, endDate];
+
+    if (locId) {
+        conditions.push(`p.loc_id = ?`);
+        params.push(locId);
+    }
+    if (status) {
+        conditions.push(`p.status = ?`);
+        params.push(status);
+    }
+
+    const where = conditions.join(' AND ');
+
     const [[summary]] = await db.query(`
         SELECT 
-            COUNT(id) AS total_pembelian,
-            COALESCE(SUM(total), 0) AS total_nilai
-        FROM purchases
-        WHERE created_by = ? AND DATE(date) BETWEEN ? AND ?
-        AND status = 'dikonfirmasi'
-    `, [userId, startDate, endDate]);
+            COUNT(p.id) AS total_pembelian,
+            COALESCE(SUM(p.total), 0) AS total_nilai
+        FROM purchases p
+        WHERE ${where}
+    `, params);
 
     const [list] = await db.query(`
-        SELECT p.id, p.supplier, p.date, p.total, p.status
+    SELECT 
+            p.id, p.supplier, p.date, p.total, p.status,
+            u.name  AS user_name,
+            sl.name AS booth_name    -- ← dari stock_locations, bukan booth
         FROM purchases p
-        WHERE p.created_by = ? AND DATE(p.date) BETWEEN ? AND ?
-        AND p.status = 'dikonfirmasi'
+        LEFT JOIN users u            ON u.id  = p.created_by
+        LEFT JOIN stock_locations sl ON sl.id = p.loc_id   -- ← join ke loc_id
+        WHERE ${where}
         ORDER BY p.date DESC
-    `, [userId, startDate, endDate]);
+    `, params);
 
-    return { summary, list };
+    if (list.length === 0) return { summary, list: [] };
+
+    const purchaseIds = list.map(p => p.id);
+    const placeholders = purchaseIds.map(() => '?').join(',');
+
+
+    const [items] = await db.query(`
+    SELECT 
+            pi.purchase_id,
+            i.name          AS item_name,
+            pi.buy_qty      AS qty,        -- ← bukan pi.qty
+            pi.buy_unit     AS unit,       -- ← bukan pi.unit
+            pi.unit_price,
+            pi.total_price
+        FROM purchase_items pi
+        LEFT JOIN items i ON i.id = pi.item_id
+        WHERE pi.purchase_id IN (${placeholders})
+        ORDER BY pi.purchase_id, pi.item_id
+    `, purchaseIds);
+
+    const itemsMap = {};
+    items.forEach(it => {
+        if (!itemsMap[it.purchase_id]) itemsMap[it.purchase_id] = [];
+        itemsMap[it.purchase_id].push(it);
+    });
+
+    return {
+        summary,
+        list: list.map(p => ({ ...p, items: itemsMap[p.id] ?? [] })),
+    };
 };
 
 // distributionsModel.js
