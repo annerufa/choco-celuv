@@ -35,10 +35,10 @@ export default function TambahKaryawanModal({ isOpen, onClose, onSubmit, karyawa
         const nikRaw = form.nik.replace(/-/g, '');
         const hpRaw = form.no_hp.replace(/\D/g, '');
 
-        if (nikRaw && karyawanList.some(k => k.nik.replace(/-/g, '') === nikRaw)) {
+        if (nikRaw && karyawanList.some(k => (k.nik ?? '').replace(/-/g, '') === nikRaw)) {
             errs.nik = 'NIK sudah terdaftar';
         }
-        if (hpRaw && karyawanList.some(k => k.no_hp.replace(/\D/g, '') === hpRaw)) {
+        if (hpRaw && karyawanList.some(k => (k.no_hp ?? '').replace(/\D/g, '') === hpRaw)) {
             errs.no_hp = 'No HP sudah terdaftar';
         }
         return errs;
