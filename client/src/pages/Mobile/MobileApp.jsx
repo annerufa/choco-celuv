@@ -27,7 +27,12 @@ import KurirHome from "./KurirHome";
 import PengirimanKurir from "./PengirimanKurir";
 import RekapKurir from "./RekapKurir";
 import KurirProfil from "./KurirProfil";
+import RekapShift from "./RekapShift";
+import RekapPage from "./RekapPage";
 
+// PageRenderer — ganti baris rekap:
+
+// di PageRenderer, tambah:
 // ── Nav config per role ──────────────────────────────────────────────────────
 const NAV = {
   kurir: [
@@ -50,17 +55,18 @@ const NAV = {
 function PageRenderer({ role, page, setPage, navigate, pageParams }) {
   if (role === "kurir") {
     if (page === "home") return <KurirHome setPage={setPage} />;
-    if (page === "profil") return <KurirProfil />;
-    if (page === "pengiriman") return <PengirimanKurir />;
-    if (page === "rekap") return <RekapKurir />;
+    if (page === "profil") return <KurirProfil setPage={setPage} />;
+    if (page === "pengiriman") return <PengirimanKurir setPage={setPage} />;
+    if (page === "rekap") return <RekapKurir setPage={setPage} />;
   } else {
-    if (page === "home") return <HomePenjaga setPage={setPage} />;
-    if (page === "stok") return <StokPage />;
-    if (page === "absensi") return <AbsensiPage />;
-    if (page === "kasir") return <KasirPenjaga />;
-    if (page === "profil") return <ProfilPenjaga />;
+    if (page === "home") return <HomePenjaga setPage={setPage} prevPage={pageParams.prevPage ?? 'home'} />;
+    if (page === "stok") return <StokPage setPage={setPage} />;
+    if (page === "absensi") return <AbsensiPage setPage={setPage} />;
+    if (page === "kasir") return <KasirPenjaga setPage={setPage} />;
+    if (page === "profil") return <ProfilPenjaga setPage={setPage} />;  // ✅ tambah setPage
+    if (page === "rekap") return <RekapPage setPage={setPage} />;     // ✅ pindah ke sini
     if (page === "buat-adonan") return <BuatAdonan setPage={setPage} />;
-    if (page === "distribusi") return <DistribusiPenjaga />;
+    if (page === "distribusi") return <DistribusiPenjaga setPage={setPage} />;
     if (page === "pembelian") return <PembelianBooth setPage={setPage} />;
     if (page === "adonan") return <Adonan setPage={setPage} navigate={navigate} />;
     if (page === "batch-detail") return <BatchDetail setPage={setPage} batchId={pageParams.batchId} />;

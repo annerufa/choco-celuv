@@ -24,8 +24,8 @@ const typeLabel = {
 const statusVariant = {
     'draft': 'grey',
     'dikirim': 'warning',
-    'sampai': 'success',
-    'diterima': 'success',
+    'sampai': 'warning',
+    'sesuai': 'success',
     'kurang': 'danger',
 };
 

@@ -1,11 +1,24 @@
 // controllers/salesController.js
 const Sale = require('../models/salesModel');
 const response = require('../helpers/response');
+const getUserLocation = require('../helpers/getUserLocation');
 
 // GET /sales/products
 const getProducts = async (req, res) => {
     try {
         const data = await Sale.getProducts();
+        response(200, data, 'Berhasil mengambil produk', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+// GET /sales/products
+const getSummary = async (req, res) => {
+    try {
+        const loc = await getUserLocation(req.user.id);
+        if (!loc) return response(404, null, 'Jadwal aktif tidak ditemukan', res);
+
+        const data = await Sale.getSummary(loc.booth_id);
         response(200, data, 'Berhasil mengambil produk', res);
     } catch (err) {
         response(500, null, err.message, res);
@@ -50,5 +63,43 @@ const getRekap = async (req, res) => {
     }
 };
 
+// Tambah helper tanggal di atas
+function getDateRange(req) {
+    const today = new Date().toISOString().slice(0, 10);
+    const defaultStart = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+    const startDate = req.query.start ?? defaultStart;
+    const endDate = req.query.end ?? today;
+    return { startDate, endDate };
+}
 
-module.exports = { getProducts, createSale, getRekap };
+const getRekapPenjualan = async (req, res) => {
+    try {
+        const { startDate, endDate } = getDateRange(req);
+        const data = await Sale.getRekapPenjualan(req.user.id, startDate, endDate);
+        response(200, data, 'Berhasil', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+const getRekapPembelian = async (req, res) => {
+    try {
+        const { startDate, endDate } = getDateRange(req);
+        const data = await Purchase.getRekapPembelian(req.user.id, startDate, endDate);
+        response(200, data, 'Berhasil', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+const getRekapDistribusi = async (req, res) => {
+    try {
+        const { startDate, endDate } = getDateRange(req);
+        const data = await Distribution.getRekapDistribusi(req.user.id, startDate, endDate);
+        response(200, data, 'Berhasil', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+module.exports = { getProducts, createSale, getRekap, getSummary, getRekapPenjualan, getRekapPembelian, getRekapDistribusi };

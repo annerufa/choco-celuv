@@ -1,5 +1,5 @@
 import { ROLES } from "./roles";
-import { IconKasir, IconStok, IconCheck, IconTruck, IconAbsensi, IconFlask, IconBox, IconRekap, IconProfil, IconWarn } from "./Icons";
+import { IconKasir, IconStok, IconTruck, IconAbsensi, IconFlask, IconBox, IconRekap, IconProfil } from "./Icons";
 import { useAuth } from '../../context/AuthContext';
 import { useApi } from '../../hooks/useApi';
 
@@ -8,39 +8,28 @@ const ROLE_LABEL = {
   kurir: 'Kurir',
   penjaga_booth: 'Penjaga Booth',
 };
-const statusVariant = {
-  hadir: { cls: 'success', label: 'Hadir' },
-  terlambat: { cls: 'warning', label: 'Terlambat' },
-  absen: { cls: 'danger', label: 'Absen' },
-  izin: { cls: 'accent', label: 'Izin' },
-  sakit: { cls: 'brown', label: 'Sakit' },
-  libur: { cls: 'grey', label: 'Libur' },
-};
+
 export function formatRole(role) {
   return ROLE_LABEL[role] ?? role;
 }
 
+function fmt(val) {
+  return Number(val ?? 0).toLocaleString('id-ID');
+}
+
 function formatJam(dt) {
   if (!dt) return '–';
-  if (typeof dt === 'string' && dt.length <= 8 && dt.includes(':')) {
-    return dt.slice(0, 5);
-  }
   return new Date(dt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function HomePenjaga({ setPage }) {
   const r = ROLES.kasir;
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
-  const {
-    data: openAbsen,
-    loading: loadingOpen,
-    fetchData: refetchOpen,
-  } = useApi('/attendance/open');
-  // console.log('openAbsen:', openAbsen);
-  const rawOpen = openAbsen; // ini array [] atau [{ ... }]
-  const absenHariIni = Array.isArray(rawOpen) ? (rawOpen[0] ?? null) : rawOpen ?? null;
-  // console.log("status: ", absenHariIni.status);
+  const { data, loading } = useApi('/sales/shift-summary');
+
+  const summary = data?.summary ?? {};
+  const transaksi = Array.isArray(data?.transaksi) ? data.transaksi : [];
 
   const getInitial = (name) =>
     name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
@@ -54,9 +43,7 @@ export default function HomePenjaga({ setPage }) {
             <div className="ptitle">Hai, {user?.name.split(" ")[0]} 👋</div>
             <div className="psub" style={{ textTransform: 'capitalize' }}>{formatRole(user?.role)}</div>
           </div>
-          <div className="ava">
-            {getInitial(user?.name)}
-          </div>
+          <div className="ava">{getInitial(user?.name)}</div>
         </div>
       </div>
 
@@ -64,77 +51,21 @@ export default function HomePenjaga({ setPage }) {
         {/* HERO */}
         <div className="hero">
           <div className="hero-lbl">Penjualan Hari Ini</div>
-          <div className="hero-val">Rp 62.000</div>
-          {/* <div className="hero-tag">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            +9.3% vs kemarin
-          </div> */}
+          <div className="hero-val">
+            {loading ? '...' : `Rp ${fmt(summary.total_penjualan)}`}
+          </div>
           <div className="hero-minis">
             <div className="hmini">
               <div className="hmini-lbl">Transaksi</div>
-              <div className="hmini-val">3</div>
+              <div className="hmini-val">{loading ? '–' : (summary.total_transaksi ?? 0)}</div>
             </div>
             <div className="hmini">
               <div className="hmini-lbl">Avg. Order</div>
-              <div className="hmini-val">12rb</div>
+              <div className="hmini-val">{loading ? '–' : `Rp ${fmt(summary.avg_order)}`}</div>
             </div>
-            {/* <div className="hmini">
-              <div className="hmini-lbl">QRIS</div>
-              <div className="hmini-val">68%</div>
-            </div> */}
           </div>
         </div>
-        {/* <div style={{ marginBottom: "10px" }}>
-          <div className="scard-row">
-            <div className="scard-icon" style={{ background: openAbsen ? "var(--greensoft)" : "var(--bg2)", color: openAbsen ? "var(--green)" : "var(--text3)" }}>
-              <IconKasir />
-            </div>
-            <div className="scard-info">
-              {absenHariIni ? (
-                <>
-                  <div className="sval" style={{ fontSize: 14 }}>Absen hari ini</div>
-                  <div style={{ marginTop: 4 }}>
-                    <span style={{ padding: '4px', color: 'var(--accent)', fontSize: 12 }}>{(absenHariIni.status)}   </span>
-                    <span style={{
-                      background: 'var(--greensoft)', color: 'var(--green)',
-                      fontSize: 11, fontWeight: 700, padding: '2px 8px',
-                      borderRadius: 20, display: 'inline-block'
-                    }}>
-                      {formatJam(absenHariIni.clock_in)}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="slbl">Hari ini</div>
-                  <div className="sval" style={{ fontSize: 14 }}>Belum absen masuk</div>
-                </>
-              )}
-            </div>
 
-            Tombol absensi — selalu muncul
-            <button
-              onClick={() => setPage("absensi")}
-              style={{
-                marginLeft: 'auto',
-                flexShrink: 0,
-                padding: '7px 13px',
-                borderRadius: '10px',
-                border: 'none',
-                background: 'var(--greensoft)',
-                color: 'var(--green)',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              Absensi
-            </button>
-          </div>
-        </div> */}
         {/* MENU GRID */}
         <div className="sec-title">Menu</div>
         <div className="menu-grid">
@@ -149,70 +80,73 @@ export default function HomePenjaga({ setPage }) {
             { id: "profil", label: "Profil", icon: <IconProfil />, bg: "var(--greensoft)", color: "var(--green)" },
           ].map(({ id, label, icon, bg, color }) => (
             <div key={id} className="menu-item" onClick={() => setPage(id)}>
-              <div className="menu-icon" style={{ background: bg, color }}>
-                {icon}
-              </div>
+              <div className="menu-icon" style={{ background: bg, color }}>{icon}</div>
               <div className="menu-label">{label}</div>
             </div>
+
           ))}
         </div>
 
-        {/* AKTIVITAS */}
+        {/* AKTIVITAS TERBARU */}
         <div className="sec-title">Aktivitas Terbaru</div>
-        <div className="act-list">
-          <div className="act-item">
-            <div className="act-ic" style={{ background: "var(--greensoft)" }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" style={{ width: 15, height: 15 }}>
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
-            <div>
-              <div className="act-ttl">Transaksi #INV-0312</div>
-              <div className="act-sub">QRIS · 3 item</div>
-            </div>
-            <div className="act-r">
-              <div className="act-amt" style={{ color: "var(--green)" }}>+Rp 15.000</div>
-              <div className="act-time">09:38</div>
-            </div>
-          </div>
 
-          <div className="act-item">
-            <div className="act-ic" style={{ background: "var(--accentsoft)" }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ width: 15, height: 15 }}>
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-            </div>
-            <div>
-              <div className="act-ttl">Stok Menipis</div>
-              <div className="act-sub">Coklat Bubuk — sisa 2 kg</div>
-            </div>
-            <div className="act-r">
-              <div className="act-amt" style={{ color: "var(--accent)" }}>Peringatan</div>
-              <div className="act-time">09:15</div>
-            </div>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text3)', fontSize: 13 }}>
+            Memuat...
           </div>
+        ) : transaksi.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <div style={{ fontSize: 28, marginBottom: 6 }}>🧾</div>
+            <div style={{ fontSize: 13, color: 'var(--text3)' }}>Belum ada transaksi hari ini</div>
+          </div>
+        ) : (
+          <div className="act-list">
+            {transaksi.slice(0, 5).map((trx) => (
+              <div key={trx.id} className="act-item">
+                <div className="act-ic" style={{ background: 'var(--greensoft)' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" style={{ width: 15, height: 15 }}>
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="act-ttl">#{String(trx.id).padStart(4, '0')}</div>
+                  <div className="act-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {trx.items_label}
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20, marginTop: 3, display: 'inline-block',
+                    background: trx.payment_method === 'qris' ? 'var(--bluesoft)' : 'var(--greensoft)',
+                    color: trx.payment_method === 'qris' ? 'var(--blue)' : 'var(--green)',
+                  }}>
+                    {trx.payment_method === 'qris' ? 'QRIS' : 'Tunai'}
+                  </span>
+                </div>
+                <div className="act-r">
+                  <div className="act-amt" style={{ color: 'var(--green)' }}>+Rp {fmt(trx.grand_total)}</div>
+                  <div className="act-time">{formatJam(trx.created_at)}</div>
+                </div>
+              </div>
+            ))}
 
-          <div className="act-item">
-            <div className="act-ic" style={{ background: "var(--greensoft)" }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" style={{ width: 15, height: 15 }}>
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
-            <div>
-              <div className="act-ttl">Transaksi #INV-0311</div>
-              <div className="act-sub">Tunai · 2 item</div>
-            </div>
-            <div className="act-r">
-              <div className="act-amt" style={{ color: "var(--green)" }}>+Rp 50.000</div>
-              <div className="act-time">09:02</div>
-            </div>
+            {/* Tombol lihat semua kalau lebih dari 5 */}
+            {transaksi.length > 5 && (
+              <button
+                onClick={() => setPage('rekap')}
+                style={{
+                  width: '100%', padding: '10px', borderRadius: 12,
+                  border: '1px solid var(--border2)', background: 'var(--bg0)',
+                  color: 'var(--accent)', fontSize: 12, fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'inherit', marginTop: 2,
+                }}
+              >
+                Lihat semua {transaksi.length} transaksi →
+              </button>
+            )}
           </div>
-        </div>
+        )}
 
         <div style={{ height: 20 }} />
       </div>
-    </div >
+    </div>
   );
 }

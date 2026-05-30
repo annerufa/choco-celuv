@@ -37,6 +37,16 @@ const getPenjaga = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
+
+const myProfile = async (req, res) => {
+    try {
+        console.log('id profile:', req.user.id)
+        const data = await Karyawan.getProfile(req.user.id);
+        response(200, data, 'Berhasil mengambil data profil', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
 const createKaryawan = async (req, res) => {
     try {
         // hashing password sebelum disimpan ke database
@@ -120,4 +130,4 @@ const updatePassword = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
-module.exports = { getAllKaryawan, createKaryawan, updateKaryawan, deleteKaryawan, statusKaryawan, getKurir, getPenjaga, getAllKaryawanwithJadwal, updatePassword };
+module.exports = { getAllKaryawan, myProfile, createKaryawan, updateKaryawan, deleteKaryawan, statusKaryawan, getKurir, getPenjaga, getAllKaryawanwithJadwal, updatePassword };

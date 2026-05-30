@@ -5,13 +5,14 @@ import styles from './KaryawanModal.module.css';
 const INITIAL_FORM = {
     name: '',
     no_hp: '',
+    nik: '',
     alamat: '',
     role: '',
     entry_date: '',
     is_active: true,
 };
 
-export default function EditKaryawanModal({ isOpen, onClose, onSubmit, karyawan }) {
+export default function EditKaryawanModal({ isOpen, onClose, onSubmit, karyawan, karyawanList = [] }) {
     const [form, setForm] = useState(INITIAL_FORM);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
@@ -21,6 +22,7 @@ export default function EditKaryawanModal({ isOpen, onClose, onSubmit, karyawan 
             setForm({
                 name: karyawan.name || '',
                 no_hp: karyawan.no_hp || '',
+                no_hp: karyawan.nik || '',
                 alamat: karyawan.alamat || '',
                 role: karyawan.role || '',
                 entry_date: karyawan.entry_date
@@ -38,6 +40,7 @@ export default function EditKaryawanModal({ isOpen, onClose, onSubmit, karyawan 
         const errs = {};
         if (!form.name.trim()) errs.name = 'Nama karyawan wajib diisi';
         if (!form.alamat.trim()) errs.alamat = 'Alamat wajib diisi';
+        if (!form.nik) errs.nik = 'NIK wajib diisi';
         if (!form.no_hp) {
             errs.no_hp = 'No HP wajib diisi';
         } else if (form.no_hp.replace(/\D/g, '').length < 10) {
@@ -56,6 +59,7 @@ export default function EditKaryawanModal({ isOpen, onClose, onSubmit, karyawan 
         try {
             await onSubmit(karyawan.id, {
                 ...form,
+                nik: form.nik.replace(/\D/g, ''),
                 no_hp: form.no_hp.replace(/\D/g, ''),
             });
             setErrors({});
@@ -75,15 +79,33 @@ export default function EditKaryawanModal({ isOpen, onClose, onSubmit, karyawan 
                     <button className={styles.modalClose} onClick={onClose}>✕</button>
                 </div>
                 <div className={styles.modalBody}>
+                    <div className={styles.formGroup}>
+                        <label className={styles.formLabel}>Nama Karyawan<span>*</span></label>
+                        <input
+                            className={`${styles.formInput} ${errors.name ? styles.error : ''}`}
+                            type="text"
+                            placeholder="Masukkan nama lengkap"
+                            value={form.name}
+                            onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                        />
+                        {errors.name && <div className={styles.formError}>{errors.name}</div>}
+                    </div>
                     <div className={styles.formRow}>
                         <div className={styles.formGroup}>
                             <label className={styles.formLabel}>Nama Karyawan<span>*</span></label>
                             <input
-                                className={`${styles.formInput} ${errors.name ? styles.error : ''}`}
+                                className={`${styles.formInput} ${errors.nik ? styles.error : ''}`}
                                 type="text"
                                 placeholder="Masukkan nama lengkap"
-                                value={form.name}
-                                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                                value={form.nik}
+                                onChange={e => {
+                                    const digits = e.target.value.replace(/\D/g, '').slice(0, 13);
+                                    const formatted = digits.replace(
+                                        /^(\d{4})(\d{0,4})(\d{0,4})(\d{0,1})$/,
+                                        (_, a, b, c, d) => [a, b, c, d].filter(Boolean).join('-')
+                                    );
+                                    setForm(f => ({ ...f, nik: formatted }));
+                                }}
                             />
                             {errors.name && <div className={styles.formError}>{errors.name}</div>}
                         </div>

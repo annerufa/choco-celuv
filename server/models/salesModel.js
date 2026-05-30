@@ -198,5 +198,92 @@ const getRekap = async ({ from, to, booth_id, method }) => {
 
     return sales.map(s => ({ ...s, items: itemMap[s.id] ?? [] }));
 };
+const getSummary = async (id) => {
+    const [rows] = await db.query(`
+            SELECT 
+        COUNT(s.id) AS total_transaksi,
+        SUM(s.grand_total) AS total_penjualan,
+        AVG(s.grand_total) AS avg_order,
+        SUM(CASE WHEN s.payment_method = 'tunai' THEN 1 ELSE 0 END) AS tunai,
+        SUM(CASE WHEN s.payment_method = 'qris' THEN 1 ELSE 0 END) AS qris
+    FROM sales s
+    WHERE s.booth_id = ? 
+    AND DATE(s.created_at) = CURDATE()
+    `, [id]);
+    return rows;
+};
 
-module.exports = { getProducts, createSale, getRekap };
+// salesModel.js
+const getRekapPenjualan = async (userId, startDate, endDate) => {
+    const [[summary]] = await db.query(`
+        SELECT 
+            COUNT(s.id) AS total_transaksi,
+            COALESCE(SUM(s.grand_total), 0) AS total_penjualan,
+            SUM(CASE WHEN s.payment_method = 'tunai' THEN 1 ELSE 0 END) AS tunai,
+            SUM(CASE WHEN s.payment_method = 'qris' THEN 1 ELSE 0 END) AS qris
+        FROM sales s
+        WHERE s.created_by = ? AND DATE(s.created_at) BETWEEN ? AND ?
+    `, [userId, startDate, endDate]);
+
+    const [list] = await db.query(`
+        SELECT 
+            s.id, s.payment_method, s.grand_total, s.created_at,
+            b.name AS booth_name,
+            GROUP_CONCAT(p.name, ' (', si.qty, ')' SEPARATOR ', ') AS items_label
+        FROM sales s
+        JOIN booth b ON b.id = s.booth_id
+        JOIN sale_items si ON si.sale_id = s.id
+        JOIN products p ON p.id = si.product_id
+        WHERE s.created_by = ? AND DATE(s.created_at) BETWEEN ? AND ?
+        GROUP BY s.id
+        ORDER BY s.created_at DESC
+    `, [userId, startDate, endDate]);
+
+    return { summary, list };
+};
+
+// purchasesModel.js
+const getRekapPembelian = async (userId, startDate, endDate) => {
+    const [[summary]] = await db.query(`
+        SELECT 
+            COUNT(id) AS total_pembelian,
+            COALESCE(SUM(total), 0) AS total_nilai
+        FROM purchases
+        WHERE created_by = ? AND DATE(date) BETWEEN ? AND ?
+        AND status = 'dikonfirmasi'
+    `, [userId, startDate, endDate]);
+
+    const [list] = await db.query(`
+        SELECT p.id, p.supplier, p.date, p.total, p.status
+        FROM purchases p
+        WHERE p.created_by = ? AND DATE(p.date) BETWEEN ? AND ?
+        AND p.status = 'dikonfirmasi'
+        ORDER BY p.date DESC
+    `, [userId, startDate, endDate]);
+
+    return { summary, list };
+};
+
+// distributionsModel.js
+const getRekapDistribusi = async (userId, startDate, endDate) => {
+    const [[summary]] = await db.query(`
+        SELECT COUNT(id) AS total_distribusi
+        FROM distributions
+        WHERE confirmed_by_booth = ? AND DATE(confirmed_at_booth) BETWEEN ? AND ?
+    `, [userId, startDate, endDate]);
+
+    const [list] = await db.query(`
+        SELECT 
+            d.id, d.status, d.planned_date, d.confirmed_at_booth,
+            sl_from.name AS dari,
+            sl_to.name AS ke
+        FROM distributions d
+        JOIN stock_locations sl_from ON sl_from.id = d.from_location_id
+        JOIN stock_locations sl_to ON sl_to.id = d.to_location_id
+        WHERE d.confirmed_by_booth = ? AND DATE(d.confirmed_at_booth) BETWEEN ? AND ?
+        ORDER BY d.confirmed_at_booth DESC
+    `, [userId, startDate, endDate]);
+
+    return { summary, list };
+};
+module.exports = { getProducts, getSummary, createSale, getRekap, getRekapPenjualan, getRekapPembelian, getRekapDistribusi };

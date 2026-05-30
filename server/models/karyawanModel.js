@@ -26,19 +26,31 @@ const getPenjaga = async () => {
     return rows;
 };
 const create = async (data) => {
-    const { name, no_hp, alamat, role, entry_date, username, password } = data;
+    const { name, no_hp, nik, alamat, role, entry_date, username, password } = data;
     const is_active = 1; // Set default is_active ke 1 (aktif)
     // console.log("data d model:", name, no_hp, alamat, role, entry_date, username, password);
 
     const [result] = await db.execute(
-        `INSERT INTO users (name, username, password, no_hp,  role,  alamat,entry_date,  is_active )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [name, username, password, no_hp, role, alamat, entry_date, is_active ?? 1]
+        `INSERT INTO users (name, username, password, no_hp,  nik, role,  alamat,entry_date,  is_active )
+                VALUES (?, ?, ?, ?,?, ?, ?, ?, ?)`,
+        [name, username, password, no_hp, nik, role, alamat, entry_date, is_active ?? 1]
     );
     return { id: result.insertId, ...data };
 };
 const findById = async (id) => {
     const [rows] = await db.execute('SELECT * FROM users WHERE id=?', [id]);
+    return rows[0];
+};
+const getProfile = async (id) => {
+    const [rows] = await db.execute(`SELECT 
+        u.name, u.role, u.created_at,
+        es.shift,
+        b.name AS booth_name
+    FROM users u
+    LEFT JOIN employee_schedules es ON es.employee_id = u.id AND es.is_active = 1
+    LEFT JOIN booth b ON b.id = es.booth_id
+    WHERE u.id = ?
+    LIMIT 1`, [id]);
     return rows[0];
 };
 
@@ -68,6 +80,11 @@ const update = async (id, data) => {
         if (data.no_hp !== undefined) {
             fields.push('no_hp = ?');
             values.push(data.no_hp);
+        }
+
+        if (data.nik !== undefined) {
+            fields.push('nik = ?');
+            values.push(data.nik);
         }
         if (data.alamat !== undefined) {
             fields.push('alamat = ?');
@@ -136,4 +153,4 @@ const updatePassword = async (id, passwordBaru) => {
     );
     return row[0];
 }
-module.exports = { getAll, create, update, statusChange, getKurir, getPenjaga, getAllwithJadwal, updatePassword };
+module.exports = { getAll, getProfile, create, update, statusChange, getKurir, getPenjaga, getAllwithJadwal, updatePassword };

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useApi } from "../../hooks/useApi";
 import axios from "axios";
-
+import { IconCart, IconBack, IconCheck, IconCup } from "./Icons";
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
 function getToken() { return localStorage.getItem("token"); }
 const authHeader = () => ({ Authorization: `Bearer ${getToken()}` });
@@ -32,9 +32,6 @@ function IconEdit() {
 }
 function IconX() {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>;
-}
-function IconCheck() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>;
 }
 
 // ── Category chip ─────────────────────────────────────────────
@@ -162,20 +159,9 @@ function StokCard({ item, onKoreksi, onDistribusi }) {
             cursor: "pointer", fontFamily: "inherit",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
           }}
+
         >
           <IconEdit /> Koreksi
-        </button>
-        <button
-          onClick={() => onDistribusi(item)}
-          style={{
-            flex: 1, padding: "8px 0", borderRadius: 10,
-            border: "none", background: "var(--accentsoft)",
-            color: "var(--accent)", fontSize: 12, fontWeight: 700,
-            cursor: "pointer", fontFamily: "inherit",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-          }}
-        >
-          <IconTruck /> Request
         </button>
       </div>
     </div>
@@ -519,11 +505,14 @@ export default function StokPage() {
       {/* HEADER */}
       <div className="phead">
         <div className="phead-row">
-          <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button onClick={() => setPage?.("home")} className="btnBack">
+              <IconBack />
+            </button>
             <div className="ptitle">Stok Booth</div>
             <div className="psub">{items.length} item terdaftar</div>
           </div>
-          {menipisCount > 0 && (
+          {/* {menipisCount > 0 && (
             <div style={{
               display: "flex", alignItems: "center", gap: 5,
               padding: "5px 10px", borderRadius: 10,
@@ -532,7 +521,7 @@ export default function StokPage() {
             }}>
               <IconWarn /> {menipisCount} menipis
             </div>
-          )}
+          )} */}
         </div>
       </div>
 
@@ -559,7 +548,7 @@ export default function StokPage() {
               transition: "all 0.15s",
             }}
           >
-            <IconWarn /> Menipis
+            {menipisCount} <IconWarn /> Menipis
           </button>
         </div>
 

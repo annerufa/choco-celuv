@@ -381,12 +381,14 @@ export default function KaryawanTable({ karyawanList, setKaryawanList, loading, 
                 isOpen={isTambahOpen}
                 onClose={() => setIsTambahOpen(false)}
                 onSubmit={handleTambahKaryawan}
+                karyawanList={karyawanList}
             />
             <EditKaryawanModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleEditKaryawan}
                 karyawan={editTarget}
+                karyawanList={karyawanList}
             />
 
 

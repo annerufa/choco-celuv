@@ -7,7 +7,7 @@ const { getMatrix, toggleActive } = require('../controllers/matrixController');
 router.get('/', getAllItems);        // pemilik → semua item (rekap)
 router.get('/my', getMyItems);      // penjaga booth → item di lokasinya
 
-router.get('/stockPer', getByItemOrLocation); //stok 1 item d semua lokasi atau semua item di 1 lokasi, query: ?item_id= atau ?location_id=
+router.get('/stockPer', getByItemOrLocation);
 router.get('/perLoc', getItemsPerLoc);
 router.get('/boothStock', getBoothStock);
 router.get('/trackItem', trackItem);
