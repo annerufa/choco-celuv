@@ -270,9 +270,9 @@ function DetailScreen({ dist, onBack, onSuccess }) {
             <div className="phead">
                 <div className="phead-row">
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div onClick={onBack} style={{ cursor: "pointer", color: "var(--bg3)", display: "flex" }}>
+                        <button onClick={onBack} className="btnBack">
                             <IconBack />
-                        </div>
+                        </button>
                         <div>
                             <div className="ptitle">Pengiriman #{String(dist.id).padStart(4, "0")}</div>
                             <div className="psub">dari {dist.from_location_name ?? `Lokasi #${dist.from_location_id}`}</div>

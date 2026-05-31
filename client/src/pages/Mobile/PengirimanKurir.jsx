@@ -223,7 +223,7 @@ export function DetailPage({ dist: initialDist, onBack, onPickupSuccess, onArriv
             <div className="phead">
                 <div className="phead-row">
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <button onClick={onBack} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 9, padding: "6px 8px", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center" }}>
+                        <button onClick={onBack} className="btnBack" >
                             <IconBack />
                         </button>
                         <div>
@@ -426,7 +426,7 @@ function DistCard({ dist, onClick }) {
 }
 
 // ── Main ──────────────────────────────────────────────────
-export default function PengirimanKurir() {
+export default function PengirimanKurir({ setPage }) {
     const [tab, setTab] = useState("draft");
     const [draftList, setDraftList] = useState([]);
     const [dikirimList, setDikirimList] = useState([]);
@@ -478,9 +478,11 @@ export default function PengirimanKurir() {
             {/* Header */}
             <div className="phead">
                 <div className="phead-row">
-                    <div>
+                    <button className="btnBack" onClick={() => setPage("home")}>
+                        <IconBack />
+                    </button>
+                    <div style={{ flex: 1 }}>
                         <div className="ptitle">Pengiriman</div>
-                        {/* <div className="psub">Distribusi yang ditugaskan ke kamu</div> */}
                     </div>
                     <div style={{ background: "var(--orange)", color: "#fff", borderRadius: 10, padding: "4px 10px", fontSize: 12, fontWeight: 800 }}>
                         {draftList.length + dikirimList.length} total

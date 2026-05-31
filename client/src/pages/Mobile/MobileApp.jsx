@@ -54,7 +54,7 @@ const NAV = {
 // ── Page router ──────────────────────────────────────────────────────────────
 function PageRenderer({ role, page, setPage, navigate, pageParams }) {
   if (role === "kurir") {
-    if (page === "home") return <KurirHome setPage={setPage} />;
+    if (page === "home") return <KurirHome setPage={setPage} prevPage={pageParams.prevPage ?? 'home'} />;
     if (page === "profil") return <KurirProfil setPage={setPage} />;
     if (page === "pengiriman") return <PengirimanKurir setPage={setPage} />;
     if (page === "rekap") return <RekapKurir setPage={setPage} />;

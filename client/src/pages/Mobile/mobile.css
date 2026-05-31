@@ -57,7 +57,7 @@ body {
 /* ── PHONE ── */
 .phone {
   width: 100%;
-  max-width: 330px;
+  max-width: 350px;
   height: 100dvh;
   border-radius: 0;
   margin: 0 auto;

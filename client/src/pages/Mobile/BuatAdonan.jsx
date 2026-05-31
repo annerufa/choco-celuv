@@ -177,7 +177,7 @@ function SuksesModal({ batch, resepNama, onClose }) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: "100%", maxWidth: 330,
+          width: "100%", maxWidth: 350,
           background: "var(--bg0)", borderRadius: "20px 20px 0 0",
           padding: "24px 24px calc(32px + env(safe-area-inset-bottom))",
           animation: "slideUp 0.22s ease",
@@ -425,7 +425,7 @@ export default function BuatAdonan({ setPage }) {
       {/* FOOTER CTA */}
       <div style={{
         position: "fixed", bottom: 60, left: "50%", transform: "translateX(-50%)",
-        width: "100%", maxWidth: 330,
+        width: "100%", maxWidth: 350,
         padding: "8px 10px calc(8px + env(safe-area-inset-bottom))",
         background: "var(--bg1)", borderTop: "1px solid var(--border)",
       }}>

@@ -285,6 +285,7 @@ export default function RekapPage({ setPage }) {
         <div className="page">
             <div className="phead">
                 <div className="phead-row">
+                    <button className="btnBack" onClick={() => setPage('home')}><IconBack /></button>
                     <div style={{ flex: 1 }}>
                         <div className="ptitle">Rekap</div>
                         <div className="psub">Riwayat aktivitas saya</div>

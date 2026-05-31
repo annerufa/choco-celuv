@@ -1,16 +1,20 @@
 import { ROLES } from "./roles";
+import { useState, useEffect } from "react";
 import { IconChevron, IconUser, IconLock, IconPin, IconActivity, IconLogout } from "./Icons";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import SetPasswordModal from "./SetPasswordModal";
 
 function getInitial(name) {
   return name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 }
 
-export default function KurirProfil() {
+export default function KurirProfil({ setPage }) {
   const r = ROLES.kurir;
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  const [showModal, setShowModal] = useState(false);
 
   function handleLogout() {
     logout();
@@ -18,6 +22,9 @@ export default function KurirProfil() {
   }
   return (
     <div className="page">
+      {showModal && (
+        <SetPasswordModal onSuccess={() => setShowModal(false)} onClose={() => setShowModal(false)} />
+      )}
       {/* AVATAR HEADER */}
       <div className="phead-profil">
         <div className="pava-lg" style={{ background: r.avaGrad }}>
@@ -28,9 +35,6 @@ export default function KurirProfil() {
         <div>
           <span className="prole-badge" style={{ background: "rgba(232,160,32,.15)", color: "#5c2603" }}>🛵 Kurir</span>
         </div>
-        {/* <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 5 }}>
-          Shift Pagi · Bergabung Jan 2024
-        </div> */}
       </div>
 
       <div style={{ height: 12, background: "var(--bg1)" }} />
@@ -40,17 +44,7 @@ export default function KurirProfil() {
         <div className="mgrp">
           <div className="mgrp-title">Akun Saya</div>
           <div className="mitems">
-            <div className="mrow">
-              <div className="mic" style={{ background: "var(--accentsoft)", color: "var(--accent)" }}>
-                <IconUser />
-              </div>
-              <div>
-                <div className="mtitle">Edit Profil</div>
-                <div className="msub">Nama, foto, kontak</div>
-              </div>
-              <div className="mchev"><IconChevron /></div>
-            </div>
-            <div className="mrow">
+            <div className="mrow" onClick={() => setShowModal(true)} style={{ cursor: 'pointer' }}>
               <div className="mic" style={{ background: "var(--greensoft)", color: "var(--green)" }}>
                 <IconLock />
               </div>
@@ -67,23 +61,12 @@ export default function KurirProfil() {
         <div className="mgrp">
           <div className="mgrp-title">Kurir</div>
           <div className="mitems">
-            <div className="mrow">
+            <div className="mrow" onClick={() => setPage('rekap')} style={{ cursor: 'pointer' }}>
               <div className="mic" style={{ background: "var(--bluesoft)", color: "var(--blue)" }}>
                 <IconPin />
               </div>
               <div>
                 <div className="mtitle">Riwayat Pengiriman</div>
-                <div className="msub">248 order selesai</div>
-              </div>
-              <div className="mchev"><IconChevron /></div>
-            </div>
-            <div className="mrow">
-              <div className="mic" style={{ background: "var(--accentsoft)", color: "var(--accent)" }}>
-                <IconActivity />
-              </div>
-              <div>
-                <div className="mtitle">Akurasi Pengiriman Saya</div>
-                <div className="msub">Rating 4.9 · 98% kecocokan barang</div>
               </div>
               <div className="mchev"><IconChevron /></div>
             </div>
@@ -99,7 +82,7 @@ export default function KurirProfil() {
                 <IconLogout />
               </div>
               <div>
-                <div className="mtitle" style={{ color: "var(--red)" }} >Keluar</div>
+                <div className="mtitle" style={{ color: "var(--red)" }}>Keluar</div>
               </div>
               <div className="mchev"><IconChevron /></div>
             </div>
