@@ -478,6 +478,7 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                 onSubmit={handleTambahBarang}
                 loading={modalLoading}
                 submitError={modalError}
+                existingNames={barangList.map(b => b.name)}  // ← tambah ini
             />
 
             {/* Modal Edit */}
@@ -488,6 +489,7 @@ export default function BarangTable({ barangList, setBarangList, loading, error 
                 item={selectedItem}
                 loading={modalLoading}
                 submitError={modalError}
+                existingNames={barangList.map(b => b.name)}  // ← tambah ini
             />
 
             {/* Confirm Modal */}

@@ -131,19 +131,6 @@ export default function RekapPembelianPage() {
                             ))}
                         </select>
                     </div>
-                    <div className={styles.filterField}>
-                        <label className={styles.filterLabel}>Status</label>
-                        <select
-                            className={styles.filterInput}
-                            value={statusFilter}
-                            onChange={e => setStatusFilter(e.target.value)}
-                        >
-                            <option value="">Semua Status</option>
-                            <option value="dikonfirmasi">Dikonfirmasi</option>
-                            <option value="pending">Pending</option>
-                            <option value="ditolak">Ditolak</option>
-                        </select>
-                    </div>
                     <button className={styles.btnApply} onClick={handleApply}>Terapkan</button>
                 </div>
 
@@ -190,7 +177,7 @@ export default function RekapPembelianPage() {
             {/* Tabel */}
             <div className={tableStyles.card}>
                 <div className={tableStyles.cardHead}>
-                    <span className={tableStyles.cardTitle}>Daftar Pembelian</span>
+                    <span className={tableStyles.cardTitle} >Daftar Pembelian</span>
                 </div>
                 <div className={tableStyles.tableWrap}>
                     <table className={tableStyles.table}>

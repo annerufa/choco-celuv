@@ -231,7 +231,7 @@ export function DetailPage({ dist: initialDist, onBack, onPickupSuccess, onArriv
                             <div className="psub">#{String(dist.id).padStart(4, "0")}</div>
                         </div>
                     </div>
-                    <StatusChip status={dist.status} />
+                    {/* <StatusChip status={dist.status} /> */}
                 </div>
             </div>
 

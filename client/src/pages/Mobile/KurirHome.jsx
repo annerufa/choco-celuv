@@ -111,7 +111,7 @@ function DeliveryCard({ delivery, onPickup, onSampai }) {
           }}>
             <span style={{ fontSize: 12, color: 'var(--text2)' }}>{item.name}</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text1)' }}>
-              {item.qty} {item.unit ?? 'pcs'}
+              {parseFloat(item.qty)} {item.unit ?? 'pcs'}
             </span>
           </div>
         ))}

@@ -16,7 +16,7 @@ const initialForm = {
     max: '',
 };
 
-export default function TambahBarangModal({ isOpen, onClose, onSubmit, loading, submutError }) {
+export default function TambahBarangModal({ isOpen, onClose, onSubmit, loading, submutError, existingNames = [] }) {
     const [formData, setFormData] = useState(initialForm);
     const [errors, setErrors] = useState({});
 
@@ -44,6 +44,12 @@ export default function TambahBarangModal({ isOpen, onClose, onSubmit, loading, 
     function validate() {
         const newErrors = {};
         if (!formData.nama.trim()) newErrors.nama = 'Nama barang wajib diisi';
+        // ← tambah ini
+        const isDuplicate = existingNames.some(
+            n => n.trim().toLowerCase() === formData.nama.trim().toLowerCase()
+        );
+        if (isDuplicate) newErrors.nama = 'Nama barang sudah ada';
+
         if (!formData.kategori) newErrors.kategori = 'Pilih kategori';
         if (!formData.satuan) newErrors.satuan = 'Pilih satuan';
         // if (!formData.min) newErrors.min = 'Stok minimum wajib diisi';

@@ -67,7 +67,7 @@ export default function Navbar({ onToggleSidebar }) {
                 {/* Actions */}
                 <div className={styles.navActions}>
                     {/* Tombol notifikasi */}
-                    <div ref={notifRef} style={{ position: 'relative' }}>
+                    {/* <div ref={notifRef} style={{ position: 'relative' }}>
                         <button className={styles.navBtn} onClick={() => setNotifOpen(v => !v)}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -76,7 +76,6 @@ export default function Navbar({ onToggleSidebar }) {
                             {unreadCount > 0 && <span className={styles.badge} />}
                         </button>
 
-                        {/* Panel notifikasi — ikut Navbar karena terikat tombolnya */}
                         {notifOpen && (
                             <div className={styles.notifPanel}>
                                 <div className={styles.notifHeader}>
@@ -96,7 +95,7 @@ export default function Navbar({ onToggleSidebar }) {
                                 </div>
                             </div>
                         )}
-                    </div>
+                    </div> */}
 
                     <div className={styles.navDivider} />
 

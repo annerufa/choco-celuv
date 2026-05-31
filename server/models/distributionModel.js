@@ -97,20 +97,20 @@ const create = async (data) => {
             }
 
             // Kurangi stok from_location
-            // await conn.execute(
-            //     `UPDATE stock_per_location
-            //     SET current_stock = current_stock - ?
-            //     WHERE item_id = ? AND location_id = ?`,
-            //     [item.qty, item.item_id, from_location_id]
-            // );
+            await conn.execute(
+                `UPDATE stock_per_location
+                SET current_stock = current_stock - ?
+                WHERE item_id = ? AND location_id = ?`,
+                [item.qty, item.item_id, from_location_id]
+            );
 
             // Catat movement OUT dari from_location
-            // await conn.execute(
-            //     `INSERT INTO stock_movements
-            //         (item_id, location_id, qty, movement_type, source_type, source_id)
-            //      VALUES (?, ?, ?, 'OUT', 'distribution', ?)`,
-            //     [item.item_id, from_location_id, item.qty, distribution_id]
-            // );
+            await conn.execute(
+                `INSERT INTO stock_movements
+                    (item_id, location_id, qty, movement_type, source_type, source_id)
+                 VALUES (?, ?, ?, 'OUT', 'distribution', ?)`,
+                [item.item_id, from_location_id, item.qty, distribution_id]
+            );
         }
 
         await conn.commit();
@@ -382,7 +382,7 @@ const pickup = async (distribution_id, user_id) => {
 const getDisToday = async (kurir_id) => {
     // const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
     const today = new Date().toLocaleDateString('en-CA');
-
+    console.log('today dist date:', today);
     // 1. Ambil header distribusi milik kurir hari ini
     const [rows] = await db.query(
         `SELECT 
@@ -399,7 +399,6 @@ const getDisToday = async (kurir_id) => {
          LEFT JOIN stock_locations tl ON tl.id = d.to_location_id
          WHERE d.kurir_id = ?
            AND DATE(d.planned_date) = ?
-           AND d.status != 'dibatalkan'
          ORDER BY d.id ASC`,
         [kurir_id, today]
     );
@@ -472,16 +471,34 @@ const getById = async (id) => {
     const [[dist]] = await db.query(`
         SELECT 
             d.*,
-            u_kurir.name  AS confirmed_by_kurir_name,
-            u_booth.name  AS confirmed_by_booth_name,
-            u_created.name AS created_by_name
+            u_kurir.name   AS confirmed_by_kurir_name,
+            u_booth.name   AS confirmed_by_booth_name,
+            u_created.name AS created_by_name,
+            fl.name        AS from_location_name,
+            tl.name        AS to_location_name
         FROM distributions d
         LEFT JOIN users u_kurir   ON u_kurir.id  = d.confirmed_by_kurir
         LEFT JOIN users u_booth   ON u_booth.id  = d.confirmed_by_booth
         LEFT JOIN users u_created ON u_created.id = d.created_by
+        LEFT JOIN stock_locations fl ON fl.id = d.from_location_id
+        LEFT JOIN stock_locations tl ON tl.id = d.to_location_id
         WHERE d.id = ?
     `, [id]);
-    return dist ?? null;
+
+    if (!dist) return null;
+
+    // ← tambah ini
+    const [items] = await db.query(`
+        SELECT 
+            di.*,
+            i.name AS item_name,
+            i.unit
+        FROM distribution_items di
+        JOIN items i ON i.id = di.item_id
+        WHERE di.distribution_id = ?
+    `, [id]);
+
+    return { ...dist, items };
 };
 
 const arrive = async (distribution_id, user_id) => {

@@ -6,7 +6,7 @@ import styles from './TambahBarangModal.module.css'; // pakai CSS yang sama
 const KATEGORI = ['Bahan Baku', 'Mixing', 'Packaging', 'Lainnya'];
 const SATUAN = ['gram', 'ml', 'pcs', 'kg', 'L'];
 
-export default function EditBarangModal({ isOpen, onClose, onSubmit, item, loading, submitError }) {
+export default function EditBarangModal({ isOpen, onClose, onSubmit, item, loading, submitError, existingNames = [] }) {
     const [formData, setFormData] = useState({ name: '', category: '', unit: '', safety_stock: '', max: '', min: '', is_active: 1 });
     const [errors, setErrors] = useState({});
     // const [loading, setLoading] = useState(false);
@@ -43,6 +43,11 @@ export default function EditBarangModal({ isOpen, onClose, onSubmit, item, loadi
     function validate() {
         const newErrors = {};
         if (!formData.name.trim()) newErrors.name = 'Nama barang wajib diisi';
+        const isDuplicate = existingNames.some(
+            n => n.trim().toLowerCase() === formData.name.trim().toLowerCase()
+                && n.trim().toLowerCase() !== (item?.name ?? '').trim().toLowerCase()
+        );
+        if (isDuplicate) newErrors.name = 'Nama barang sudah ada';
         if (!formData.category) newErrors.category = 'Pilih kategori';
         if (!formData.unit) newErrors.unit = 'Pilih satuan';
         return newErrors;

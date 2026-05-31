@@ -59,6 +59,24 @@ export default function DetailBarangPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // ── State filter riwayat ──────────────────────────────
+    const [movRange, setMovRange] = useState('30d'); // '7d' | '30d' | '3m' | 'custom'
+    const [customFrom, setCustomFrom] = useState('');
+    const [customTo, setCustomTo] = useState('');
+    const [movLoading, setMovLoading] = useState(false);
+
+    function getRangeDates(range) {
+        const to = new Date();
+        const from = new Date();
+        if (range === '7d') from.setDate(to.getDate() - 7);
+        else if (range === '30d') from.setDate(to.getDate() - 30);
+        else if (range === '3m') from.setMonth(to.getMonth() - 3);
+        else return null; // custom — gunakan customFrom/customTo
+        return {
+            from: from.toISOString().slice(0, 10),
+            to: to.toISOString().slice(0, 10),
+        };
+    }
     useEffect(() => {
         async function fetchAll() {
             setLoading(true);
@@ -66,21 +84,21 @@ export default function DetailBarangPage() {
             try {
                 const headers = { Authorization: `Bearer ${getToken()}` };
 
-                const [resItem, resStok, resMov] = await Promise.all([
+                const [resItem, resStok] = await Promise.all([
                     fetch(`${BASE_URL}/items/${id}`, { headers }),
                     fetch(`${BASE_URL}/items/stockPer?item_id=${id}`, { headers }),
-                    fetch(`${BASE_URL}/items/trackItem?item_id=${id}&limit=20`, { headers }),
+                    // fetch(`${BASE_URL}/items/trackItem?item_id=${id}&limit=20`, { headers }),
                 ]);
 
-                const [jItem, jStok, jMov] = await Promise.all([
-                    resItem.json(), resStok.json(), resMov.json()
+                const [jItem, jStok] = await Promise.all([
+                    resItem.json(), resStok.json()
                 ]);
 
                 if (!resItem.ok) throw new Error(jItem.payload?.message ?? 'Barang tidak ditemukan');
 
                 setItem(jItem.payload?.data ?? jItem);
                 setStokLoks(Array.isArray(jStok.payload?.data) ? jStok.payload.data : (Array.isArray(jStok) ? jStok : []));
-                setMovements(Array.isArray(jMov.payload?.data) ? jMov.payload.data : (Array.isArray(jMov) ? jMov : []));
+                // setMovements(Array.isArray(jMov.payload?.data) ? jMov.payload.data : (Array.isArray(jMov) ? jMov : []));
 
             } catch (err) {
                 setError(err.message);
@@ -90,9 +108,54 @@ export default function DetailBarangPage() {
         }
         fetchAll();
     }, [id]);
+    // Fetch movements terpisah agar bisa di-trigger ulang saat filter berubah
+    useEffect(() => {
+        if (!id) return;
 
+        async function fetchMovements() {
+            setMovLoading(true);
+            try {
+                const headers = { Authorization: `Bearer ${getToken()}` };
+                let dateFrom, dateTo;
 
+                if (movRange === 'custom') {
+                    if (!customFrom || !customTo) { setMovLoading(false); return; }
+                    dateFrom = customFrom;
+                    dateTo = customTo;
+                } else {
+                    const dates = getRangeDates(movRange);
+                    dateFrom = dates.from;
+                    dateTo = dates.to;
+                }
 
+                const url = `${BASE_URL}/items/trackItem?item_id=${id}&limit=200&date_from=${dateFrom}&date_to=${dateTo}`;
+                const res = await fetch(url, { headers });
+                const json = await res.json();
+                const raw = Array.isArray(json.payload?.data) ? json.payload.data : (Array.isArray(json) ? json : []);
+                setMovements(raw);
+            } catch (err) {
+                console.error('Gagal fetch movements:', err);
+            } finally {
+                setMovLoading(false);
+            }
+        }
+
+        fetchMovements();
+    }, [id, movRange, customFrom, customTo]);
+
+    // Hitung saldo running — urutkan ASC dulu, akumulasi, lalu balik ke DESC untuk tampil
+    const movWithSaldo = (() => {
+        const sorted = [...movements].sort(
+            (a, b) => new Date(a.created_at) - new Date(b.created_at)
+        );
+        let saldo = 0;
+        const withSaldo = sorted.map(mov => {
+            const qty = Number(mov.qty ?? 0);
+            saldo += mov.movement_type === 'IN' ? qty : -qty;
+            return { ...mov, saldo_after: saldo };
+        });
+        return withSaldo; // tampil terbaru di atas
+    })();
     if (loading) return (
         <div className={styles.page}>
             <div className={styles.loadingWrap}>
@@ -269,10 +332,56 @@ export default function DetailBarangPage() {
                 <div className={`${styles.card} ${styles.fullWidth}`}>
                     <div className={styles.cardHeader}>
                         <span className={styles.cardTitle}>Riwayat Pergerakan Stok</span>
-                        <span className={styles.cardSubtitle}>20 transaksi terakhir</span>
+                        <span className={styles.cardSubtitle}>Buku kas barang</span>
                     </div>
-                    {movements.length === 0 ? (
-                        <div className={styles.emptyState}>Belum ada pergerakan stok</div>
+
+                    {/* Filter bar */}
+                    <div className={styles.filterBar}>
+                        <div className={styles.filterPresets}>
+                            {[
+                                { key: '7d', label: '7 Hari' },
+                                { key: '30d', label: '30 Hari' },
+                                { key: '3m', label: '3 Bulan' },
+                                { key: 'custom', label: 'Custom' },
+                            ].map(opt => (
+                                <button
+                                    key={opt.key}
+                                    onClick={() => setMovRange(opt.key)}
+                                    className={`${styles.filterBtn} ${movRange === opt.key ? styles.filterBtnActive : ''}`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {movRange === 'custom' && (
+                            <div className={styles.filterCustom}>
+                                <input
+                                    type="date"
+                                    value={customFrom}
+                                    onChange={e => setCustomFrom(e.target.value)}
+                                    className={styles.filterDateInput}
+                                />
+                                <span className={styles.filterSep}>s/d</span>
+                                <input
+                                    type="date"
+                                    value={customTo}
+                                    onChange={e => setCustomTo(e.target.value)}
+                                    className={styles.filterDateInput}
+                                />
+                            </div>
+                        )}
+
+                        <div className={styles.filterMeta}>
+                            {movLoading && <span className={styles.filterLoading}>Memuat...</span>}
+                            <span className={styles.filterCount}>{movWithSaldo.length} transaksi</span>
+                        </div>
+                    </div>
+
+                    {movWithSaldo.length === 0 ? (
+                        <div className={styles.emptyState}>
+                            {movLoading ? 'Memuat...' : 'Tidak ada transaksi di periode ini'}
+                        </div>
                     ) : (
                         <div className={styles.tableWrap}>
                             <table className={styles.table}>
@@ -280,13 +389,14 @@ export default function DetailBarangPage() {
                                     <tr>
                                         <th>Tanggal</th>
                                         <th>Tipe</th>
-                                        <th>Sumber</th>
+                                        <th>Transaksi</th>
                                         <th>Lokasi</th>
-                                        <th>Qty</th>
+                                        <th style={{ textAlign: 'right' }}>Qty</th>
+                                        <th style={{ textAlign: 'right' }}>Saldo</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {movements.map(mov => {
+                                    {movWithSaldo.map(mov => {
                                         const mv = movementVariant[mov.movement_type] ?? { label: mov.movement_type, cls: '' };
                                         return (
                                             <tr key={mov.id}>
@@ -298,10 +408,13 @@ export default function DetailBarangPage() {
                                                 </td>
                                                 <td>{sourceLabel[mov.source_type] ?? mov.source_type}</td>
                                                 <td>{mov.location_name ?? `Lokasi ${mov.location_id}`}</td>
-                                                <td className={styles.monoCell}>
+                                                <td className={styles.monoCell} style={{ textAlign: 'right' }}>
                                                     <span className={mov.movement_type === 'IN' ? styles.qtyIn : styles.qtyOut}>
                                                         {mov.movement_type === 'IN' ? '+' : '-'}{mov.qty} {item.unit}
                                                     </span>
+                                                </td>
+                                                <td className={styles.monoCell} style={{ textAlign: 'right', fontWeight: 600 }}>
+                                                    {Number(mov.saldo_after).toLocaleString('id')} {item.unit}
                                                 </td>
                                             </tr>
                                         );
@@ -311,7 +424,6 @@ export default function DetailBarangPage() {
                         </div>
                     )}
                 </div>
-
             </div>
         </div>
     );

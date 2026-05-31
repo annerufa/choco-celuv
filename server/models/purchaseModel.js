@@ -1,5 +1,5 @@
 const db = require('../connection');
-
+const { insertMovement } = require('../helpers/stockHelper');
 // ─────────────────────────────────────────────
 // Helper: ambil konversi satuan beli → satuan dasar
 // Kalau tidak ada konversi, anggap 1:1
@@ -100,12 +100,23 @@ const create = async (data) => {
             }
 
             // ── Insert stock_movements ────────────────────────────────
-            await conn.execute(
-                `INSERT INTO stock_movements
-                    (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'IN', 'PEMBELIAN', ?)`,
-                [item_id, loc_id, stock_qty, purchase_id]
-            );
+
+            // const [{ saldo }] = await conn.query(
+            //     'SELECT saldo_after FROM stock_movements WHERE item_id = ? ORDER BY created_at DESC LIMIT 1',
+            //     [item_id]
+            // );
+            // const prevSaldo = saldo ?? 0;
+            // const newSaldo = movement_type === 'IN' ? prevSaldo + qty : prevSaldo - qty;
+
+
+            await insertMovement(conn, {
+                item_id,
+                location_id: loc_id,
+                qty: stock_qty,
+                movement_type: 'IN',
+                source_type: 'PEMBELIAN',
+                source_id: purchase_id,
+            });
 
             // ── Update last_cost & avg_cost di items ──────────────────
             await conn.execute(

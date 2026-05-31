@@ -277,7 +277,7 @@ function ResepFormModal({ resep, itemList, onSave, onClose }) {
                                         type="number"
                                         min="0"
                                         step="0.01"
-                                        value={b.qty}
+                                        value={parseFloat(b.qty)}
                                         onChange={e => setBahan(idx, 'qty', e.target.value)}
                                         placeholder="0"
                                     />
@@ -367,7 +367,7 @@ function ResepCard({ resep, selected, onClick }) {
                             {b.item_name ?? `Item #${b.item_id}`}
                         </span>
                         <span className={styles.bahanQty}>
-                            {b.qty_per_unit} {b.unit}
+                            {parseFloat(b.qty_per_unit)} {b.unit}
                         </span>
                     </div>
                 ))}
@@ -383,10 +383,10 @@ function ResepCard({ resep, selected, onClick }) {
                     <div className={styles.rcFootLbl}>Output</div>
                     <div className={styles.rcFootVal}>{resep.output_qty} {resep.output_unit}</div>
                 </div>
-                <div>
+                {/* <div>
                     <div className={styles.rcFootLbl}>Terakhir dibuat</div>
                     <div className={styles.rcFootVal}>{relativeDate(resep.last_made)}</div>
-                </div>
+                </div> */}
                 <div>
                     <div className={styles.rcFootLbl}>Total bahan</div>
                     <div className={styles.rcFootVal}>{(resep.bahan ?? []).length} item</div>
@@ -430,7 +430,7 @@ function DetailPanel({ resep, onEdit, onToggleStatus, actionLoading }) {
                     <div className={styles.dpSubMeta}>
                         <span>{(resep.bahan ?? []).length} bahan</span>
                         <span>·</span>
-                        <span>Output: {resep.output_qty} {resep.output_unit}</span>
+                        <span>Output: {parseFloat(resep.output_qty)} {resep.output_unit}</span>
                         {resep.expiry_hours && (
                             <>
                                 <span>·</span>
@@ -454,7 +454,7 @@ function DetailPanel({ resep, onEdit, onToggleStatus, actionLoading }) {
                             {b.item_name ?? `Item #${b.item_id}`}
                         </div>
                         <div className={styles.bahanDetailQty}>
-                            {b.qty_per_unit} {b.unit}
+                            {parseFloat(b.qty_per_unit)} {b.unit}
                         </div>
                     </div>
                 ))}

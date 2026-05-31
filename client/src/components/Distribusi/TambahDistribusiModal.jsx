@@ -9,7 +9,7 @@ const initialForm = {
     from_location_id: '',   // diisi otomatis kalau warehouse, manual kalau booth_to_booth
     to_location_id: '',
     kurir_id: '',
-    planned_date: new Date().toISOString().split('T')[0],
+    planned_date: new Date().toLocaleDateString('en-CA'),
     notes: '',
     items: [{ item_id: '', qty: '' }],
 };

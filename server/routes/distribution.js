@@ -8,8 +8,8 @@ router.get('/', auth, getAll);
 router.post('/', auth, create);
 
 router.get('/my', auth, getMyDistributions);  // list distribusi kurir
-router.get('/my/sampai', auth, doneDistributions);  // list distribusi kurir
 router.get('/my-today', auth, getDisToday);  // list distribusi kurir
+router.get('/my/sampai', auth, doneDistributions);  // list distribusi kurir
 router.get('/booth', auth, getDisBooth);  // list distribusi ke booth
 
 router.get('/:id/items', auth, getDistributionItems);   // detail barang distribusi
