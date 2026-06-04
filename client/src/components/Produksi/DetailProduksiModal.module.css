@@ -1,0 +1,461 @@
+/* src/components/Produksi/DetailProduksiModal.module.css */
+
+/* ── Backdrop ──────────────────────────────────────── */
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(28, 16, 8, 0.50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 16px;
+    animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: translateY(0) } }
+
+/* ── Modal ─────────────────────────────────────────── */
+.modal {
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 620px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(28, 16, 8, 0.22);
+    animation: slideUp 0.18s ease;
+    overflow: hidden;
+}
+
+/* ── Header ────────────────────────────────────────── */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--brown-100);
+    flex-shrink: 0;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.headerIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--brown-50);
+    border: 1px solid var(--brown-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brown-500);
+    flex-shrink: 0;
+}
+.headerIcon svg { width: 18px; height: 18px; }
+
+.headerTitle {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--brown-900);
+}
+
+.headerSub {
+    font-size: 12px;
+    color: var(--brown-400);
+    margin-top: 2px;
+}
+
+.closeBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--brown-100);
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brown-400);
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+.closeBtn svg { width: 15px; height: 15px; }
+.closeBtn:hover { background: var(--brown-50); color: var(--brown-800); border-color: var(--brown-200); }
+
+/* ── Body ──────────────────────────────────────────── */
+.body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.body::-webkit-scrollbar { width: 4px; }
+.body::-webkit-scrollbar-track { background: var(--brown-50); }
+.body::-webkit-scrollbar-thumb { background: var(--brown-200); border-radius: 99px; }
+
+/* ── State ─────────────────────────────────────────── */
+.stateWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 160px;
+    color: var(--brown-400);
+    font-size: 13px;
+}
+
+.spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--brown-100);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg) } }
+
+/* ── Section ───────────────────────────────────────── */
+.section {}
+
+.sectionTitle {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--brown-400);
+    margin-bottom: 10px;
+}
+
+/* ── Info Grid ─────────────────────────────────────── */
+.infoGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--brown-100);
+    border: 1px solid var(--brown-100);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.infoItem {
+    background: #fff;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.infoLabel {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--brown-400);
+}
+
+.infoValue {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brown-800);
+}
+
+/* ── Pills ─────────────────────────────────────────── */
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    align-self: flex-start;
+}
+.pill::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .6;
+}
+.accent  { background: #FEE8D8; color: var(--accent); }
+.warning { background: #FEF3C7; color: var(--warning); }
+
+/* ── Summary Grid ──────────────────────────────────── */
+.summaryGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.summaryCard {
+    background: var(--brown-50);
+    border: 1px solid var(--brown-100);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.summaryIcon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.summaryVal {
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--brown-900);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.summaryLbl {
+    font-size: 10px;
+    color: var(--brown-400);
+    line-height: 1.4;
+}
+
+/* ── Usage Bar ─────────────────────────────────────── */
+.usageBar {
+    background: var(--brown-50);
+    border: 1px solid var(--brown-100);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+}
+
+.usageBarLabel {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--brown-500);
+    margin-bottom: 6px;
+}
+
+.usageBarTrack {
+    height: 8px;
+    background: var(--brown-100);
+    border-radius: 99px;
+    overflow: hidden;
+    display: flex;
+}
+
+.usageBarFill {
+    height: 100%;
+    background: var(--success);
+    border-radius: 99px;
+    transition: width 0.6s ease;
+}
+
+.usageBarWaste {
+    height: 100%;
+    background: var(--danger);
+    border-radius: 99px;
+    transition: width 0.6s ease;
+}
+
+.usageBarLegend {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--brown-500);
+}
+
+.legendDot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+/* ── Status Count Badges ───────────────────────────── */
+.statusCount {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.statusBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badgeActive  { background: #DBEAFE; color: #1D4ED8; }
+.badgeUsed    { background: #D1FAE5; color: var(--success); }
+.badgeExpired { background: #FEF3C7; color: var(--warning); }
+.badgeDamaged { background: #FEE2E2; color: var(--danger); }
+
+/* ── Batch List ────────────────────────────────────── */
+.batchList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.batchCard {
+    border: 1px solid var(--brown-100);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.15s;
+}
+
+.batchCard:hover { border-color: var(--brown-200); }
+
+.batchExpiredWarn {
+    border-color: #FCA5A5;
+    background: #FFF5F5;
+}
+
+.batchTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.batchNum {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--brown-700);
+}
+
+.batchStatus {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.active  { background: #DBEAFE; color: #1D4ED8; }
+.used    { background: #D1FAE5; color: var(--success); }
+.expired { background: #FEF3C7; color: var(--warning); }
+.damaged { background: #FEE2E2; color: var(--danger); }
+.grey    { background: var(--brown-100); color: var(--brown-500); }
+
+.batchMeta {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.batchMetaItem {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.batchMetaLabel {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--brown-400);
+}
+
+.batchMetaVal {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brown-800);
+    font-variant-numeric: tabular-nums;
+}
+
+.batchProgress {
+    height: 4px;
+    background: var(--brown-100);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.batchProgressFill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.5s ease;
+}
+
+.batchProgressLabel {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* ── Colors ────────────────────────────────────────── */
+.textSuccess { color: var(--success); }
+.textDanger  { color: var(--danger); }
+.textWarning { color: var(--warning); }
+
+/* ── Mix Note ──────────────────────────────────────── */
+.mixNote {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--brown-50);
+    border: 1px solid var(--brown-100);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--brown-600);
+    line-height: 1.5;
+}
+.mixNote svg { flex-shrink: 0; color: var(--brown-400); margin-top: 1px; }
+
+/* ── Footer ────────────────────────────────────────── */
+.footer {
+    padding: 14px 24px;
+    border-top: 1px solid var(--brown-100);
+    display: flex;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+.btnClose {
+    padding: 9px 24px;
+    border-radius: 8px;
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    color: var(--brown-700);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.btnClose:hover { background: var(--brown-50); }
+
+/* ── Responsive ────────────────────────────────────── */
+@media (max-width: 600px) {
+    .summaryGrid { grid-template-columns: repeat(2, 1fr); }
+    .batchMeta   { grid-template-columns: repeat(3, 1fr); }
+    .infoGrid    { grid-template-columns: 1fr; }
+}

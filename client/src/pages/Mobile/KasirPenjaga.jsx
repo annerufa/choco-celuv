@@ -415,10 +415,10 @@ function CartScreen({ cart, products, onBack, onSuccess }) {
       </div>
 
       <div style={{
-        position: "fixed", bottom: 60, left: "50%", transform: "translateX(-50%)",
+        position: "fixed", bottom: 65, left: "50%", transform: "translateX(-50%)",
         width: "100%", maxWidth: 330,
         padding: "5px 10px calc(5px + env(safe-area-inset-bottom))",
-        background: "var(--bg1)", borderTop: "1px solid var(--border)",
+        borderTop: "1px solid var(--border)",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <span style={{ fontSize: 13, color: "var(--text2)", fontWeight: 600 }}>Total</span>
@@ -443,7 +443,7 @@ function CartScreen({ cart, products, onBack, onSuccess }) {
 }
 
 // ── Main: KasirPenjaga ────────────────────────────────────────
-export default function KasirPenjaga() {
+export default function KasirPenjaga({ setPage }) {
   // cart: { [productId]: { qty: number, lessIceQty: number } }
   const [cart, setCart] = useState({});
   const [showCart, setShowCart] = useState(false);

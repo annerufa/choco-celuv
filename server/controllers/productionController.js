@@ -4,10 +4,13 @@
 const production = require('../models/productionModel');
 const db = require('../connection');
 const response = require('../helpers/response');
+const expireBatches = require('../helpers/expireBatches');
 
 // GET /api/productions
 const getProductions = async (req, res) => {
     try {
+
+        await expireBatches(); // ← cek & update dulu
         const data = await production.getAll();
         response(200, data, 'Berhasil', res);
     } catch (err) {
@@ -18,6 +21,7 @@ const getProductions = async (req, res) => {
 // GET /api/productions/rekap
 const getRekapProduksi = async (req, res) => {
     try {
+        await expireBatches(); // ← cek & update dulu
         const { from, to, booth_id } = req.query;
         if (!from || !to) return response(400, null, 'Parameter from dan to wajib diisi', res);
 
@@ -153,4 +157,17 @@ const getAdonanBooth = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
-module.exports = { createProduction, getAdonanBooth, getActiveRecipes, getRekapProduksi, getProductions, updateProduction, deleteProduction };
+const getProductionDetail = async (req, res) => {
+    try {
+
+        await expireBatches(); // ← cek & update dulu
+        const { id } = req.params;
+        const data = await production.getDetail(id);
+        if (!data) return response(404, null, 'Produksi tidak ditemukan', res);
+        response(200, data, 'Berhasil', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+module.exports = { createProduction, getProductionDetail, getAdonanBooth, getActiveRecipes, getRekapProduksi, getProductions, updateProduction, deleteProduction };

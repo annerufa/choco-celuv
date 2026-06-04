@@ -25,6 +25,7 @@ import AbsensiPage from './pages/Absensi/RekapAbsensiPage';
 
 import ResepPage from './pages/Resep/ResepPage';
 import ProduksiPage from './pages/Produksi/ProduksiPage';
+import DetailProduksiPage from './pages/Produksi/DetailProduksiPage';
 import RekapProduksiPage from './pages/Produksi/RekapProduksiPage';
 import ProductsPage from './pages/Products/ProductsPage';
 
@@ -98,6 +99,7 @@ export default function App() {
         <Route path="/distribusi/:id" element={<DetailDistribusiPage />} />
         <Route path="/produksi" element={<ProduksiPage />} />
         <Route path="/produksi-rekap" element={<RekapProduksiPage />} />
+        <Route path="/produksi/:id" element={<DetailProduksiPage />} />
         <Route path="/penjualan-rekap" element={<RekapPenjualanPage />} />
         <Route path="/chart" element={<ChartPage />} />
       </Route>

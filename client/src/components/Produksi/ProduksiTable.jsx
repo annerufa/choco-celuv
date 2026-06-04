@@ -1,8 +1,11 @@
 // src/components/Produksi/ProduksiTable.jsx
 import { useState } from 'react';
 import styles from './ProduksiTable.module.css';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import TambahProduksiModal from './TambahProduksiModal';
 import EditProduksiModal from './EditProduksiModal';
+import DetailProduksiModal from './DetailProduksiModal';
 import toast from 'react-hot-toast';
 import { useApi } from '../../hooks/useApi';
 import axios from 'axios';
@@ -15,11 +18,14 @@ const typeLabel = { mix: 'Mixing', adonan: 'Adonan' };
 function getToken() { return localStorage.getItem('token'); }
 
 export default function ProduksiTable() {
+    const { user } = useAuth();
+    const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [isAddOpen, setIsAddOpen] = useState(false);
-    const [editTarget, setEditTarget] = useState(null); // null | produksi obj
+    const [editTarget, setEditTarget] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
+    const [detailTarget, setDetailTarget] = useState(null); // ← NEW
     const [actionLoading, setActionLoading] = useState(null);
 
     const { data, loading, error, fetchData: refetch } = useApi('/productions');
@@ -66,6 +72,10 @@ export default function ProduksiTable() {
         }
     }
 
+    // Lihat detail — pindah halaman
+    function handleDetail(p) {
+        navigate(`/produksi/${p.id}`);
+    }
     return (
         <>
             <div className={styles.card}>
@@ -130,45 +140,58 @@ export default function ProduksiTable() {
                                     </td>
                                     <td className={styles.monoCell}>{p.qty}x</td>
                                     <td className={styles.monoCell}>
-                                        {p.recipe_type === 'mix'
-                                            ? `${Number(p.output_qty) * p.qty} ${p.output_unit ?? ''}`
-                                            : `${Number(p.output_qty) * p.qty} ${p.output_unit ?? ''}`}
-                                        {p.recipe_type === 'mix' && p.output_item_name && (
-                                            <span style={{ color: 'var(--brown-400)', fontSize: 11, marginLeft: 4 }}>
-                                                ({p.output_item_name})
-                                            </span>
-                                        )}
+                                        {Number(p.output_qty) * p.qty} {p.output_unit ?? ''}
                                     </td>
                                     <td>{p.location_name ?? '-'}</td>
                                     <td>{p.created_by_name ?? '-'}</td>
                                     <td>
                                         <div className={styles.actionBtns}>
-                                            {/* Edit */}
+                                            {/* ── Detail (NEW) ── */}
                                             <button
                                                 className={styles.iconBtn}
-                                                title="Edit qty"
-                                                onClick={() => setEditTarget(p)}
+                                                title="Lihat detail"
+                                                // onClick={() => setDetailTarget(p)}
+                                                onClick={() => handleDetail(p)}
                                                 disabled={actionLoading === p.id}
                                             >
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                    <circle cx="12" cy="12" r="10" />
+                                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                                    <circle cx="12" cy="16" r="1" fill="currentColor" />
                                                 </svg>
                                             </button>
-                                            {/* Delete */}
-                                            <button
-                                                className={`${styles.iconBtn} ${styles.dangerBtn}`}
-                                                title="Hapus"
-                                                onClick={() => setDeleteTarget(p)}
-                                                disabled={actionLoading === p.id}
-                                            >
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                                    <polyline points="3 6 5 6 21 6" />
-                                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                                    <path d="M10 11v6M14 11v6" />
-                                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                                                </svg>
-                                            </button>
+                                            {/* Edit */}
+                                            {p.created_by_id === user.id && (
+                                                <>
+                                                    {/* Edit button */}
+                                                    <button
+                                                        className={styles.iconBtn}
+                                                        title="Edit qty"
+                                                        onClick={() => setEditTarget(p)}
+                                                        disabled={actionLoading === p.id}
+                                                    >
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                        </svg>
+                                                    </button>
+
+                                                    {/* Delete button */}
+                                                    <button
+                                                        className={`${styles.iconBtn} ${styles.dangerBtn}`}
+                                                        title="Hapus"
+                                                        onClick={() => setDeleteTarget(p)}
+                                                        disabled={actionLoading === p.id}
+                                                    >
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                            <polyline points="3 6 5 6 21 6" />
+                                                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                                            <path d="M10 11v6M14 11v6" />
+                                                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                                        </svg>
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -246,6 +269,13 @@ export default function ProduksiTable() {
                     produksi={editTarget}
                     onClose={() => setEditTarget(null)}
                     onSuccess={() => { refetch(); toast.success('Produksi berhasil diperbarui!'); setEditTarget(null); }}
+                />
+            )}
+            {/* ── Detail Modal (NEW) ── */}
+            {detailTarget && (
+                <DetailProduksiModal
+                    produksi={detailTarget}
+                    onClose={() => setDetailTarget(null)}
                 />
             )}
         </>

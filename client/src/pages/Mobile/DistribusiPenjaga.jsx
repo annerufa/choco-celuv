@@ -404,7 +404,7 @@ function DetailScreen({ dist, onBack, onSuccess }) {
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
-export default function DistribusiPenjaga() {
+export default function DistribusiPenjaga({ setPage }) {
     const [tab, setTab] = useState("sampai");
     const [selected, setSelected] = useState(null);
 
@@ -449,18 +449,23 @@ export default function DistribusiPenjaga() {
             {/* Header */}
             <div className="phead">
                 <div className="phead-row">
-                    <div>
-                        <div className="ptitle">Penerimaan</div>
-                        <div className="psub">Konfirmasi barang masuk</div>
-                    </div>
-                    {sampaiList.length > 0 && (
-                        <div style={{
-                            background: "var(--bluesoft)", color: "var(--blue)",
-                            fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 20,
-                        }}>
-                            {sampaiList.length} menunggu
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <button onClick={() => setPage?.("home")} className="btnBack">
+                            <IconBack />
+                        </button>
+                        <div>
+                            <div className="ptitle">Penerimaan</div>
+                            <div className="psub">Konfirmasi barang masuk</div>
                         </div>
-                    )}
+                        {sampaiList.length > 0 && (
+                            <div style={{
+                                background: "var(--bluesoft)", color: "var(--blue)",
+                                fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 20,
+                            }}>
+                                {sampaiList.length} menunggu
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 

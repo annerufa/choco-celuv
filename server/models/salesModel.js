@@ -48,7 +48,7 @@ const createSale = async (userId, payment_method, items) => {
             ORDER BY produced_at ASC
             LIMIT 1
         `, [booth_id]);
-        if (!batch) throw new Error('Tidak ada batch adonan aktif di booth ini');
+        if (!batch) throw new Error('Tidak ada adonan aktif di booth ini');
 
         // 3. Ambil harga + adonan_ml per produk
         const productIds = items.map(i => i.product_id);

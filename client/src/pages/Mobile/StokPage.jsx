@@ -466,7 +466,7 @@ const inputStyle = {
 };
 
 // ── Main: StokPage ────────────────────────────────────────────
-export default function StokPage() {
+export default function StokPage({ setPage }) {
   const [search, setSearch] = useState("");
   const [filterMenipis, setFilterMenipis] = useState(false);
   const [koreksiItem, setKoreksiItem] = useState(null);

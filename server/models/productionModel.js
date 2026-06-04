@@ -107,6 +107,7 @@ const getAll = async () => {
             r.output_qty,
             r.output_unit,
             u.name        AS created_by_name,
+            u.id        AS created_by_id,
             sl.name       AS location_name,
             i.name        AS output_item_name
          FROM productions p
@@ -718,4 +719,104 @@ const getAdonanForBooth = async (booth_id, { from, to, batch_status }) => {
         }))
         .filter(p => p.batches.length > 0); // ← buang produksi tanpa batch yang cocok
 };
-module.exports = { create, getAll, getRekap, getAdonanByBooth, getAdonanForBooth, getRecipeById, getActiveRecipes, checkStock, getById, hasActiveBatch, update, remove };
+
+const getDetail = async (id) => {
+    // 1. Data produksi + resep
+    const [[prod]] = await db.query(
+        `SELECT
+            p.*,
+            r.name           AS recipe_name,
+            r.type           AS recipe_type,
+            r.output_qty,
+            r.output_unit,
+            r.expiry_hours,
+            u.name           AS created_by_name,
+            sl.name          AS location_name,
+            b2.name          AS booth_name,
+            i.name           AS output_item_name
+         FROM productions p
+         JOIN recipes r          ON r.id  = p.recipe_id
+         JOIN users u            ON u.id  = p.created_by
+         JOIN stock_locations sl ON sl.id = p.loc_id
+         LEFT JOIN booth b2      ON b2.id = p.booth_id
+         LEFT JOIN items i       ON i.id  = r.output_id
+         WHERE p.id = ?`,
+        [id]
+    );
+    if (!prod) return null;
+
+    // 2. Batch list (hanya untuk tipe adonan)
+    let batches = [];
+    if (prod.recipe_type === 'adonan') {
+        const [batchRows] = await db.query(
+            `SELECT
+                b.id,
+                b.status,
+                b.total_qty,
+                b.remaining_qty,
+                b.produced_at,
+                b.expired_at,
+                b.notes,
+                (b.total_qty - b.remaining_qty) AS used_qty
+             FROM batches b
+             WHERE b.production_id = ?
+             ORDER BY b.produced_at ASC`,
+            [id]
+        );
+
+        // Untuk tiap batch, ambil riwayat penjualan (transaksi keluar adonan)
+        for (const batch of batchRows) {
+            const [salesRows] = await db.query(
+                `SELECT
+                    s.id          AS sale_id,
+                    s.created_at  AS sale_at,
+                    s.payment_method,
+                    s.grand_total,
+                    -- total ml terpakai dari transaksi ini (sum semua item × adonan_ml)
+                    SUM(si.qty * pr.adonan_ml) AS ml_used,
+                    -- ringkasan item yang dijual
+                    GROUP_CONCAT(
+                        CONCAT(pr.name, ' ', pr.size, ' ×', si.qty)
+                        ORDER BY pr.size
+                        SEPARATOR ', '
+                    ) AS items_summary
+                 FROM sales s
+                 JOIN sale_items si ON si.sale_id = s.id
+                 JOIN products  pr  ON pr.id = si.product_id
+                 WHERE s.batch_id = ?
+                 GROUP BY s.id, s.created_at, s.payment_method, s.grand_total
+                 ORDER BY s.created_at ASC`,
+                [batch.id]
+            );
+            batch.sales = salesRows;
+        }
+
+        batches = batchRows;
+    }
+
+    // 3. Ringkasan batch
+    let batchSummary = null;
+    if (prod.recipe_type === 'adonan' && batches.length > 0) {
+        const totalQty = batches.reduce((s, b) => s + Number(b.total_qty), 0);
+        const usedQty = batches.reduce((s, b) => s + Number(b.used_qty), 0);
+        const remaining = batches.reduce((s, b) => s + Number(b.remaining_qty), 0);
+        const wasted = batches
+            .filter(b => ['EXPIRED', 'DAMAGED'].includes(b.status))
+            .reduce((s, b) => s + Number(b.remaining_qty), 0);
+
+        batchSummary = {
+            total_qty: totalQty,
+            used_qty: usedQty,
+            remaining_qty: remaining,
+            wasted_qty: wasted,
+            active_count: batches.filter(b => b.status === 'ACTIVE').length,
+            frozen_count: batches.filter(b => b.status === 'FROZEN').length,
+            expired_count: batches.filter(b => b.status === 'EXPIRED').length,
+            damaged_count: batches.filter(b => b.status === 'DAMAGED').length,
+            sold_out_count: batches.filter(b => b.status === 'SOLD_OUT').length,
+        };
+    }
+
+    return { ...prod, batches, batch_summary: batchSummary };
+};
+module.exports = { create, getAll, getDetail, getRekap, getAdonanByBooth, getAdonanForBooth, getRecipeById, getActiveRecipes, checkStock, getById, hasActiveBatch, update, remove };

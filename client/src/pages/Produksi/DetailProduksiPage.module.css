@@ -1,0 +1,760 @@
+/* src/pages/Produksi/DetailProduksiPage.module.css */
+
+/* ── Base ────────────────────────────────────────── */
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ── Loading / Error ─────────────────────────────── */
+.stateWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 300px;
+    color: var(--brown-500);
+    font-size: 14px;
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--brown-100);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── Header ──────────────────────────────────────── */
+.pageHeader {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--brown-400);
+}
+
+.breadLink {
+    color: var(--brown-600);
+    cursor: pointer;
+}
+
+.breadLink:hover {
+    text-decoration: underline;
+}
+
+.headerRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.titleWrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.titleIcon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: var(--brown-50);
+    border: 1px solid var(--brown-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brown-500);
+    flex-shrink: 0;
+}
+
+.pageTitle {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--brown-900);
+    margin: 0 0 4px;
+}
+
+.pageSubtitle {
+    font-size: 13px;
+    color: var(--brown-500);
+    margin: 0;
+}
+
+.backBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    color: var(--brown-700);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+    white-space: nowrap;
+}
+
+.backBtn:hover {
+    background: var(--brown-50);
+    border-color: var(--brown-300);
+}
+
+/* ── Hero stats card ─────────────────────────────── */
+.heroCard {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--brown-100);
+    overflow: hidden;
+}
+
+.heroStats {
+    display: flex;
+    align-items: stretch;
+    overflow-x: auto;
+}
+
+.heroStatGroup {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+}
+
+.heroStat {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 22px;
+}
+
+.heroStatDivider {
+    width: 1px;
+    background: var(--brown-100);
+    flex-shrink: 0;
+    align-self: stretch;
+    margin: 10px 0;
+}
+
+.heroStatLabel {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--brown-400);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    white-space: nowrap;
+}
+
+.heroStatValue {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--brown-900);
+    font-family: var(--mono);
+}
+
+.heroStatValue small {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--brown-400);
+    font-family: var(--font);
+    margin-left: 2px;
+}
+
+/* Pill tipe produksi di hero */
+.typePill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    width: fit-content;
+}
+
+.warning {
+    background: #FEF3C7;
+    color: #D97706;
+}
+
+.accent {
+    background: var(--brown-100);
+    color: var(--brown-700);
+}
+
+/* ── Card ────────────────────────────────────────── */
+.card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--brown-100);
+    overflow: hidden;
+}
+
+.cardHeader {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--brown-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cardTitle {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brown-900);
+}
+
+.cardSubtitle {
+    font-size: 11px;
+    color: var(--brown-400);
+}
+
+/* ── Summary grid (ringkasan adonan) ─────────────── */
+.summaryGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-bottom: 1px solid var(--brown-100);
+}
+
+.summaryCard {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+    border-right: 1px solid var(--brown-100);
+    background: color-mix(in srgb, var(--sbg, #f5f5f5) 30%, #fff);
+}
+
+.summaryCard:last-child {
+    border-right: none;
+}
+
+.summaryIcon {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.summaryNum {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--brown-900);
+    font-family: var(--mono);
+    line-height: 1.2;
+}
+
+.summaryNum span {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--brown-400);
+    font-family: var(--font);
+}
+
+.summaryLbl {
+    font-size: 11px;
+    color: var(--brown-500);
+    font-weight: 600;
+}
+
+/* ── Progress bar ────────────────────────────────── */
+.progressWrap {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--brown-50);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.progressLabels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--brown-500);
+}
+
+.progressTrack {
+    height: 8px;
+    background: var(--brown-100);
+    border-radius: 99px;
+    overflow: hidden;
+    display: flex;
+}
+
+.progressSeg {
+    height: 100%;
+    transition: width 0.6s ease;
+}
+
+.progressLegend {
+    display: flex;
+    gap: 14px;
+    font-size: 11px;
+    color: var(--brown-500);
+}
+
+.progressLegend span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.progressLegend i {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+/* ── Status badges ───────────────────────────────── */
+.statusBadges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px 20px;
+}
+
+.sBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* ── Batch list ──────────────────────────────────── */
+.batchList {
+    display: flex;
+    flex-direction: column;
+}
+
+.batchCard {
+    border-bottom: 1px solid var(--brown-100);
+    padding: 16px 20px;
+}
+
+.batchCard:last-child {
+    border-bottom: none;
+}
+
+.batchHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.batchLeft {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.batchNum {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brown-800);
+}
+
+.batchStatus {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.batchRight {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.batchQtyBig {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--brown-900);
+    font-family: var(--mono);
+}
+
+.batchQtyBig small {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--brown-400);
+    font-family: var(--font);
+}
+
+.toggleBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--brown-200);
+    background: #fff;
+    color: var(--brown-600);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.toggleBtn:hover {
+    background: var(--brown-50);
+    border-color: var(--brown-300);
+}
+
+/* ── Batch meta grid ─────────────────────────────── */
+.batchMeta {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px 20px;
+    background: var(--brown-50);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+}
+
+.batchMetaItem {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.bml {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--brown-400);
+}
+
+.bmv {
+    font-size: 13px;
+    color: var(--brown-800);
+}
+
+/* ── Mini progress bar ───────────────────────────── */
+.miniBar {
+    height: 4px;
+    background: var(--brown-100);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.miniBarFill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s ease;
+}
+
+.miniBarLabel {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--brown-400);
+    margin-bottom: 4px;
+}
+
+/* ── Sales table (expand) ────────────────────────── */
+.salesTableWrap {
+    margin-top: 12px;
+    border: 1px solid var(--brown-100);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.salesTableTitle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    background: var(--brown-50);
+    border-bottom: 1px solid var(--brown-100);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--brown-700);
+}
+
+.salesTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.salesTable thead th {
+    padding: 9px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--brown-500);
+    background: var(--brown-50);
+    border-bottom: 1px solid var(--brown-100);
+    white-space: nowrap;
+}
+
+.salesTable tbody td {
+    padding: 10px 14px;
+    color: var(--brown-800);
+    border-bottom: 1px solid var(--brown-50);
+    vertical-align: middle;
+}
+
+.salesTable tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.salesTable tbody tr:hover td {
+    background: var(--brown-50);
+}
+
+.salesTable tfoot td {
+    padding: 10px 14px;
+    border-top: 1px solid var(--brown-100);
+    background: var(--brown-50);
+}
+
+.noCell {
+    color: var(--brown-400);
+    font-size: 12px;
+    width: 32px;
+}
+
+.itemsCell {
+    color: var(--brown-700);
+}
+
+.payBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--brown-100);
+    color: var(--brown-700);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.moneyCell {
+    font-family: var(--mono);
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.mlCell {
+    text-align: right;
+}
+
+.mlBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #D1FAE5;
+    color: #059669;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--mono);
+}
+
+.footLabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brown-500);
+}
+
+.footMoney {
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--brown-900);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.footMl {
+    font-family: var(--mono);
+    font-weight: 700;
+    color: #059669;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.noSales {
+    padding: 12px 20px;
+    font-size: 12px;
+    color: var(--brown-400);
+    font-style: italic;
+}
+
+/* ── Mixing info card ────────────────────────────── */
+.mixInfo {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+}
+
+.mixIconWrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #D1FAE5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #059669;
+    flex-shrink: 0;
+}
+
+.mixBody {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.mixDesc {
+    font-size: 13px;
+    color: var(--brown-600);
+    margin: 0;
+    line-height: 1.6;
+}
+
+.mixDesc strong {
+    color: var(--brown-900);
+}
+
+.mixStats {
+    display: flex;
+    align-items: center;
+    background: var(--brown-50);
+    border: 1px solid var(--brown-100);
+    border-radius: 10px;
+    overflow: hidden;
+    flex-wrap: wrap;
+}
+
+.mixStat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 18px;
+}
+
+.mixStatDivider {
+    width: 1px;
+    height: 36px;
+    background: var(--brown-100);
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.mixStatLabel {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--brown-400);
+    white-space: nowrap;
+}
+
+.mixStatValue {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brown-900);
+    font-family: var(--mono);
+}
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 900px) {
+    .summaryGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .summaryCard:nth-child(2) {
+        border-right: none;
+    }
+
+    .summaryCard:nth-child(1),
+    .summaryCard:nth-child(2) {
+        border-bottom: 1px solid var(--brown-100);
+    }
+}
+
+@media (max-width: 768px) {
+    .headerRow {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .backBtn {
+        align-self: flex-start;
+    }
+
+    .heroStats {
+        flex-direction: column;
+    }
+
+    .heroStatDivider {
+        width: 100%;
+        height: 1px;
+        margin: 0;
+    }
+
+    .mixInfo {
+        flex-direction: column;
+    }
+
+    .mixStats {
+        flex-direction: column;
+    }
+
+    .mixStatDivider {
+        width: 100%;
+        height: 1px;
+        align-self: stretch;
+    }
+}
+
+@media (max-width: 480px) {
+    .summaryGrid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .batchMeta {
+        grid-template-columns: 1fr 1fr;
+    }
+}

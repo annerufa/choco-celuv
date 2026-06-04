@@ -3,6 +3,8 @@ import "./mobile.css";
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import SetPasswordModal from "./SetPasswordModal";
+import axios from 'axios';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // icons
 import { IconHome, IconStok, IconPenjaga, IconChevron, IconRekap, IconCheck, IconAbsensi, IconProfil } from "./Icons";
@@ -83,6 +85,20 @@ export default function MobileApp() {
   const [page, setPage] = useState("home");
   const [pageParams, setPageParams] = useState({});
 
+  useEffect(() => {
+    if (role !== 'penjaga_booth') return; // hanya untuk penjaga
+
+    const checkExpiry = () => {
+      const token = localStorage.getItem('token');
+      axios.patch(`${BASE_URL}/production/batches/expire-check`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => { }); // silent fail — tidak perlu alert
+    };
+
+    checkExpiry(); // langsung cek saat pertama buka app
+    const interval = setInterval(checkExpiry, 30 * 60 * 1000); // lalu tiap 30 menit
+    return () => clearInterval(interval);
+  }, [role]);
   const navigate = (pageName, params = {}) => {
     setPage(pageName);
     setPageParams(params);

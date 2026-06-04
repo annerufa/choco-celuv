@@ -138,7 +138,7 @@ function AbsenMap({ userLat, userLon, boothLat, boothLon, radius = 100, clockInL
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
-export default function AbsensiPage() {
+export default function AbsensiPage({ setPage }) {
   const [time, setTime] = useState(getNow);
   const [userPos, setUserPos] = useState(null);
   const [gpsStatus, setGpsStatus] = useState('idle'); // idle | loading | ok | denied | error
