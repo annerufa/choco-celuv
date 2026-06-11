@@ -241,9 +241,9 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
                                             <div className={styles.bcStatLbl}>Transaksi bulan ini</div>
                                         </div>
                                         <div className={styles.bcStat}>
-                                            <div className={styles.bcStatVal}>{b.jumlah_pegawai ?? 0}</div>
+                                            <div cliassName={styles.bcStatVal}>{b.jumlah_pegawai ?? 0}</div>
                                             {/* <div className={styles.bcStatLbl}>1</div> */}
-                                            <div className={styles.bcStatLbl}>Pegawai bertugas</div>
+                                            <div className={styles.bcStatLbl}>Karyawan bertugas</div>
                                         </div>
                                         <div className={styles.bcStat}>
                                             <div className={styles.bcStatVal}>{b.is_open ? 'Buka' : 'Tutup'}</div>
@@ -260,7 +260,7 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
                                                         <span className={styles.keeperName}>{b.pegawai}</span>
                                                     </>
                                                 ) : (
-                                                    <span className={styles.keeperEmpty}>Belum ada pegawai</span>
+                                                    <span className={styles.keeperEmpty}>Belum ada penjaga booth</span>
                                                 )}
                                             </div>
                                         </div>
@@ -308,7 +308,7 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
                                 <th>Booth</th>
                                 <th>Kode</th>
                                 <th>Alamat</th>
-                                <th>Pegawai</th>
+                                <th>Penjaga Booth</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
                             </tr>
@@ -453,7 +453,7 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
 
                             {/* Seksi: Pegawai */}
                             <div className={styles.detailSection}>
-                                <div className={styles.detailSectionTitle}>Pegawai Bertugas</div>
+                                <div className={styles.detailSectionTitle}>Penjaga Booth</div>
                                 {drawerBooth.pegawai ? (
                                     <div className={styles.miniStaff}>
                                         <div className={styles.staffAv}>{drawerBooth.pegawai[0]}</div>
@@ -463,7 +463,7 @@ export default function BoothTable({ boothList, setBoothList, loading, error }) 
                                     </div>
                                 ) : (
                                     <div style={{ fontSize: 13, color: 'var(--brown-300)', padding: '8px 0' }}>
-                                        Belum ada pegawai ditugaskan
+                                        Belum ada penjaga booth
                                     </div>
                                 )}
                             </div>

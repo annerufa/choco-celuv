@@ -530,7 +530,8 @@ const styles = `
   @media (max-width: 900px) {
     .login-wrapper {
       grid-template-columns: 1fr;
-      grid-template-rows: auto 1fr;
+    grid-template-rows: 1fr;   /* ← ubah dari 'auto 1fr' jadi '1fr' */
+    min-height: 100vh;    
     }
 
     .left-panel {
@@ -579,6 +580,7 @@ const styles = `
     .right-panel {
       padding: 40px 24px 50px;
       align-items: flex-start;
+    min-height: 100vh;   
     }
 
     .form-container {
@@ -642,11 +644,11 @@ export default function Login() {
       login(data); // simpan ke context + localStorage
 
       const destination = ROLE_ROUTES[data.user.role] ?? '/dashboard';
-      console.log(destination);
+      // console.log(destination);
       navigate(destination);
 
     } catch (err) {
-      console.log(err.response?.data);
+      // console.log(err.response?.data);
       setAlert({
         type: 'error',
         msg: err.response?.data?.payload?.message || 'Login gagal. Periksa kredensial Anda.',

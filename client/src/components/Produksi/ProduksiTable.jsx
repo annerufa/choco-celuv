@@ -112,10 +112,11 @@ export default function ProduksiTable() {
                                 <th>Tanggal</th>
                                 <th>Resep</th>
                                 <th>Tipe</th>
-                                <th>Batch</th>
                                 <th>Output</th>
                                 <th>Lokasi</th>
                                 <th>Dibuat oleh</th>
+                                <th>Jumlah</th>
+                                <th>Status</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -138,12 +139,13 @@ export default function ProduksiTable() {
                                             {typeLabel[p.recipe_type] ?? p.recipe_type}
                                         </span>
                                     </td>
-                                    <td className={styles.monoCell}>{p.qty}x</td>
                                     <td className={styles.monoCell}>
                                         {Number(p.output_qty) * p.qty} {p.output_unit ?? ''}
                                     </td>
                                     <td>{p.location_name ?? '-'}</td>
                                     <td>{p.created_by_name ?? '-'}</td>
+                                    <td className={styles.monoCell}>{parseFloat(p.qty)}x</td>
+                                    <td className={styles.monoCell}>{p.status ?? '-'}</td>
                                     <td>
                                         <div className={styles.actionBtns}>
                                             {/* ── Detail (NEW) ── */}

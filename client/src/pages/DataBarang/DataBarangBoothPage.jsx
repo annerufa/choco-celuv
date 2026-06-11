@@ -51,6 +51,7 @@ function buildMatrix(rows) {
                 status: getStokStatus(stok, min, max, safety_stock),
                 stok, min, max, safety_stock,
                 unit: row.unit ?? '',
+                can_purchase: row.can_purchase ?? false,
             };
         }
     });
@@ -73,7 +74,7 @@ const STATUS_META = {
 
 const STATUS_OPTIONS = ['Kritis', 'Habis', 'Menipis', 'Aman', 'Overstock'];
 
-function StatusPill({ entry, boothName }) {
+function StatusPill({ entry, boothName, onNavigate }) {
     if (entry === undefined || entry === null) {
         return <span className={`${styles.pill} ${styles.pillNonaktif}`}>—</span>;
     }
@@ -82,7 +83,10 @@ function StatusPill({ entry, boothName }) {
 
     return (
         <span className={`${styles.pillWrap}`}>
-            <span className={`${styles.pill} ${meta.cls}`}>
+            <span className={`${styles.pill} ${meta.cls}`}
+                style={{ cursor: 'pointer' }}
+                onClick={onNavigate}
+            >
                 <span className={`${styles.dot} ${meta.dot}`} />
                 {entry.status}
             </span>
@@ -165,6 +169,7 @@ export default function DataBarangBoothPage() {
             min: item.booths[booth.id]?.min ?? 0,
             max: item.booths[booth.id]?.max ?? 0,
             is_active: item.booths[booth.id] !== null,
+            can_purchase: item.booths[booth.id]?.can_purchase ?? false, // ← tambah ini
         }));
         setSetupModal({ open: true, item, settings });
     }
@@ -293,7 +298,7 @@ export default function DataBarangBoothPage() {
                                                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                                     </svg>
                                                 </button>
-                                                <button
+                                                {/* <button
                                                     className={styles.detailBtn}
                                                     onClick={() => navigate(`/barang-booth/${item.id}`)}
                                                     aria-label={`Detail ${item.name}`}
@@ -303,7 +308,7 @@ export default function DataBarangBoothPage() {
                                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                                                         <circle cx="12" cy="12" r="3" />
                                                     </svg>
-                                                </button>
+                                                </button> */}
                                             </div>
                                         </td>
                                         {visibleBooths.map(b => (
@@ -311,6 +316,7 @@ export default function DataBarangBoothPage() {
                                                 <StatusPill
                                                     entry={item.booths[b.id] ?? null}
                                                     boothName={b.name}
+                                                    onNavigate={() => navigate(`/barang-booth/${item.id}/${b.id}`)}
                                                 />
                                             </td>
                                         ))}

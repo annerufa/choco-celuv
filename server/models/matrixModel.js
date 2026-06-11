@@ -20,7 +20,8 @@ async function getStockMatrix() {
             spl.min_qty,
             spl.max_qty,
             spl.safety_stock,
-            spl.is_active
+            spl.is_active,
+            spl.can_purchase
         FROM items i
         CROSS JOIN stock_locations sl
         JOIN booth b ON b.id = sl.booth_id
@@ -56,7 +57,8 @@ async function getStockMatrixByBooth(locationId) {
             spl.min_qty,
             spl.max_qty,
             spl.safety_stock,
-            spl.is_active
+            spl.is_active,
+            spl.can_purchase
         FROM items i
         JOIN stock_locations sl ON sl.id = ?
         LEFT JOIN stock_per_location spl

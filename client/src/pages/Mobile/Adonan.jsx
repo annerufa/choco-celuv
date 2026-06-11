@@ -22,14 +22,14 @@ const STATUS_COLOR = {
 };
 
 function toDateStr(date) {
-    return date.toISOString().slice(0, 10);
+    return date.toLocaleDateString('en-CA'); // WIB-safe
 }
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 
-
 const token = localStorage.getItem('token');
 const headers = { Authorization: `Bearer ${token}` };
+
 export default function Adonan({ setPage, navigate }) {
     const today = toDateStr(new Date());
     const weekAgo = toDateStr(new Date(Date.now() - 6 * 86400000));
@@ -37,10 +37,9 @@ export default function Adonan({ setPage, navigate }) {
     const [from, setFrom] = useState(weekAgo);
     const [to, setTo] = useState(today);
     const [status, setStatus] = useState("");
-    const [now, setNow] = useState(Date.now());           // ← jam sekarang (reaktif)
-    const [expiringWarning, setExpiringWarning] = useState([]); // batch yang mau expired
+    const [now, setNow] = useState(Date.now());
+    const [expiringWarning, setExpiringWarning] = useState([]);
 
-    // Jadi ini:
     const queryString = useMemo(() => {
         const params = new URLSearchParams({ from, to });
         if (status) params.set("batch_status", status);
@@ -62,15 +61,14 @@ export default function Adonan({ setPage, navigate }) {
     useEffect(() => {
         const interval = setInterval(() => {
             setNow(Date.now());
-            fetchData(); // re-fetch → server akan return status terbaru (EXPIRED jika sudah lewat)
-        }, 30 * 60 * 1000); // 30 menit
-
+            fetchData();
+        }, 30 * 60 * 1000);
         return () => clearInterval(interval);
     }, []);
 
     // ── Cek warning batch mendekati expired ───────────────────
     useEffect(() => {
-        const WARN_MS = 30 * 60 * 1000; // 30 menit
+        const WARN_MS = 30 * 60 * 1000;
         const warnings = [];
 
         adonanList.forEach(prod => {
@@ -87,7 +85,7 @@ export default function Adonan({ setPage, navigate }) {
         setExpiringWarning(warnings);
     }, [adonanList, now]);
 
-    // Helper: apakah batch sudah expired secara waktu (meski status belum diupdate server)
+    // Helper: apakah batch sudah expired secara waktu
     function isExpiredByTime(b) {
         return b.expired_at && new Date(b.expired_at) <= now;
     }
@@ -162,7 +160,7 @@ export default function Adonan({ setPage, navigate }) {
                 </div>
             </div>
 
-            {/* ── Warning banner batch mau expired ── */}
+            {/* Warning banner batch mau expired */}
             {expiringWarning.length > 0 && (
                 <div style={{
                     margin: "10px 16px 0",
@@ -209,8 +207,16 @@ export default function Adonan({ setPage, navigate }) {
 
             {/* LIST */}
             <div className="pbody" style={{ paddingBottom: 100 }}>
-                {loading && <div style={{ textAlign: "center", color: "var(--text3)", fontSize: 13, marginTop: 40 }}>Memuat data adonan...</div>}
-                {error && <div style={{ textAlign: "center", color: "var(--red)", fontSize: 13, marginTop: 40 }}>Gagal memuat data.</div>}
+                {loading && (
+                    <div style={{ textAlign: "center", color: "var(--text3)", fontSize: 13, marginTop: 40 }}>
+                        Memuat data adonan...
+                    </div>
+                )}
+                {error && (
+                    <div style={{ textAlign: "center", color: "var(--red)", fontSize: 13, marginTop: 40 }}>
+                        Gagal memuat data.
+                    </div>
+                )}
                 {!loading && !error && adonanList.length === 0 && (
                     <div style={{ textAlign: "center", color: "var(--text3)", fontSize: 13, marginTop: 60 }}>
                         <div style={{ fontSize: 36, marginBottom: 10 }}>🧪</div>
@@ -250,7 +256,6 @@ export default function Adonan({ setPage, navigate }) {
                                 {prod.batches.length > 0 && (
                                     <div style={{ padding: "8px 16px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
                                         {prod.batches.map(b => {
-                                            // Expired by time tapi server belum update → tampilkan sebagai EXPIRED
                                             const effectiveStatus = (b.status === "ACTIVE" && isExpiredByTime(b))
                                                 ? "EXPIRED"
                                                 : b.status;
@@ -259,10 +264,17 @@ export default function Adonan({ setPage, navigate }) {
                                             const msLeft = b.expired_at ? new Date(b.expired_at) - now : Infinity;
                                             const expiringSoon = b.status === "ACTIVE" && msLeft > 0 && msLeft <= 30 * 60 * 1000;
                                             const isLoading = loadingAction === b.id;
-
-                                            // Tombol aksi hanya muncul kalau ACTIVE/FROZEN DAN belum lewat expired
                                             const showActions = (b.status === "ACTIVE" || b.status === "FROZEN")
                                                 && !isExpiredByTime(b);
+
+                                            // Info durasi di freezer
+                                            const frozenInfo = b.status === "FROZEN" && b.frozen_at ? (() => {
+                                                const jamDiFreezer = (now - new Date(b.frozen_at).getTime()) / 3600000;
+                                                const sisaJam = Math.max(0, 24 - jamDiFreezer);
+                                                const jamBulat = Math.floor(sisaJam);
+                                                const menitSisa = Math.round((sisaJam - jamBulat) * 60);
+                                                return ` · ❄ Di freezer ${Math.floor(jamDiFreezer)}j ${Math.round((jamDiFreezer % 1) * 60)}m · sisa ${jamBulat}j ${menitSisa}m`;
+                                            })() : '';
 
                                             return (
                                                 <div key={b.id}
@@ -289,8 +301,8 @@ export default function Adonan({ setPage, navigate }) {
                                                             </div>
                                                             <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 1 }}>
                                                                 Sisa {b.remaining_qty}/{b.total_qty} {prod.output_unit}
-                                                                {b.expired_at && ` · exp ${new Date(b.expired_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
-                                                                {b.status === "FROZEN" && " · ❄ Dikulkas"}
+                                                                {b.expired_at && !frozenInfo && ` · exp ${new Date(b.expired_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
+                                                                {frozenInfo}
                                                             </div>
                                                         </div>
                                                         <span style={{
@@ -343,7 +355,7 @@ export default function Adonan({ setPage, navigate }) {
                 )}
             </div>
 
-            {/* Modal Damage — sama seperti sebelumnya */}
+            {/* Modal Damage */}
             {damageModal && (
                 <div style={{
                     position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",

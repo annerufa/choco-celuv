@@ -11,6 +11,16 @@ const getAllItems = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
+const getAllItemsAktif = async (req, res) => {
+    try {
+        const { location_id, role } = req.user;
+        if (!role) return response(403, null, 'Tidak memiliki akses', res);
+        const data = await Items.getAllAktif();
+        response(200, data, 'Berhasil mengambil semua barang aktif', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
 
 const getMyItems = async (req, res) => {
     try {
@@ -239,4 +249,4 @@ const deleteUnitConversion = async (req, res) => {
 };
 
 
-module.exports = { getBoothStock, getAllItems, getMyItems, createItems, statusItem, getConversions, getBoothSettings, updateBoothSettings, updateItems, deleteItems, getItem, getItemsPerLoc, getByItemOrLocation, getUnitConversions, createUnitConversion, deleteUnitConversion };
+module.exports = { getBoothStock, getAllItems, getAllItemsAktif, getMyItems, createItems, statusItem, getConversions, getBoothSettings, updateBoothSettings, updateItems, deleteItems, getItem, getItemsPerLoc, getByItemOrLocation, getUnitConversions, createUnitConversion, deleteUnitConversion };

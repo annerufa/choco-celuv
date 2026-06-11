@@ -9,17 +9,17 @@ const headers = () => ({ Authorization: `Bearer ${getToken()}` });
 
 const APPLIES_TO_LABEL = { all: 'Semua', regular: 'Regular', less_ice: 'Less Ice' };
 const APPLIES_TO_COLOR = {
-    all:      { bg: '#EDE9FE', color: '#7C3AED' },
-    regular:  { bg: '#D1FAE5', color: '#065F46' },
+    all: { bg: '#EDE9FE', color: '#7C3AED' },
+    regular: { bg: '#D1FAE5', color: '#065F46' },
     less_ice: { bg: '#DBEAFE', color: '#1E40AF' },
 };
 
 export default function ComponentsModal({ produk, onClose }) {
     const [components, setComponents] = useState([]);
-    const [items, setItems]           = useState([]);
-    const [loading, setLoading]       = useState(true);
-    const [saving, setSaving]         = useState(false);
-    const [error, setError]           = useState(null);
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState(null);
 
     // Form tambah komponen
     const [form, setForm] = useState({ item_id: '', qty: '', applies_to: 'all' });
@@ -30,7 +30,7 @@ export default function ComponentsModal({ produk, onClose }) {
         // Fetch items untuk dropdown
         axios.get(`${BASE_URL}/items`, { headers: headers() })
             .then(res => setItems(res.data?.payload?.data ?? []))
-            .catch(() => {});
+            .catch(() => { });
     }, []);
 
     async function fetchComponents() {
@@ -164,7 +164,7 @@ export default function ComponentsModal({ produk, onClose }) {
                                             <input
                                                 className={styles.input} type="number" min="0" step="0.01"
                                                 placeholder="0"
-                                                value={form.qty}
+                                                value={parseFloat(form.qty)}
                                                 onChange={e => setForm(f => ({ ...f, qty: e.target.value }))}
                                             />
                                         </div>
@@ -214,7 +214,7 @@ export default function ComponentsModal({ produk, onClose }) {
 // ── Comp Row ─────────────────────────────────────────────────
 function CompRow({ comp, onUpdateQty, onDelete }) {
     const [editing, setEditing] = useState(false);
-    const [qty, setQty]         = useState(comp.qty);
+    const [qty, setQty] = useState(comp.qty);
 
     function handleSave() {
         onUpdateQty(comp, qty);
@@ -233,7 +233,7 @@ function CompRow({ comp, onUpdateQty, onDelete }) {
                         <input
                             type="number" min="0" step="0.01"
                             className={styles.compQtyInput}
-                            value={qty}
+                            value={parseFloat(qty)}
                             onChange={e => setQty(e.target.value)}
                             autoFocus
                         />
@@ -243,7 +243,7 @@ function CompRow({ comp, onUpdateQty, onDelete }) {
                 ) : (
                     <>
                         <span className={styles.compQty} onClick={() => setEditing(true)} title="Klik untuk edit">
-                            {comp.qty}
+                            {parseFloat(comp.qty)}
                         </span>
                         <button className={styles.compDeleteBtn} onClick={() => onDelete(comp)} title="Hapus">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">

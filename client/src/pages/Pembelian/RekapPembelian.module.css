@@ -2,11 +2,14 @@
 /* Identik dengan Produksi.module.css — bisa di-share kalau mau */
 
 .page {
-    padding: 24px;
+    /* padding: 24px; */
     max-width: 1100px;
 }
 
-.pageHeader { margin-bottom: 24px; }
+.pageHeader {
+    margin-bottom: 24px;
+}
+
 
 .pageTitle {
     font-size: 22px;
@@ -29,7 +32,9 @@
     margin-bottom: 8px;
 }
 
-.breadcrumb span { color: var(--brown-600); }
+.breadcrumb span {
+    color: var(--brown-600);
+}
 
 /* ── Filter card ── */
 .filterCard {
@@ -76,7 +81,10 @@
     outline: none;
     transition: border-color 0.15s;
 }
-.filterInput:focus { border-color: var(--accent); }
+
+.filterInput:focus {
+    border-color: var(--accent);
+}
 
 .btnApply {
     padding: 9px 20px;
@@ -92,7 +100,10 @@
     transition: background 0.15s;
     white-space: nowrap;
 }
-.btnApply:hover { background: var(--accent-light); }
+
+.btnApply:hover {
+    background: var(--accent-light);
+}
 
 /* ── Summary row ── */
 .summaryRow {
@@ -118,4 +129,11 @@
 .summaryLbl {
     font-size: 11px;
     color: var(--brown-400);
+}
+
+.cardTitle {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brown-900);
+    padding: 12px;
 }

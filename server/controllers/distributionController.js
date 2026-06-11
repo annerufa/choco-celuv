@@ -3,6 +3,7 @@ const distributions = require('../models/distributionModel');
 const users = require('../models/userModel');
 const db = require('../connection');
 const response = require('../helpers/response');
+const getUserLocation = require('../helpers/getUserLocation');
 // ─────────────────────────────────────────────
 const getAll = async (req, res) => {
     try {
@@ -111,7 +112,8 @@ const doneDistributions = async (req, res) => {
 const cancelDis = async (req, res) => {
     try {
         const kurir_id = req.user.id;
-        const data = await distributions.getDisToday(kurir_id);
+        // const data = await distributions.getDisToday(kurir_id);
+        const data = await distributions.cancel(req.params.id, kurir_id);
         response(200, data, 'Berhasil mengambil distribusi hari ini', res);
     } catch (err) {
         response(500, null, err.message, res);
@@ -156,8 +158,11 @@ const arriveDistribution = async (req, res) => {
 // GET /api/distributions?kurir_id=me&status=draft
 const getDisBooth = async (req, res) => {
     try {
-        // const { status } = req.query;
-        const loc_penjaga_id = req.user.location_id; // kurir_id=me → pakai user dari token
+
+        const loc = await getUserLocation(req.user.id);
+        if (!loc) return response(404, null, 'Jadwal aktif tidak ditemukan', res);
+
+        const loc_penjaga_id = loc.location_id;
         console.log('id loc penjaga booth: ', loc_penjaga_id);
 
         // console.log('id kurir:', kurir_id, ' + status:', status)
@@ -201,5 +206,17 @@ const getRekapKurir = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
-
-module.exports = { getAll, create, updateDistributionItem, getRekapKurir, updateDistributionStatus, doneDistributions, getDisBooth, arriveDistribution, cancelDis, receiveDis, getDistributionbyId, getMyDistributions, getDisToday, getDistributionItems, pickupDistribution };
+// distributionController.js
+const getUnitConversions = async (req, res) => {
+    try {
+        const ids = (req.query.item_ids ?? '')
+            .split(',')
+            .map(Number)
+            .filter(Boolean);
+        const data = await distributionModel.getUnitConversions(ids);
+        return response(res, 200, true, 'OK', data);
+    } catch (err) {
+        return response(res, 500, false, err.message);
+    }
+};
+module.exports = { getAll, getUnitConversions, create, updateDistributionItem, getRekapKurir, updateDistributionStatus, doneDistributions, getDisBooth, arriveDistribution, cancelDis, receiveDis, getDistributionbyId, getMyDistributions, getDisToday, getDistributionItems, pickupDistribution };

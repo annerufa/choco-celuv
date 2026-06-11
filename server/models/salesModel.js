@@ -1,5 +1,6 @@
 // models/salesModel.js
 const db = require('../connection');
+const { insertMovement } = require('../helpers/stockHelper');
 
 // ── GET /sales/products ──────────────────────────────────────
 const getProducts = async () => {
@@ -103,17 +104,14 @@ const createSale = async (userId, payment_method, items) => {
             for (const comp of components) {
                 const totalQty = Number(comp.qty) * it.qty;
 
-                await conn.query(`
-                    UPDATE stock_per_location
-                    SET current_stock = GREATEST(0, current_stock - ?)
-                    WHERE item_id = ? AND location_id = ?
-                `, [totalQty, comp.item_id, location_id]);
-
-                await conn.query(`
-                    INSERT INTO stock_movements 
-                        (item_id, location_id, qty, movement_type, source_type, source_id)
-                    VALUES (?, ?, ?, 'OUT', 'PENJUALAN', ?)
-                `, [comp.item_id, location_id, totalQty, sale_id]);
+                await insertMovement(conn, {
+                    item_id: comp.item_id,
+                    location_id,
+                    qty: totalQty,
+                    movement_type: 'OUT',
+                    source_type: 'PENJUALAN',
+                    source_id: sale_id,
+                });
             }
         }
 
@@ -244,9 +242,9 @@ const getRekapPenjualan = async (userId, startDate, endDate) => {
 
 // purchasesModel.js
 const getRekapPembelian = async ({ startDate, endDate, locId, status }) => {
+    console.log('getRekapPembelian called with:', { startDate, endDate, locId, status });
     const conditions = [
         `DATE(p.date) BETWEEN ? AND ?`,
-        `p.loc_id != 1`  // ← exclude gudang (loc_id = 1)
     ];
     const params = [startDate, endDate];
 
@@ -335,4 +333,52 @@ const getRekapDistribusi = async (userId, startDate, endDate) => {
 
     return { summary, list };
 };
-module.exports = { getProducts, getSummary, createSale, getRekap, getRekapPenjualan, getRekapPembelian, getRekapDistribusi };
+
+// Tren harian (untuk line chart)
+const getSalesTrend = async ({ from, to, booth_id }) => {
+    const conditions = [
+        `DATE(s.created_at) BETWEEN ? AND ?`
+    ];
+    const params = [from, to];
+
+    if (booth_id) {
+        conditions.push(`s.booth_id = ?`);
+        params.push(booth_id);
+    }
+
+    const [rows] = await db.query(`
+        SELECT
+            DATE(s.created_at)       AS tanggal,
+            COUNT(s.id)              AS total_transaksi,
+            COALESCE(SUM(s.grand_total), 0) AS total_penjualan,
+            COALESCE(SUM(si.qty), 0) AS total_cup
+        FROM sales s
+        LEFT JOIN sale_items si ON si.sale_id = s.id
+        WHERE ${conditions.join(' AND ')}
+        GROUP BY DATE(s.created_at)
+        ORDER BY tanggal ASC
+    `, params);
+
+    return rows;
+};
+
+// Agregat per booth (untuk bar chart)
+const getSalesPerBooth = async ({ from, to }) => {
+    const [rows] = await db.query(`
+        SELECT
+            b.id                     AS booth_id,
+            b.name                   AS booth_name,
+            COUNT(s.id)              AS total_transaksi,
+            COALESCE(SUM(s.grand_total), 0) AS total_penjualan,
+            COALESCE(SUM(si.qty), 0) AS total_cup
+        FROM sales s
+        JOIN booth b ON b.id = s.booth_id
+        LEFT JOIN sale_items si ON si.sale_id = s.id
+        WHERE DATE(s.created_at) BETWEEN ? AND ?
+        GROUP BY b.id, b.name
+        ORDER BY total_penjualan DESC
+    `, [from, to]);
+
+    return rows;
+};
+module.exports = { getSalesTrend, getSalesPerBooth, getProducts, getSummary, createSale, getRekap, getRekapPenjualan, getRekapPembelian, getRekapDistribusi };

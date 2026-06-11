@@ -517,6 +517,33 @@
     background: var(--brown-300);
 }
 
+/* Export buttons */
+.exportBtns {
+    display: flex;
+    gap: 8px;
+    margin-left: 8px;
+}
+
+.btnExport {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1.5px solid var(--border, #e0d6cc);
+    background: #fff;
+    color: var(--text, #3b2a1a);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.btnExport:hover {
+    background: var(--brown-light, #f5ede4);
+    border-color: var(--brown, #7c4f2a);
+}
+
 /* ── Responsive ──────────────────────────────────── */
 @media (max-width: 768px) {
     .heroCard {

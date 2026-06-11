@@ -8,6 +8,13 @@ const getAll = async () => {
     return rows;
 };
 
+const getAllAktif = async () => {
+    const [rows] = await db.query(
+        'SELECT * FROM items WHERE is_active=1 ORDER BY id DESC',
+    );
+    return rows;
+};
+
 const getAllPerLoc = async (loc_id) => {
     const [rows] = await db.query(
         `SELECT 
@@ -20,7 +27,7 @@ const getAllPerLoc = async (loc_id) => {
             sl.can_purchase
          FROM items i
          JOIN stock_per_location sl ON i.id = sl.item_id
-         WHERE sl.location_id = ?
+         WHERE sl.location_id = ? AND i.is_active = 1
          ORDER BY i.updated_at DESC`,
         [loc_id]
     );
@@ -359,4 +366,4 @@ const getBoothStock = async (userId) => {
 };
 
 
-module.exports = { getBoothStock, getBoothSettingsByItemId, updateBoothSettings, getAll, create, update, statusChange, removePerLoc, getAllPerLoc, getById, getMatrix, getItem, getByItemId, getByLocation, getConversions, getConversions, createConversion, deleteConversion };
+module.exports = { getAllAktif, getBoothStock, getBoothSettingsByItemId, updateBoothSettings, getAll, create, update, statusChange, removePerLoc, getAllPerLoc, getById, getMatrix, getItem, getByItemId, getByLocation, getConversions, getConversions, createConversion, deleteConversion };

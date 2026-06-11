@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getProducts, createSale, getSummary, getRekap, getRekapPenjualan, getRekapPembelian, getRekapDistribusi } = require('../controllers/salesController');
+const { getProducts, createSale, getSummary, getSalesTrend, getSalesPerBooth, getRekap, getRekapPenjualan, getRekapPembelian, getRekapDistribusi } = require('../controllers/salesController');
 const auth = require('../middleware/authenticate');
 
 
@@ -11,4 +11,6 @@ router.post('/', auth, createSale);
 router.get('/rekap/penjualan', getRekapPenjualan);
 router.get('/rekap/pembelian', getRekapPembelian);
 router.get('/rekap/distribusi', getRekapDistribusi);
+router.get('/chart/trend', auth, getSalesTrend);
+router.get('/chart/per-booth', auth, getSalesPerBooth);
 module.exports = router;

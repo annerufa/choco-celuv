@@ -1,8 +1,7 @@
-// src/pages/DataBarang/DataBarangPage.jsx
+
 import styles from './DashboardPage.module.css';
 import StatsGrid from '../../components/StatsGrid/StatsGrid';
 import StockChart from '../../components/StockChart/StockChart';
-// import BarangTable from '../../components/BarangTable/BarangTable';
 
 export default function PemilikDashboard() {
     return (
@@ -23,8 +22,6 @@ export default function PemilikDashboard() {
             {/* Chart */}
             <StockChart />
 
-            {/* Tabel */}
-            {/* <BarangTable /> */}
 
         </div>
     );

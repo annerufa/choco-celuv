@@ -333,7 +333,31 @@ tbody tr:hover td {
     border-color: var(--accent);
 }
 
+.select {
+    padding: 5px 12px;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+    font-size: 12px;
+    background: var(--surface, #fff);
+    color: var(--text, #1f2937);
+    cursor: pointer;
+    outline: none;
+}
+
+.select:focus {
+    border-color: var(--accent);
+}
+
 @media (max-width: 480px) {
+    .btnPrimary .btnLabel {
+        display: none;
+    }
+
+    .btnPrimary {
+        padding: 8px;
+        /* jadi kotak kecil */
+    }
+
     .cardHeader {
         padding: 12px 14px;
     }

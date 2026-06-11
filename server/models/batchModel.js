@@ -52,26 +52,43 @@ const getUtilization = async ({ from, to, booth_id }) => {
     return rows;
 };
 // Freeze batch (ACTIVE → FROZEN, pause expired_at)
+// const freezeBatch = async (id) => {
+//     const [[batch]] = await db.query(`SELECT * FROM batches WHERE id = ?`, [id]);
+//     if (!batch) throw new Error('Batch tidak ditemukan');
+//     if (batch.status !== 'ACTIVE') throw new Error('Hanya batch ACTIVE yang bisa difreeze');
+
+//     // Hitung sisa waktu sebelum expired (dalam detik), simpan ke notes sementara
+//     // Lebih baik simpan di kolom tersendiri, tapi pakai notes dulu
+//     const remaining_seconds = batch.expired_at
+//         ? Math.max(0, (new Date(batch.expired_at) - Date.now()) / 1000)
+//         : null;
+
+//     await db.query(`
+//         UPDATE batches 
+//         SET status = 'FROZEN',
+//             expired_at = NULL,
+//             notes = ?
+//         WHERE id = ?
+//     `, [remaining_seconds !== null ? `frozen:${Math.round(remaining_seconds)}` : null, id]);
+
+//     return db.query(`SELECT * FROM batches WHERE id = ?`, [id]).then(([r]) => r[0]);
+// };
+
 const freezeBatch = async (id) => {
     const [[batch]] = await db.query(`SELECT * FROM batches WHERE id = ?`, [id]);
     if (!batch) throw new Error('Batch tidak ditemukan');
     if (batch.status !== 'ACTIVE') throw new Error('Hanya batch ACTIVE yang bisa difreeze');
 
-    // Hitung sisa waktu sebelum expired (dalam detik), simpan ke notes sementara
-    // Lebih baik simpan di kolom tersendiri, tapi pakai notes dulu
-    const remaining_seconds = batch.expired_at
-        ? Math.max(0, (new Date(batch.expired_at) - Date.now()) / 1000)
-        : null;
-
     await db.query(`
         UPDATE batches 
         SET status = 'FROZEN',
             expired_at = NULL,
-            notes = ?
+            frozen_at = NOW()
         WHERE id = ?
-    `, [remaining_seconds !== null ? `frozen:${Math.round(remaining_seconds)}` : null, id]);
+    `, [id]);
 
-    return db.query(`SELECT * FROM batches WHERE id = ?`, [id]).then(([r]) => r[0]);
+    const [[updated]] = await db.query(`SELECT * FROM batches WHERE id = ?`, [id]);
+    return updated;
 };
 
 // Thaw batch (FROZEN → ACTIVE, expired_at = NOW() + 1 jam)
@@ -81,12 +98,13 @@ const thawBatch = async (id) => {
     if (batch.status !== 'FROZEN') throw new Error('Hanya batch FROZEN yang bisa di-thaw');
 
     await db.query(`
-        UPDATE batches
-        SET status = 'ACTIVE',
-            expired_at = DATE_ADD(NOW(), INTERVAL 1 HOUR),
-            notes = NULL
-        WHERE id = ?
-    `, [id]);
+    UPDATE batches
+    SET status = 'ACTIVE',
+        expired_at = DATE_ADD(NOW(), INTERVAL 1 HOUR),
+        frozen_at = NULL,
+        notes = NULL
+    WHERE id = ?
+`, [id]);
 
     const [[updated]] = await db.query(`SELECT * FROM batches WHERE id = ?`, [id]);
     return updated;

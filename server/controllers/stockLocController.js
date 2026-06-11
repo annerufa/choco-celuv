@@ -1,5 +1,6 @@
 const Stock = require('../models/stockLocModel');
 const response = require('../helpers/response');
+const db = require('../connection');
 
 const getByLocation = async (req, res) => {
     try {
@@ -43,4 +44,11 @@ const getByLocation = async (req, res) => {
 //         response(500, null, err.message, res);
 //     }
 // };
-module.exports = { getByLocation };
+// route baru, misal GET /stock-locations
+const getAllLocations = async (req, res) => {
+    const [rows] = await db.query(
+        `SELECT id AS location_id, name, type FROM stock_locations ORDER BY type DESC, name`
+    );
+    return response(200, rows, 'OK', res);
+};
+module.exports = { getByLocation, getAllLocations };

@@ -9,7 +9,7 @@
 }
 
 @media (max-width: 768px) {
-    .overlay.visible {
+    .overlay {
         display: block;
     }
 }
@@ -46,7 +46,7 @@
         box-shadow: 4px 0 24px rgba(0, 0, 0, .4);
     }
 
-    .mobile-open {
+    .mobileOpen {
         transform: translateX(0);
     }
 }

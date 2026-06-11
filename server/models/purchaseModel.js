@@ -86,29 +86,12 @@ const create = async (data) => {
             );
 
             // ── Update stok ───────────────────────────────────────────
-            const [updateResult] = await conn.execute(
-                `UPDATE stock_per_location
-                 SET current_stock = current_stock + ?
-                 WHERE item_id = ? AND location_id = ?`,
-                [stock_qty, item_id, loc_id]
-            );
-
-            if (updateResult.affectedRows === 0) {
+            // Cek ini sudah ada dan sudah cukup sebagai validasi:
+            if (!currentStock) {
                 throw new Error(
                     `Item id ${item_id} belum di-setup untuk lokasi ini. Hubungi pemilik.`
                 );
             }
-
-            // ── Insert stock_movements ────────────────────────────────
-
-            // const [{ saldo }] = await conn.query(
-            //     'SELECT saldo_after FROM stock_movements WHERE item_id = ? ORDER BY created_at DESC LIMIT 1',
-            //     [item_id]
-            // );
-            // const prevSaldo = saldo ?? 0;
-            // const newSaldo = movement_type === 'IN' ? prevSaldo + qty : prevSaldo - qty;
-
-
             await insertMovement(conn, {
                 item_id,
                 location_id: loc_id,
@@ -188,29 +171,25 @@ const cancel = async (id, cancelled_by) => {
                 );
             }
 
-            // Kurangi stok
-            await conn.execute(
-                `UPDATE stock_per_location
-                 SET current_stock = current_stock - ?
-                 WHERE item_id = ? AND location_id = ?`,
-                [stock_qty, item.item_id, purchase.loc_id]
-            );
 
             // Setelah kurangi stok, recalculate avg_cost
+            // Catat movement OUT
+            await insertMovement(conn, {
+                item_id: item.item_id,
+                location_id: purchase.loc_id,
+                qty: stock_qty,
+                movement_type: 'OUT',
+                source_type: 'PEMBATALAN PEMBELIAN',
+                source_id: id,
+            });
             const [[currentItem]] = await conn.execute(
                 `SELECT avg_price, last_price FROM items WHERE id = ?`,
                 [item.item_id]
             );
 
-            const [[newStock]] = await conn.execute(
-                `SELECT current_stock FROM stock_per_location
-     WHERE item_id = ? AND location_id = ?`,
-                [item.item_id, purchase.loc_id]
-            );
-
+            const sisa_qty = Number(currentStock.current_stock) - stock_qty;
             const cost_base = item.unit_price / multiplier; // multiplier sudah ada dari atas
-            const sisa_qty = Number(newStock.current_stock); // sudah dikurangi
-            const old_avg = Number(currentItem.avg_cost);
+            const old_avg = Number(currentItem.avg_price);
 
             // Reverse weighted average:
             // avg_lama = (sisa × avg_baru + qty_cancel × harga_cancel) / (sisa + qty_cancel)
@@ -223,10 +202,10 @@ const cancel = async (id, cancelled_by) => {
             // Update last_cost dari pembelian aktif terakhir
             const [[lastPurchase]] = await conn.execute(
                 `SELECT pi.unit_price, pi.buy_unit 
-     FROM purchase_items pi
-     JOIN purchases p ON pi.purchase_id = p.id
-     WHERE pi.item_id = ? AND p.status = 'dikonfirmasi' AND p.id != ?
-     ORDER BY p.date DESC LIMIT 1`,
+                    FROM purchase_items pi
+                    JOIN purchases p ON pi.purchase_id = p.id
+                    WHERE pi.item_id = ? AND p.status = 'dikonfirmasi' AND p.id != ?
+                    ORDER BY p.date DESC LIMIT 1`,
                 [item.item_id, id]
             );
 
@@ -239,13 +218,8 @@ const cancel = async (id, cancelled_by) => {
                 [Math.max(0, new_avg), new_last_cost, item.item_id]
             );
 
-            // Catat movement OUT
-            await conn.execute(
-                `INSERT INTO stock_movements
-                    (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'OUT', 'KOREKSI', ?)`,
-                [item.item_id, purchase.loc_id, stock_qty, id]
-            );
+
+
         }
 
         // 4. Update status purchase → cancelled

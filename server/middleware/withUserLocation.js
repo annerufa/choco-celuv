@@ -2,6 +2,10 @@
 const getUserLocation = require('../helpers/getUserLocation');
 
 module.exports = async (req, res, next) => {
+    // if (req.user.role == 'pemilik') {
+
+    //     return next(); // Skip if user is owner
+    // };
     const loc = await getUserLocation(req.user.id);
     if (!loc) return res.status(400).json({ message: 'Kamu belum punya jadwal aktif' });
     req.userLocation = loc; // { location_id, booth_id }

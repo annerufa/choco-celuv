@@ -6,7 +6,8 @@ import { useApi } from '../../hooks/useApi';
 
 const ITEMS_PER_PAGE = 10;
 
-function toInputDate(d) { return new Date(d).toISOString().slice(0, 10); }
+// function toInputDate(d) { return new Date(d).toISOString().slice(0, 10); }
+function toInputDate(d) { return new Date(d).toLocaleDateString('en-CA'); }
 function defaultRange() {
     const to = new Date(), from = new Date();
     from.setDate(from.getDate() - 30);
@@ -112,10 +113,11 @@ export default function RekapProduksiPage() {
                                 <th>Tanggal</th>
                                 <th>Resep</th>
                                 <th>Tipe</th>
-                                <th>Batch</th>
                                 <th>Output</th>
                                 <th>Lokasi</th>
                                 <th>Dibuat oleh</th>
+                                <th>Jumlah</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -137,17 +139,18 @@ export default function RekapProduksiPage() {
                                             {typeLabel[p.recipe_type] ?? p.recipe_type}
                                         </span>
                                     </td>
-                                    <td className={tableStyles.monoCell}>{p.qty}x</td>
                                     <td className={tableStyles.monoCell}>
                                         {Number(p.output_qty) * p.qty} {p.output_unit ?? ''}
-                                        {p.recipe_type === 'mix' && p.output_item_name && (
+                                        {/* {p.recipe_type === 'mix' && p.output_item_name && (
                                             <span style={{ color: 'var(--brown-400)', fontSize: 11, marginLeft: 4 }}>
                                                 ({p.output_item_name})
                                             </span>
-                                        )}
+                                        )} */}
                                     </td>
                                     <td>{p.location_name ?? '-'}</td>
                                     <td>{p.created_by_name ?? '-'}</td>
+                                    <td className={tableStyles.monoCell}>{parseFloat(p.qty)}x</td>
+                                    <td className={tableStyles.monoCell}>{p.status ?? '-'}</td>
                                 </tr>
                             ))}
                         </tbody>

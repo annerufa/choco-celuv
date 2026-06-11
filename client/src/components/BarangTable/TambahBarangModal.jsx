@@ -102,7 +102,7 @@ export default function TambahBarangModal({ isOpen, onClose, onSubmit, loading, 
 
                         {/* Nama Barang — full width */}
                         <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-                            <label className={styles.label} htmlFor="nama">Nama Barang</label>
+                            <label className={styles.label} htmlFor="nama">Nama Barang<span>*</span></label>
                             <input
                                 id="nama"
                                 name="nama"
@@ -117,7 +117,7 @@ export default function TambahBarangModal({ isOpen, onClose, onSubmit, loading, 
 
                         {/* Kategori */}
                         <div className={`${styles.formGroup}  ${styles.halfWidth}`}>
-                            <label className={styles.label} htmlFor="kategori">Kategori</label>
+                            <label className={styles.label} htmlFor="kategori">Kategori<span>*</span></label>
                             <select
                                 id="kategori"
                                 name="kategori"
@@ -133,7 +133,7 @@ export default function TambahBarangModal({ isOpen, onClose, onSubmit, loading, 
 
                         {/* Satuan */}
                         <div className={`${styles.formGroup}  ${styles.halfWidth}`}>
-                            <label className={styles.label} htmlFor="satuan">Satuan</label>
+                            <label className={styles.label} htmlFor="satuan">Satuan<span>*</span></label>
                             <select
                                 id="satuan"
                                 name="satuan"

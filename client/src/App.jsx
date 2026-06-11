@@ -31,7 +31,8 @@ import ProductsPage from './pages/Products/ProductsPage';
 
 import RekapPenjualanPage from './pages/Penjualan/RekapPenjualanPage';
 import RekapPembelianPage from './pages/Pembelian/RekapPembelianPage';
-import ChartPage from './pages/Dashboard/ChartPage';
+import ChartPage from './pages/analitik/ChartPage';
+import SalesChart from './pages/Analitik/SalesChartPage';
 import ProtectedRoute from './routes/ProtectedRoute';
 
 // import HomePenjaga from './pages/Penjaga/Home';
@@ -83,7 +84,8 @@ export default function App() {
         <Route path="/barang" element={<DataBarangPage />} />
         <Route path="/barang/:id" element={<DetailBarangPage />} />
         <Route path="/barang-booth" element={<DataBarangBoothPage />} />
-        <Route path="/barang-booth/:id" element={<DetailBarangBoothPage />} />
+        <Route path="/barang-booth/:item_id/:booth_id" element={<DetailBarangBoothPage />} />
+        {/* <Route path="/barang-booth/:id" element={<DetailBarangBoothPage />} /> */}
 
         <Route path="/booth" element={<DataBoothPage />} />
 
@@ -102,6 +104,7 @@ export default function App() {
         <Route path="/produksi/:id" element={<DetailProduksiPage />} />
         <Route path="/penjualan-rekap" element={<RekapPenjualanPage />} />
         <Route path="/chart" element={<ChartPage />} />
+        <Route path="/chart-penjualan" element={<SalesChart />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

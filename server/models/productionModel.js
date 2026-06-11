@@ -1,6 +1,6 @@
 // models/productionModel.js
 const db = require('../connection');
-
+const { insertMovement } = require('../helpers/stockHelper');
 /**
  * Catat produksi — satu transaksi DB:
  *  1. INSERT productions
@@ -119,7 +119,6 @@ const getAll = async () => {
     );
     return rows;
 };
-
 // ── GET rekap (filter booth + tanggal) ──────────────────────
 const getRekap = async (from, to, booth_id) => {
     const [rows] = await db.query(
@@ -131,12 +130,14 @@ const getRekap = async (from, to, booth_id) => {
             r.output_unit,
             u.name        AS created_by_name,
             sl.name       AS location_name,
-            i.name        AS output_item_name
+            i.name        AS output_item_name,
+            b.status      AS batch_status
          FROM productions p
          JOIN recipes r          ON r.id = p.recipe_id
          JOIN users u            ON u.id = p.created_by
          JOIN stock_locations sl ON sl.id = p.loc_id
          LEFT JOIN items i       ON i.id = r.output_id
+         LEFT JOIN batches b     ON b.production_id = p.id AND r.type = 'adonan'
          WHERE DATE(p.created_at) BETWEEN ? AND ?
            ${booth_id ? 'AND p.booth_id = ?' : ''}
          ORDER BY p.created_at DESC`,
@@ -247,7 +248,7 @@ const create = async ({ recipe_id, qty, created_by, loc_id, booth_id }) => {
         const [result] = await conn.query(
             `INSERT INTO productions (recipe_id, qty, created_by, loc_id, booth_id)
              VALUES (?, ?, ?, ?, ?)`,
-            [recipe_id, qty, created_by, loc_id, booth_id]
+            [recipe_id, qty, created_by, loc_id, booth_id ?? null]
         );
         const production_id = result.insertId;
 
@@ -255,40 +256,28 @@ const create = async ({ recipe_id, qty, created_by, loc_id, booth_id }) => {
         for (const ing of ingredients) {
             const usedQty = Number(ing.qty) * qty;
 
-            await conn.query(
-                `UPDATE stock_per_location
-                 SET current_stock = current_stock - ?
-                 WHERE item_id = ? AND location_id = ?`,
-                [usedQty, ing.item_id, loc_id]
-            );
-
-            // Catat movement OUT bahan
-            await conn.query(
-                `INSERT INTO stock_movements
-                    (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'OUT', 'PRODUKSI', ?)`,
-                [ing.item_id, loc_id, usedQty, production_id]
-            );
+            await insertMovement(conn, {
+                item_id: ing.item_id,
+                location_id: loc_id,
+                qty: usedQty,
+                movement_type: 'OUT',
+                source_type: 'PRODUKSI',
+                source_id: production_id,
+            });
         }
 
         // 3. Kalau mix → tambah stok output item di gudang
         if (recipe.type === 'mix' && recipe.output_id) {
             const outputQty = Number(recipe.output_qty) * qty;
 
-            await conn.query(
-                `INSERT INTO stock_per_location (item_id, location_id, current_stock)
-                 VALUES (?, ?, ?)
-                 ON DUPLICATE KEY UPDATE current_stock = current_stock + VALUES(current_stock)`,
-                [recipe.output_id, loc_id, outputQty]
-            );
-
-            // Catat movement IN output
-            await conn.query(
-                `INSERT INTO stock_movements
-                    (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'IN', 'PRODUKSI', ?)`,
-                [recipe.output_id, loc_id, outputQty, production_id]
-            );
+            await insertMovement(conn, {
+                item_id: recipe.output_id,
+                location_id: loc_id,
+                qty: outputQty,
+                movement_type: 'IN',
+                source_type: 'PRODUKSI',
+                source_id: production_id,
+            });
         }
 
         // 4. Kalau adonan → insert ke batches
@@ -408,34 +397,18 @@ const update = async (id, new_qty, diff) => {
         for (const ing of ingredients) {
             const diffQty = Number(ing.qty) * Math.abs(diff);
 
-            if (diff > 0) {
-                // Tambah batch → kurangi stok bahan, tambah stock_movements OUT
-                await conn.query(
-                    `UPDATE stock_per_location
-                     SET current_stock = current_stock - ?
-                     WHERE item_id = ? AND location_id = ?`,
-                    [diffQty, ing.item_id, prod.loc_id]
-                );
-                await conn.query(
-                    `INSERT INTO stock_movements
-                        (item_id, location_id, qty, movement_type, source_type, source_id)
-                     VALUES (?, ?, ?, 'OUT', 'PRODUKSI', ?)`,
-                    [ing.item_id, prod.loc_id, diffQty, id]
-                );
-            } else {
-                // Kurangi batch → kembalikan stok bahan, catat IN
-                await conn.query(
-                    `UPDATE stock_per_location
-                     SET current_stock = current_stock + ?
-                     WHERE item_id = ? AND location_id = ?`,
-                    [diffQty, ing.item_id, prod.loc_id]
-                );
-                await conn.query(
-                    `INSERT INTO stock_movements
-                        (item_id, location_id, qty, movement_type, source_type, source_id)
-                     VALUES (?, ?, ?, 'IN', 'PRODUKSI', ?)`,
-                    [ing.item_id, prod.loc_id, diffQty, id]
-                );
+            if (diff > 0) { //OUT bahan:
+                await insertMovement(conn, {
+                    item_id: ing.item_id, location_id: prod.loc_id,
+                    qty: diffQty, movement_type: 'OUT',
+                    source_type: 'PRODUKSI', source_id: id,
+                });
+            } else { //IN bahan (rollback)
+                await insertMovement(conn, {
+                    item_id: ing.item_id, location_id: prod.loc_id,
+                    qty: diffQty, movement_type: 'IN',
+                    source_type: 'PRODUKSI', source_id: id,
+                });
             }
         }
 
@@ -443,31 +416,17 @@ const update = async (id, new_qty, diff) => {
         if (prod.recipe_type === 'mix' && prod.output_id) {
             const outputDiff = Number(prod.output_qty) * Math.abs(diff);
             if (diff > 0) {
-                await conn.query(
-                    `INSERT INTO stock_per_location (item_id, location_id, current_stock)
-                     VALUES (?, ?, ?)
-                     ON DUPLICATE KEY UPDATE current_stock = current_stock + VALUES(current_stock)`,
-                    [prod.output_id, prod.loc_id, outputDiff]
-                );
-                await conn.query(
-                    `INSERT INTO stock_movements
-                        (item_id, location_id, qty, movement_type, source_type, source_id)
-                     VALUES (?, ?, ?, 'IN', 'PRODUKSI', ?)`,
-                    [prod.output_id, prod.loc_id, outputDiff, id]
-                );
+                await insertMovement(conn, {
+                    item_id: prod.output_id, location_id: prod.loc_id,
+                    qty: outputDiff, movement_type: 'IN',
+                    source_type: 'PRODUKSI', source_id: id,
+                });
             } else {
-                await conn.query(
-                    `UPDATE stock_per_location
-                     SET current_stock = current_stock - ?
-                     WHERE item_id = ? AND location_id = ?`,
-                    [outputDiff, prod.output_id, prod.loc_id]
-                );
-                await conn.query(
-                    `INSERT INTO stock_movements
-                        (item_id, location_id, qty, movement_type, source_type, source_id)
-                     VALUES (?, ?, ?, 'OUT', 'PRODUKSI', ?)`,
-                    [prod.output_id, prod.loc_id, outputDiff, id]
-                );
+                await insertMovement(conn, {
+                    item_id: prod.output_id, location_id: prod.loc_id,
+                    qty: outputDiff, movement_type: 'OUT',
+                    source_type: 'PRODUKSI', source_id: id,
+                });
             }
         }
 
@@ -569,35 +528,21 @@ const remove = async (id) => {
         for (const ing of ingredients) {
             const usedQty = Number(ing.qty) * prod.qty;
 
-            await conn.query(
-                `UPDATE stock_per_location
-                 SET current_stock = current_stock + ?
-                 WHERE item_id = ? AND location_id = ?`,
-                [usedQty, ing.item_id, prod.loc_id]
-            );
-            await conn.query(
-                `INSERT INTO stock_movements
-                    (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'IN', 'PRODUKSI', ?)`,
-                [ing.item_id, prod.loc_id, usedQty, id]
-            );
+            await insertMovement(conn, {
+                item_id: ing.item_id, location_id: prod.loc_id,
+                qty: usedQty, movement_type: 'IN',
+                source_type: 'PRODUKSI', source_id: id,
+            });
         }
 
         // Kalau mix → kurangi stok output
         if (prod.recipe_type === 'mix' && prod.output_id) {
             const outputQty = Number(prod.output_qty) * prod.qty;
-            await conn.query(
-                `UPDATE stock_per_location
-                 SET current_stock = current_stock - ?
-                 WHERE item_id = ? AND location_id = ?`,
-                [outputQty, prod.output_id, prod.loc_id]
-            );
-            await conn.query(
-                `INSERT INTO stock_movements
-                    (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'OUT', 'PRODUKSI', ?)`,
-                [prod.output_id, prod.loc_id, outputQty, id]
-            );
+            await insertMovement(conn, {
+                item_id: prod.output_id, location_id: prod.loc_id,
+                qty: outputQty, movement_type: 'OUT',
+                source_type: 'PRODUKSI', source_id: id,
+            });
         }
 
         // Hapus batches terkait
@@ -705,7 +650,7 @@ const getAdonanForBooth = async (booth_id, { from, to, batch_status }) => {
     const [batches] = await db.query(`
         SELECT b.id, b.production_id, b.status,
                b.total_qty, b.remaining_qty,
-               b.produced_at, b.expired_at, b.notes
+               b.produced_at, b.expired_at, b.frozen_at,  b.notes
         FROM batches b
         WHERE b.production_id IN (${placeholders}) ${batchCond}
         ORDER BY b.produced_at ASC

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePurchase } from '../../hooks/usePurchase';
 import styles from './TambahPurchaseModal.module.css';
+import ConfirmModal from '../shared/ConfirmModal';
 
 const initialItem = { item_id: '', buy_qty: '', buy_unit: '', unit_price: '' };
 const initialForm = {
@@ -16,6 +17,7 @@ export default function TambahPurchaseModal({ isOpen, onClose, onSuccess, itemLi
     const [errors, setErrors] = useState({});
     const [conversions, setConversions] = useState({}); // { item_id: [...unit_conversions] }
     const { createPurchase, getUnitConversions, loading, error } = usePurchase();
+    const [showConfirm, setShowConfirm] = useState(false);
 
 
     // Reset form saat modal dibuka
@@ -79,18 +81,20 @@ export default function TambahPurchaseModal({ isOpen, onClose, onSuccess, itemLi
         });
         return errs;
     }
+    function handleClickSimpan() {
+        const errs = validate();
+        if (Object.keys(errs).length > 0) {
+            setErrors(errs);
+            return;
+        }
+        setShowConfirm(true); // baru buka modal
+    }
 
     const total = formData.items.reduce((sum, item) =>
         sum + (Number(item.buy_qty) * Number(item.unit_price) || 0), 0
     );
 
     async function handleSubmit(e) {
-        e.preventDefault();
-        const errs = validate();
-        if (Object.keys(errs).length > 0) {
-            setErrors(errs);
-            return;
-        }
         try {
             await createPurchase(formData);
             onSuccess?.();
@@ -118,7 +122,7 @@ export default function TambahPurchaseModal({ isOpen, onClose, onSuccess, itemLi
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={e => e.preventDefault()}>
                     <div className={styles.modalBody}>
 
                         {/* Supplier & Tanggal */}
@@ -277,13 +281,25 @@ export default function TambahPurchaseModal({ isOpen, onClose, onSuccess, itemLi
                         <button type="button" className={styles.btnGhost} onClick={onClose}>
                             Batal
                         </button>
-                        <button type="submit" className={styles.btnPrimary} disabled={loading}>
+
+                        <button type="button" className={styles.btnPrimary} onClick={handleClickSimpan} disabled={loading}>
                             {loading ? 'Menyimpan...' : 'Simpan Purchase'}
                         </button>
                     </div>
                 </form>
 
             </div>
+            <ConfirmModal
+                isOpen={showConfirm}
+                onClose={() => setShowConfirm(false)}
+                onConfirm={() => { setShowConfirm(false); handleSubmit(); }}
+                title="Konfirmasi Pembelian"
+                message="Data pembelian yang sudah disimpan tidak dapat diubah. Pastikan semua data sudah benar sebelum melanjutkan."
+                confirmLabel="Ya, Simpan"
+                variant="warning"
+                loading={loading}
+            />
         </div>
+
     );
 }

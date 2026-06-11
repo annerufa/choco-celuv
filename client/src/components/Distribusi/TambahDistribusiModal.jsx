@@ -443,7 +443,7 @@ export default function TambahDistribusiModal({ isOpen, onClose, onSuccess, user
                                                         className={`${styles.input} ${errors[`qty_${i}`] ? styles.inputError : ''}`}
                                                         placeholder="0"
                                                         min="1"
-                                                        max={stok ?? undefined}
+                                                        // max={stok ?? undefined}
                                                         // ✅ Fix: value pakai item.qty bukan item.current_stock
                                                         value={item.qty}
                                                         onChange={e => handleItemChange(i, 'qty', e.target.value)}

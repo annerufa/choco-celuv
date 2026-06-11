@@ -1,7 +1,7 @@
 //distributionModel.js
 
 const db = require('../connection');
-
+const { insertMovement } = require('../helpers/stockHelper');
 const getAll = async ({ type, status, from_location_id, to_location_id, start_date, end_date, limit = 50, offset = 0 } = {}) => {
     const where = [];
     const params = [];
@@ -57,6 +57,7 @@ const getAll = async ({ type, status, from_location_id, to_location_id, start_da
     return { data: rows, total_count };
 };
 
+
 const create = async (data) => {
     const { type, from_location_id, to_location_id, kurir_id, created_by, planned_date, notes, items } = data;
 
@@ -76,14 +77,7 @@ const create = async (data) => {
         const distribution_id = result.insertId;
 
         // 2. Insert tiap item
-        // Setelah insert distribution_items, tambah ini di dalam loop:
         for (const item of items) {
-            await conn.execute(
-                `INSERT INTO distribution_items (distribution_id, item_id, qty, notes)
-                    VALUES (?, ?, ?, ?)`,
-                [distribution_id, item.item_id, item.qty, item.notes ?? null]
-            );
-
             // Cek stok from_location mencukupi
             const [[currentStock]] = await conn.execute(
                 `SELECT current_stock FROM stock_per_location
@@ -96,21 +90,22 @@ const create = async (data) => {
                 throw new Error(`Stok item id ${item.item_id} tidak mencukupi. Stok saat ini: ${currentStock.current_stock}`);
             }
 
-            // Kurangi stok from_location
             await conn.execute(
-                `UPDATE stock_per_location
-                SET current_stock = current_stock - ?
-                WHERE item_id = ? AND location_id = ?`,
-                [item.qty, item.item_id, from_location_id]
+                `INSERT INTO distribution_items (distribution_id, item_id, qty, notes)
+                    VALUES (?, ?, ?, ?)`,
+                [distribution_id, item.item_id, item.qty, item.notes ?? null]
             );
 
+            // Kurangi stok from_location
             // Catat movement OUT dari from_location
-            await conn.execute(
-                `INSERT INTO stock_movements
-                    (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'OUT', 'distribution', ?)`,
-                [item.item_id, from_location_id, item.qty, distribution_id]
-            );
+            await insertMovement(conn, {
+                item_id: item.item_id,
+                location_id: from_location_id,
+                qty: item.qty,
+                movement_type: 'OUT',
+                source_type: 'DISTRIBUSI',
+                source_id: distribution_id,
+            });
         }
 
         await conn.commit();
@@ -123,61 +118,53 @@ const create = async (data) => {
         conn.release();
     }
 };
+// const confirmBooth = async (distribution_id, confirmed_by) => {
+//     const conn = await db.getConnection();
+//     try {
+//         await conn.beginTransaction();
 
-const confirmBooth = async (distribution_id, confirmed_by) => {
-    const conn = await db.getConnection();
-    try {
-        await conn.beginTransaction();
+//         const [[dist]] = await conn.execute(
+//             `SELECT * FROM distributions WHERE id = ?`, [distribution_id]
+//         );
 
-        const [[dist]] = await conn.execute(
-            `SELECT * FROM distributions WHERE id = ?`, [distribution_id]
-        );
+//         if (!dist) throw new Error('Distribusi tidak ditemukan');
+//         if (dist.status === 'diterima') throw new Error('Sudah dikonfirmasi');
+//         if (dist.status === 'dibatalkan') throw new Error('Distribusi sudah dibatalkan');
+//         if (dist.status !== 'dikirim') throw new Error('Status harus dikirim untuk bisa diterima');
+//         if (!dist.arrived_at) throw new Error('Kurir belum konfirmasi sudah sampai');  // ✅ validasi arrived_at
 
-        if (!dist) throw new Error('Distribusi tidak ditemukan');
-        if (dist.status === 'diterima') throw new Error('Sudah dikonfirmasi');
-        if (dist.status === 'dibatalkan') throw new Error('Distribusi sudah dibatalkan');
-        if (dist.status !== 'dikirim') throw new Error('Status harus dikirim untuk bisa diterima');
-        if (!dist.arrived_at) throw new Error('Kurir belum konfirmasi sudah sampai');  // ✅ validasi arrived_at
+//         const [items] = await conn.execute(
+//             `SELECT * FROM distribution_items WHERE distribution_id = ?`, [distribution_id]
+//         );
 
-        const [items] = await conn.execute(
-            `SELECT * FROM distribution_items WHERE distribution_id = ?`, [distribution_id]
-        );
+//         for (const item of items) {
+//             await insertMovement(conn, {
+//                 item_id: item.item_id,
+//                 location_id: dist.to_location_id,
+//                 qty: item.qty,
+//                 movement_type: 'IN',
+//                 source_type: 'DISTRIBUSI',
+//                 source_id: distribution_id,
+//             });
+//         }
 
-        for (const item of items) {
-            // Tambah stok to_location
-            await conn.execute(
-                `UPDATE stock_per_location
-                 SET current_stock = current_stock + ?
-                 WHERE item_id = ? AND location_id = ?`,
-                [item.qty, item.item_id, dist.to_location_id]
-            );
+//         await conn.execute(
+//             `UPDATE distributions
+//              SET status = 'diterima',
+//                  confirmed_by_booth = ?,
+//                  confirmed_at_booth = NOW()
+//              WHERE id = ?`,
+//             [confirmed_by, distribution_id]
+//         );
 
-            // Catat movement IN ke to_location
-            await conn.execute(
-                `INSERT INTO stock_movements
-                    (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'IN', 'distribution', ?)`,
-                [item.item_id, dist.to_location_id, item.qty, distribution_id]
-            );
-        }
-
-        await conn.execute(
-            `UPDATE distributions
-             SET status = 'diterima',
-                 confirmed_by_booth = ?,
-                 confirmed_at_booth = NOW()
-             WHERE id = ?`,
-            [confirmed_by, distribution_id]
-        );
-
-        await conn.commit();
-    } catch (err) {
-        await conn.rollback();
-        throw err;
-    } finally {
-        conn.release();
-    }
-};
+//         await conn.commit();
+//     } catch (err) {
+//         await conn.rollback();
+//         throw err;
+//     } finally {
+//         conn.release();
+//     }
+// };
 
 const cancel = async (distribution_id, cancelled_by) => {
     const conn = await db.getConnection();
@@ -198,20 +185,15 @@ const cancel = async (distribution_id, cancelled_by) => {
 
         for (const item of items) {
             // Kembalikan stok from_location
-            await conn.execute(
-                `UPDATE stock_per_location
-                 SET current_stock = current_stock + ?
-                 WHERE item_id = ? AND location_id = ?`,
-                [item.qty, item.item_id, dist.from_location_id]
-            );
-
-            // Catat movement IN (pembatalan)
-            await conn.execute(
-                `INSERT INTO stock_movements
-                    (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'IN', 'distribution_cancel', ?)`,
-                [item.item_id, dist.from_location_id, item.qty, distribution_id]
-            );
+            // GANTI jadi:
+            await insertMovement(conn, {
+                item_id: item.item_id,
+                location_id: dist.from_location_id,
+                qty: item.qty,
+                movement_type: 'IN',
+                source_type: 'PEMBATALAN DISTRIBUSI',
+                source_id: distribution_id,
+            });
         }
 
         await conn.execute(
@@ -340,20 +322,6 @@ const pickup = async (distribution_id, user_id) => {
             `SELECT * FROM distribution_items WHERE distribution_id = ?`,
             [distribution_id]
         );
-        for (const item of items) {
-            await conn.execute(
-                `UPDATE stock_per_location 
-                 SET current_stock = GREATEST(0, current_stock - ?)
-                 WHERE item_id = ? AND location_id = ?`,
-                [item.qty, item.item_id, dist.from_location_id]
-            );
-            await conn.execute(
-                `INSERT INTO stock_movements 
-                    (item_id, location_id, qty, movement_type, source_type, source_id)
-                 VALUES (?, ?, ?, 'OUT', 'DISTRIBUSI', ?)`,
-                [item.item_id, dist.from_location_id, item.qty, distribution_id]
-            );
-        }
 
         // 4. Update status — sama untuk semua
         await conn.execute(
@@ -573,36 +541,12 @@ const updateStatus = async (distribution_id, status, user_id) => {
         for (const item of items) {
             const { item_id, qty_masuk } = item;
 
-            // Kurangi stok dari lokasi asal (from_location_id)
-            await conn.query(
-                `UPDATE stock_per_location
-         SET current_stock = current_stock - ?
-         WHERE item_id     = ?
-           AND location_id = ?`,
-                [qty_masuk, item_id, dist.from_location_id]
-            );
+            await insertMovement(conn, {
+                item_id, location_id: dist.to_location_id,
+                qty: qty_masuk, movement_type: 'IN',
+                source_type: 'DISTRIBUSI', source_id: distribution_id,
+            });
 
-            // Catat movement OUT dari lokasi asal
-            await conn.query(
-                `INSERT INTO stock_movements (item_id, location_id, qty, movement_type, source_type, source_id)
-         VALUES (?, ?, ?, 'OUT', 'DISTRIBUSI', ?)`,
-                [item_id, dist.from_location_id, qty_masuk, distribution_id]
-            );
-
-            // Tambah stok di lokasi tujuan (to_location_id)
-            await conn.query(
-                `INSERT INTO stock_per_location (item_id, location_id, current_stock)
-         VALUES (?, ?, ?)
-         ON DUPLICATE KEY UPDATE current_stock = current_stock + VALUES(current_stock)`,
-                [item_id, dist.to_location_id, qty_masuk]
-            );
-
-            // Catat movement IN di lokasi tujuan
-            await conn.query(
-                `INSERT INTO stock_movements (item_id, location_id, qty, movement_type, source_type, source_id)
-         VALUES (?, ?, ?, 'IN', 'DISTRIBUSI', ?)`,
-                [item_id, dist.to_location_id, qty_masuk, distribution_id]
-            );
         }
 
         await conn.commit();
@@ -652,4 +596,4 @@ const getRekap = async (kurir_id, from, to) => {
     );
     return rows;
 };
-module.exports = { getAll, create, updateStatus, getRekap, getById, updateItem, confirmBooth, arrive, cancel, getByKurir, getByBooth, doneDistributions, getItems, pickup, getDisToday };
+module.exports = { getAll, create, updateStatus, getRekap, getById, updateItem, arrive, cancel, getByKurir, getByBooth, doneDistributions, getItems, pickup, getDisToday };

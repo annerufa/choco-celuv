@@ -29,7 +29,8 @@ const movementVariant = {
 
 const sourceLabel = {
     'PEMBELIAN': 'Pembelian',
-    'KOREKSI': 'Batal Beli',
+    'PEMBATALAN PEMBELIAN': 'Batal Beli',
+    'PEMBATALAN DISTRIBUSI': 'Batal Kirim',
     'PRODUKSI': 'Produksi',
     'DISTRIBUSI': 'Distribusi',
     'KOREKSI': 'Penyesuaian',
@@ -39,9 +40,14 @@ const stokStatusVariant = {
     'Aman': 'success',
     'Overstock': 'warning',
     'Kritis': 'danger',
+    'Habis': 'danger',
 };
 
 function getStokStatus(stok, min, max, safetyStock) {
+    stok = parseFloat(stok);
+    min = parseFloat(min);
+    max = parseFloat(max);
+    safetyStock = parseFloat(safetyStock);
     if (stok <= 0) return 'Habis';
     if (stok <= safetyStock) return 'Kritis';  // di bawah safety stock = darurat
     if (stok <= min) return 'Menipis';          // sudah waktunya order
@@ -66,6 +72,7 @@ export default function DetailBarangPage() {
     const [movLoading, setMovLoading] = useState(false);
 
     function getRangeDates(range) {
+        const toLocalDate = (d) => d.toLocaleDateString('en-CA');
         const to = new Date();
         const from = new Date();
         if (range === '7d') from.setDate(to.getDate() - 7);
@@ -73,8 +80,8 @@ export default function DetailBarangPage() {
         else if (range === '3m') from.setMonth(to.getMonth() - 3);
         else return null; // custom — gunakan customFrom/customTo
         return {
-            from: from.toISOString().slice(0, 10),
-            to: to.toISOString().slice(0, 10),
+            from: toLocalDate(from),
+            to: toLocalDate(to),
         };
     }
     useEffect(() => {
@@ -129,7 +136,13 @@ export default function DetailBarangPage() {
                 }
 
                 const url = `${BASE_URL}/items/trackItem?item_id=${id}&limit=200&date_from=${dateFrom}&date_to=${dateTo}`;
-                const res = await fetch(url, { headers });
+                // const res = await fetch(url, { headers });
+                const res = await fetch(url, {
+                    headers: {
+                        Authorization: `Bearer ${getToken()}`,
+                        'Cache-Control': 'no-cache',  // ← tambah ini
+                    }
+                });
                 const json = await res.json();
                 const raw = Array.isArray(json.payload?.data) ? json.payload.data : (Array.isArray(json) ? json : []);
                 setMovements(raw);
@@ -182,7 +195,7 @@ export default function DetailBarangPage() {
     const totalStok = stokLoks.reduce((s, l) => s + Number(l.current_stock ?? 0), 0);
     console.log('Item data:', item);
     const statusItem = getStokStatus(item.current_stock, item.min_qty, item.max_qty, item.safety_stock);
-    console.log(`Status item: ${statusItem} (stok: ${item.current_stock}, min: ${item.min_qty}, max: ${item.max_qty}, safety: ${item.safety_stock})`);
+    // console.log(`Status item: ${statusItem} (stok: ${item.current_stock}, min: ${item.min_qty}, max: ${item.max_qty}, safety: ${item.safety_stock})`);
     return (
         <div className={styles.page}>
 
@@ -258,6 +271,8 @@ export default function DetailBarangPage() {
                         <div className={styles.lokList}>
                             {stokLoks.map(lok => {
                                 const stokStatus = getStokStatus(lok.current_stock, lok.min_qty, lok.max_qty, lok.safety_stock);
+                                console.log(`Status item: ${stokStatus} (stok: ${lok.current_stock}, min: ${lok.min_qty}, max: ${lok.max_qty}, safety: ${lok.safety_stock})`);
+
                                 return (
                                     <div key={lok.location_id} className={styles.lokRow}>
                                         <div className={styles.lokInfo}>
@@ -266,7 +281,7 @@ export default function DetailBarangPage() {
                                         </div>
                                         <div className={styles.lokRight}>
                                             <span className={styles.lokStok}>
-                                                {lok.current_stock} <small>{item.unit}</small>
+                                                {parseFloat(lok.current_stock)} <small>{item.unit}</small>
                                             </span>
                                             <span className={`${styles.pill} ${styles[stokStatusVariant[stokStatus]]}`}>
                                                 {stokStatus}
@@ -277,20 +292,24 @@ export default function DetailBarangPage() {
                                             <div
                                                 className={styles.lokProgressBar}
                                                 style={{
-                                                    width: lok.max_qty > 0
-                                                        ? `${Math.min(100, (lok.current_stock / lok.max_qty) * 100)}%`
-                                                        : '0%',
-                                                    background: stokStatus === 'Kritis'
+                                                    width: parseFloat(lok.max_qty) > 0
+                                                        ? `${Math.max(0, Math.min(100, (parseFloat(lok.current_stock) / parseFloat(lok.max_qty)) * 100))}%`
+                                                        : stokStatus === 'Overstock' ? '100%' : '0%',
+                                                    background: stokStatus === 'Habis'
                                                         ? 'var(--danger)'
-                                                        : stokStatus === 'Overstock'
-                                                            ? 'var(--warning)'
-                                                            : 'var(--success)',
+                                                        : stokStatus === 'Kritis'
+                                                            ? 'var(--danger)'
+                                                            : stokStatus === 'Menipis'
+                                                                ? 'var(--warning)'
+                                                                : stokStatus === 'Overstock'
+                                                                    ? 'var(--warning)'
+                                                                    : 'var(--success)',
                                                 }}
                                             />
                                         </div>
                                         <div className={styles.lokMinMax}>
-                                            <span>Min: {lok.min_qty} {item.unit}</span>
-                                            <span>Max: {lok.max_qty} {item.unit}</span>
+                                            <span>Min: {parseFloat(lok.min_qty)} {item.unit}</span>
+                                            <span>Max: {parseFloat(lok.max_qty)} {item.unit}</span>
                                         </div>
                                     </div>
                                 );
@@ -410,7 +429,7 @@ export default function DetailBarangPage() {
                                                 <td>{mov.location_name ?? `Lokasi ${mov.location_id}`}</td>
                                                 <td className={styles.monoCell} style={{ textAlign: 'right' }}>
                                                     <span className={mov.movement_type === 'IN' ? styles.qtyIn : styles.qtyOut}>
-                                                        {mov.movement_type === 'IN' ? '+' : '-'}{mov.qty} {item.unit}
+                                                        {mov.movement_type === 'IN' ? '+' : '-'}{parseFloat(mov.qty)} {item.unit}
                                                     </span>
                                                 </td>
                                                 <td className={styles.monoCell} style={{ textAlign: 'right', fontWeight: 600 }}>

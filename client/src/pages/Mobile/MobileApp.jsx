@@ -86,19 +86,48 @@ export default function MobileApp() {
   const [pageParams, setPageParams] = useState({});
 
   useEffect(() => {
-    if (role !== 'penjaga_booth') return; // hanya untuk penjaga
+    if (role !== 'penjaga_booth') return;
 
-    const checkExpiry = () => {
-      const token = localStorage.getItem('token');
-      axios.patch(`${BASE_URL}/production/batches/expire-check`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => { }); // silent fail — tidak perlu alert
+    // Minta permission notifikasi
+    if ('Notification' in window) {
+      Notification.requestPermission();
+    }
+
+    const checkExpiring = async () => {
+      if (Notification.permission !== 'granted') return;
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${BASE_URL}/productions/batches/expiring-soon`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = res.data?.payload?.data ?? [];
+        if (data.length > 0) {
+          new Notification('⚠️ Adonan Hampir Kadaluarsa', {
+            body: `${data.length} adonan akan kadaluarsa dalam 30 menit!`,
+            icon: '/icons/icon-192x192.png', // sesuaikan path icon PWA-mu
+          });
+        }
+      } catch (err) { }
     };
 
-    checkExpiry(); // langsung cek saat pertama buka app
-    const interval = setInterval(checkExpiry, 30 * 60 * 1000); // lalu tiap 30 menit
+    checkExpiring();
+    const interval = setInterval(checkExpiring, 30 * 60 * 1000);
     return () => clearInterval(interval);
   }, [role]);
+  // useEffect(() => {
+  //   if (role !== 'penjaga_booth') return; // hanya untuk penjaga
+
+  //   const checkExpiry = () => {
+  //     const token = localStorage.getItem('token');
+  //     axios.patch(`${BASE_URL}/productions/expire-check`, {}, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     }).catch(() => { }); // silent fail — tidak perlu alert
+  //   };
+
+  //   checkExpiry(); // langsung cek saat pertama buka app
+  //   const interval = setInterval(checkExpiry, 30 * 60 * 1000); // lalu tiap 30 menit
+  //   return () => clearInterval(interval);
+  // }, [role]);
   const navigate = (pageName, params = {}) => {
     setPage(pageName);
     setPageParams(params);

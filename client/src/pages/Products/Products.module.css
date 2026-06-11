@@ -1,6 +1,32 @@
-.page        { padding: 24px; max-width: 1100px; }
-.pageHeader  { margin-bottom: 24px; }
-.pageTitle   { font-size: 22px; font-weight: 700; color: var(--brown-900); margin-bottom: 4px; }
-.pageSubtitle { font-size: 13px; color: var(--brown-500); }
-.breadcrumb  { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--brown-400); margin-bottom: 8px; }
-.breadcrumb span { color: var(--brown-600); }
+.page {
+    max-width: 1100px;
+}
+
+.pageHeader {
+    margin-bottom: 24px;
+}
+
+.pageTitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--brown-900);
+    margin-bottom: 4px;
+}
+
+.pageSubtitle {
+    font-size: 13px;
+    color: var(--brown-500);
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--brown-400);
+    margin-bottom: 8px;
+}
+
+.breadcrumb span {
+    color: var(--brown-600);
+}

@@ -32,7 +32,7 @@ export default function PurchaseTable() {
     const [actionLoading, setActionLoading] = useState(null);
 
     const { getAll, cancelPurchase } = usePurchase();
-    const { data: itemList } = useApi('/items');
+    const { data: itemList } = useApi('/items/aktif');
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);

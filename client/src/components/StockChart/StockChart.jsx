@@ -1,22 +1,24 @@
 import { useRef, useEffect, useState } from 'react';
 import styles from './StockChart.module.css';
 import { useAuth } from '../../context/AuthContext';
-import { useApi } from '../../hooks/useApi';
+// import { useApi } from '../../hooks/useApi';
 
-const SCALE_MAX_DEFAULT = 320;
+// const SCALE_MAX_DEFAULT = 320;
 
-function getStatus(pct, maxPct) {
-    if (pct < 50) return { color: '#EF4444', bg: '#FEE2E2', label: 'Kritis', textColor: '#B91C1C' };
-    if (pct < 100) return { color: '#F59E0B', bg: '#FEF3C7', label: 'Waspada', textColor: '#92400E' };
-    if (pct > maxPct) return { color: '#7C3AED', bg: '#EDE9FE', label: 'Overstock', textColor: '#5B21B6' };
+// pct      = stok / max * 100   -> 100% berarti stok pas di batas maksimum
+// minPct   = min  / max * 100   -> posisi garis "min" relatif terhadap max
+function getStatus(pct, minPct) {
+    if (pct < minPct / 2) return { color: '#EF4444', bg: '#FEE2E2', label: 'Kritis', textColor: '#B91C1C' };
+    if (pct < minPct) return { color: '#F59E0B', bg: '#FEF3C7', label: 'Waspada', textColor: '#92400E' };
+    if (pct > 100) return { color: '#7C3AED', bg: '#EDE9FE', label: 'Overstock', textColor: '#5B21B6' };
     return { color: '#2E7D52', bg: '#D1FAE5', label: 'Aman', textColor: '#166534' };
 }
 
 function ChartTooltip({ item, position }) {
     if (!item) return null;
-    const pct = Math.round((item.stok / item.min) * 100);
-    const maxPct = Math.round((item.max / item.min) * 100);
-    const status = getStatus(pct, maxPct);
+    const pct = Math.round((item.stok / item.max) * 100);
+    const minPct = Math.round((item.min / item.max) * 100);
+    const status = getStatus(pct, minPct);
     const selisihMin = item.stok - item.min;
     const selisihMax = item.max - item.stok;
     const statusColors = {
@@ -37,7 +39,7 @@ function ChartTooltip({ item, position }) {
                         : <>Sisa ke max: <b style={{ color: '#6EE7B7' }}>{selisihMax.toLocaleString('id')} {item.satuan}</b></>
                 }
             </div>
-            <div>Status: <b style={{ color: statusColors[status.label] }}>{status.label} ({pct}% dari min)</b></div>
+            <div>Status: <b style={{ color: statusColors[status.label] }}>{status.label} ({pct}% dari max)</b></div>
         </div>
     );
 }
@@ -83,7 +85,11 @@ export default function StockChart() {
         const canvas = canvasRef.current;
         if (!canvas || data.length === 0) return;
 
-        const SCALE_MAX = Math.max(...data.map(d => Math.round((d.max / d.min) * 100))) + 20;
+        // pct = stok/max*100 -> 100% = pas di batas maksimum
+        const SCALE_MAX = Math.max(
+            100,
+            ...data.map(d => Math.round((d.stok / d.max) * 100))
+        ) + 20;
 
         const ctx = canvas.getContext('2d');
         const dpr = window.devicePixelRatio || 1;
@@ -112,12 +118,12 @@ export default function StockChart() {
             ctx.beginPath();
             ctx.moveTo(x, padT - 8);
             ctx.lineTo(x, totalH - padB);
-            ctx.strokeStyle = pct === 100 ? '#C68A6A' : pct === 0 ? '#E8C4A8' : '#F5E6D8';
+            ctx.strokeStyle = pct === 100 ? '#7C3AED' : '#F5E6D8';
             ctx.lineWidth = pct === 100 ? 1.5 : 1;
             ctx.setLineDash(pct === 100 ? [4, 3] : []);
             ctx.stroke();
             ctx.setLineDash([]);
-            ctx.fillStyle = pct === 100 ? '#D4500A' : '#A0643F';
+            ctx.fillStyle = pct === 100 ? '#5B21B6' : '#A0643F';
             ctx.font = `${pct === 100 ? '600' : '400'} 10px DM Mono, monospace`;
             ctx.textAlign = 'center';
             ctx.fillText(pct + '%', x, totalH - padB + 16);
@@ -126,34 +132,38 @@ export default function StockChart() {
         ctx.fillStyle = '#A0643F';
         ctx.font = '10px Plus Jakarta Sans, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('% dari batas minimum restock', chartX + chartW / 2, totalH - padB + 32);
+        ctx.fillText('% dari batas maksimum stok', chartX + chartW / 2, totalH - padB + 32);
 
-        ctx.fillStyle = '#D4500A';
+        ctx.fillStyle = '#5B21B6';
         ctx.font = '9px Plus Jakarta Sans, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('min', toX(100), padT - 12);
+        ctx.fillText('max', toX(100), padT - 12);
 
         data.forEach((item, i) => {
-            const pct = Math.round((item.stok / item.min) * 100);
-            const maxPct = Math.round((item.max / item.min) * 100);
-            const status = getStatus(pct, maxPct);
+            const pct = Math.round((item.stok / item.max) * 100);
+            const minPct = Math.round((item.min / item.max) * 100);
+            const status = getStatus(pct, minPct);
             const y = padT + i * (barH + gap);
             const barW = Math.min((pct / SCALE_MAX) * chartW, chartW);
-            const maxX = toX(maxPct);
+            const minX = toX(minPct);
+            const maxX = toX(100);
 
             ctx.beginPath();
             ctx.roundRect(chartX, y, chartW, barH, 5);
             ctx.fillStyle = '#F5E6D8';
             ctx.fill();
 
+            // Zona "Aman": antara garis min dan garis max
+            const safeStartX = Math.max(minX, chartX);
             const safeEndX = Math.min(maxX, chartX + chartW);
-            if (safeEndX > toX(100)) {
+            if (safeEndX > safeStartX) {
                 ctx.beginPath();
-                ctx.roundRect(toX(100), y, safeEndX - toX(100), barH, 0);
+                ctx.roundRect(safeStartX, y, safeEndX - safeStartX, barH, 0);
                 ctx.fillStyle = '#D1FAE599';
                 ctx.fill();
             }
 
+            // Zona "Overstock": di atas garis max
             if (maxX < chartX + chartW) {
                 ctx.beginPath();
                 ctx.roundRect(maxX, y, chartX + chartW - maxX, barH, [0, 5, 5, 0]);
@@ -168,7 +178,8 @@ export default function StockChart() {
             ctx.fill();
             ctx.globalAlpha = 1;
 
-            [[toX(100), '#EF4444'], [maxX, '#7C3AED']].forEach(([x, color]) => {
+            // Garis "min" (per item, posisinya beda-beda) & garis "max" (tetap di 100%)
+            [[minX, '#EF4444'], [maxX, '#7C3AED']].forEach(([x, color]) => {
                 ctx.save();
                 ctx.setLineDash([4, 3]);
                 ctx.beginPath();
@@ -181,14 +192,14 @@ export default function StockChart() {
             });
 
             if (i === 0) {
-                ctx.fillStyle = '#7C3AED';
+                ctx.fillStyle = '#EF4444';
                 ctx.font = '9px Plus Jakarta Sans, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('max', maxX, padT - 12);
+                ctx.fillText('min', minX, padT - 12);
             }
 
             ctx.fillStyle = status.textColor;
-            ctx.font = `${pct < 100 || pct > maxPct ? '600' : '500'} 12px Plus Jakarta Sans, sans-serif`;
+            ctx.font = `${pct < minPct || pct > 100 ? '600' : '500'} 12px Plus Jakarta Sans, sans-serif`;
             ctx.textAlign = 'right';
             ctx.fillText(item.name, chartX - 8, y + barH / 2 + 4);
 
@@ -261,12 +272,12 @@ export default function StockChart() {
     return (
         <div className={styles.card}>
             <div className={styles.cardHeader}>
-                <span className={styles.cardTitle}>Stok Saat Ini vs Batas Minimum</span>
+                <span className={styles.cardTitle}>Stok Saat Ini vs Batas Maksimum</span>
                 <div className={styles.cardActions}>
                     <div className={styles.legend}>
                         {[
-                            { color: '#EF4444', label: 'Kritis <50%' },
-                            { color: '#F59E0B', label: 'Waspada 50–99%' },
+                            { color: '#EF4444', label: 'Kritis (< 50% dari min)' },
+                            { color: '#F59E0B', label: 'Waspada (di bawah min)' },
                             { color: '#2E7D52', label: 'Aman' },
                             { color: '#7C3AED', label: 'Overstock' },
                         ].map(item => (

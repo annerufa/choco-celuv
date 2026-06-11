@@ -208,7 +208,7 @@ export default function DetailPembelianPage() {
                                         <tr key={item.id ?? i}>
                                             <td className={styles.idCell}>{i + 1}</td>
                                             <td className={styles.namaCell}>{item.item_name ?? `Item #${item.item_id}`}</td>
-                                            <td className={styles.monoCell}>{item.buy_qty}</td>
+                                            <td className={styles.monoCell}>{parseFloat(item.buy_qty)}</td>
                                             <td>{item.buy_unit ?? item.base_unit ?? '-'}</td>
                                             <td className={styles.monoCell}>{formatRp(item.unit_price)}</td>
                                             <td className={styles.monoCell} style={{ fontWeight: 700 }}>

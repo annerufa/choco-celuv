@@ -21,19 +21,19 @@ const getKurir = async () => {
 };
 const getPenjaga = async () => {
     const [rows] = await db.query(
-        "SELECT * FROM users WHERE role = 'penjaga_booth' ORDER BY created_at DESC;",
+        "SELECT * FROM users WHERE role = 'penjaga_booth' AND is_active=1 ORDER BY created_at DESC;",
     );
     return rows;
 };
 const create = async (data) => {
-    const { name, no_hp, nik, alamat, role, entry_date, username, password } = data;
+    const { name, no_hp, alamat, role, entry_date, username, password } = data;
     const is_active = 1; // Set default is_active ke 1 (aktif)
     // console.log("data d model:", name, no_hp, alamat, role, entry_date, username, password);
 
     const [result] = await db.execute(
-        `INSERT INTO users (name, username, password, no_hp,  nik, role,  alamat,entry_date,  is_active )
-                VALUES (?, ?, ?, ?,?, ?, ?, ?, ?)`,
-        [name, username, password, no_hp, nik, role, alamat, entry_date, is_active ?? 1]
+        `INSERT INTO users (name, username, password, no_hp,   role,  alamat,entry_date,  is_active )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, username, password, no_hp, role, alamat, entry_date, is_active ?? 1]
     );
     return { id: result.insertId, ...data };
 };

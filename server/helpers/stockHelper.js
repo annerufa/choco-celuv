@@ -7,7 +7,6 @@
  * Selalu pakai `conn` (connection dalam transaksi), bukan `db`.
  */
 const insertMovement = async (conn, { item_id, location_id, qty, movement_type, source_type, source_id }) => {
-    // Ambil saldo terakhir item ini di lokasi ini
     const [[last]] = await conn.execute(
         `SELECT saldo_after FROM stock_movements 
          WHERE item_id = ? AND location_id = ?
@@ -25,6 +24,14 @@ const insertMovement = async (conn, { item_id, location_id, qty, movement_type, 
             (item_id, location_id, qty, movement_type, source_type, source_id, saldo_after)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [item_id, location_id, qty, movement_type, source_type, source_id, newSaldo]
+    );
+
+    // ← tambah ini: sync current_stock di stock_per_location
+    await conn.execute(
+        `UPDATE stock_per_location 
+         SET current_stock = ?
+         WHERE item_id = ? AND location_id = ?`,
+        [newSaldo, item_id, location_id]
     );
 
     return newSaldo;

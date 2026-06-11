@@ -6,6 +6,9 @@ const port = process.env.PORT || 3001;
 const authenticate = require('./middleware/authenticate');
 const requireActiveBooth = require('./middleware/requireActiveBooth');
 const response = require('./helpers/response');
+// Di app.js
+const expireBatches = require('./helpers/expireBatches');
+setInterval(expireBatches, 60 * 1000); // tiap 1 menit
 
 // Middleware
 app.use(cors());           // Izinkan akses dari frontend (Vite)
@@ -43,6 +46,7 @@ app.use('/api/sales', authenticate, require('./routes/sales'));
 // app.use('/api/stock', authenticate, require('./routes/stock'));
 // app.use('/api/karyawan', require('./routes/karyawan'));
 app.use('/api/batches', authenticate, require('./routes/batches'));
+app.use('/api/stock', authenticate, require('./routes/stock'));
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });

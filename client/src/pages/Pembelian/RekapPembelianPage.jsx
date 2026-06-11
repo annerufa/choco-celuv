@@ -3,11 +3,14 @@ import React, { useState } from 'react';
 import styles from './RekapPembelian.module.css';          // pakai CSS yang sama
 import tableStyles from '../../components/Produksi/ProduksiTable.module.css';
 import { useApi } from '../../hooks/useApi';
-
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const ITEMS_PER_PAGE = 10;
 
-function toInputDate(d) { return new Date(d).toISOString().slice(0, 10); }
+function toInputDate(d) { return new Date(d).toLocaleDateString('en-CA'); }
+// console.log('Default date range:', toInputDate(new Date(Date.now() - 30 * 86400000)), 'to', toInputDate(new Date()));
 function defaultRange() {
     const to = new Date(), from = new Date();
     from.setDate(from.getDate() - 30);
@@ -46,15 +49,9 @@ export default function RekapPembelianPage() {
 
     // Fetch booth list
 
-    const { data: locData } = useApi('/booth/loc');
+    const { data: locData } = useApi('/purchase/stock-locations');
     const locations = Array.isArray(locData) ? locData : [];
-
-
-    // Fetch rekap pembelian — semua user, filter booth & rentang
-    // const query =
-    //     `/sales/rekap/pembelian?from=${dateFrom}&to=${dateTo}` +
-    //     `${boothId ? `&booth_id=${boothId}` : ''}` +
-    //     `${statusFilter ? `&status=${statusFilter}` : ''}`;
+    // console.log('Locations for filter:', locations);
 
     const query =
         `/sales/rekap/pembelian?from=${dateFrom}&to=${dateTo}` +
@@ -65,6 +62,7 @@ export default function RekapPembelianPage() {
 
     const summary = data?.summary ?? null;
     const list = Array.isArray(data?.list) ? data.list : [];
+    // console.log('Fetched purchase list:', list);
 
     // Pagination
     const totalPages = Math.ceil(list.length / ITEMS_PER_PAGE);
@@ -84,6 +82,136 @@ export default function RekapPembelianPage() {
     const uniqueBooth = new Set(list.map(r => r.booth_id).filter(Boolean)).size;
 
     function handleApply() { setCurrentPage(1); setExpanded(null); refetch(); }
+    function handleExportExcel() {
+        // Sheet 1: Ringkasan
+        const summaryData = [
+            ['No', 'Tanggal', 'Booth', 'User', 'Total Item', 'Total'],
+            ...list.map((p, i) => [
+                i + 1,
+                formatDate(p.date),
+                p.booth_name ?? '-',
+                p.user_name ?? '-',
+                p.total_item ?? p.items?.length ?? '-',
+                Number(p.total),
+            ]),
+            [],
+            ['', '', '', 'Total Transaksi', list.length],
+            ['', '', '', 'Total Nilai', Number(summary?.total_nilai ?? 0)],
+        ];
+
+        // Sheet 2: Detail Item
+        const detailData = [
+            ['No Transaksi', 'Tanggal', 'Lokasi', 'Supplier', 'Pembeli', 'Barang', 'Qty', 'Satuan', 'Harga Satuan', 'Subtotal'],
+        ];
+        list.forEach((p, i) => {
+            if (p.items?.length) {
+                p.items.forEach(it => {
+                    detailData.push([
+                        i + 1,
+                        formatDate(p.date),
+                        p.booth_name ?? '-',
+                        p.supplier ?? '-',
+                        p.user_name ?? '-',
+                        it.item_name ?? it.name,
+                        parseFloat(it.qty),
+                        it.unit ?? '',
+                        Number(it.unit_price ?? it.price),
+                        Number(it.total_price ?? (it.qty * (it.unit_price ?? it.price))),
+                    ]);
+                });
+            }
+        });
+
+        const wb = XLSX.utils.book_new();
+        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        const wsDetail = XLSX.utils.aoa_to_sheet(detailData);
+
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan');
+        XLSX.utils.book_append_sheet(wb, wsDetail, 'Detail Item');
+
+        XLSX.writeFile(wb, `rekap-pembelian-${dateFrom}-${dateTo}.xlsx`);
+    }
+
+    function handleExportPdf() {
+        const doc = new jsPDF();
+
+        // === HALAMAN 1: Ringkasan ===
+        doc.setFontSize(14);
+        doc.text('Rekap Pembelian', 14, 16);
+        doc.setFontSize(10);
+        doc.text(`Periode: ${formatDate(dateFrom)} - ${formatDate(dateTo)}`, 14, 23);
+
+        autoTable(doc, {
+            startY: 28,
+            head: [['No', 'Tanggal', 'Supplier', 'Booth', 'Pembeli', 'Item', 'Total']],
+            body: list.map((p, i) => [
+                i + 1,
+                formatDate(p.date),
+                p.supplier ?? '-',
+                p.booth_name ?? '-',
+                p.user_name ?? '-',
+                p.total_item ?? p.items?.length ?? '-',
+                formatRp(p.total),
+            ]),
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [101, 67, 33] },
+            columnStyles: { 5: { halign: 'right' } },
+        });
+
+        const finalY = doc.lastAutoTable.finalY + 6;
+        doc.setFontSize(10);
+        doc.text(`Total Transaksi: ${list.length}`, 14, finalY);
+        doc.text(`Total Nilai: ${formatRp(summary?.total_nilai ?? 0)}`, 14, finalY + 6);
+
+        // === HALAMAN 2 dst: Detail Item per Transaksi ===
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.text('Detail Item per Transaksi', 14, 16);
+
+        let y = 24;
+
+        list.forEach((p, i) => {
+            // Cek butuh halaman baru sebelum mulai blok transaksi
+            if (y > 250) {
+                doc.addPage();
+                y = 16;
+            }
+
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'bold');
+            doc.text(
+                `${i + 1}. ${formatDate(p.date)} - ${p.booth_name ?? '-'} - ${p.user_name ?? '-'} - ${formatRp(p.total)}`,
+                14, y
+            );
+            doc.setFont(undefined, 'normal');
+            y += 4;
+
+            if (p.items?.length) {
+                autoTable(doc, {
+                    startY: y,
+                    margin: { left: 14 },
+                    head: [['Item', 'Qty', 'Satuan', 'Harga', 'Subtotal']],
+                    body: p.items.map(it => [
+                        it.item_name ?? it.name,
+                        parseFloat(it.qty),
+                        it.unit ?? '',
+                        formatRp(it.unit_price ?? it.price),
+                        formatRp(it.total_price ?? (it.qty * (it.unit_price ?? it.price))),
+                    ]),
+                    styles: { fontSize: 8 },
+                    headStyles: { fillColor: [180, 140, 100] },
+                    columnStyles: { 3: { halign: 'right' }, 4: { halign: 'right' } },
+                });
+                y = doc.lastAutoTable.finalY + 8;
+            } else {
+                doc.setFontSize(9);
+                doc.text('Tidak ada detail item', 14, y);
+                y += 8;
+            }
+        });
+
+        doc.save(`rekap-pembelian-${dateFrom}-${dateTo}.pdf`);
+    }
 
     return (
         <div className={styles.page}>
@@ -132,9 +260,24 @@ export default function RekapPembelianPage() {
                         </select>
                     </div>
                     <button className={styles.btnApply} onClick={handleApply}>Terapkan</button>
+                    <button
+                        className={styles.btnApply}
+                        style={{ background: 'var(--success, #16a34a)' }}
+                        onClick={handleExportExcel}
+                        disabled={list.length === 0}
+                    >
+                        Excel
+                    </button>
+                    <button
+                        className={styles.btnApply}
+                        style={{ background: 'var(--danger, #dc2626)' }}
+                        onClick={handleExportPdf}
+                        disabled={list.length === 0}
+                    >
+                        PDF
+                    </button>
                 </div>
 
-                {/* Summary */}
                 {/* Summary */}
                 {!loading && summary && (
                     <div className={styles.summaryRow}>
@@ -151,33 +294,12 @@ export default function RekapPembelianPage() {
                         ))}
                     </div>
                 )}
-                {/* {!loading && list.length > 0 && (
-                    <div className={styles.summaryRow}>
-                        {[
-                            { label: 'Total Nilai', val: formatRp(totalNilai), color: 'var(--brown-900)' },
-                            { label: 'Transaksi', val: list.length, color: 'var(--accent)' },
-                            { label: 'Total Item', val: totalItem, color: 'var(--brown-700)' },
-                            { label: 'User Terlibat', val: uniqueUser, color: 'var(--blue, #2563a8)' },
-                            { label: 'Booth Terlibat', val: uniqueBooth, color: 'var(--brown-500)' },
-                        ].map(s => (
-                            <div key={s.label} className={styles.summaryItem}>
-                                <span
-                                    className={styles.summaryVal}
-                                    style={{ color: s.color, fontSize: typeof s.val === 'string' ? 18 : 22 }}
-                                >
-                                    {s.val}
-                                </span>
-                                <span className={styles.summaryLbl}>{s.label}</span>
-                            </div>
-                        ))}
-                    </div>
-                )} */}
             </div>
 
             {/* Tabel */}
             <div className={tableStyles.card}>
-                <div className={tableStyles.cardHead}>
-                    <span className={tableStyles.cardTitle} >Daftar Pembelian</span>
+                <div className={tableStyles.cardHead} style={{ padding: 20 }}>
+                    <span className={tableStyles.cardTitle}>Daftar Pembelian</span>
                 </div>
                 <div className={tableStyles.tableWrap}>
                     <table className={tableStyles.table}>
@@ -185,12 +307,10 @@ export default function RekapPembelianPage() {
                             <tr>
                                 <th>No</th>
                                 <th>Tanggal</th>
-                                {/* <th>Invoice</th> */}
-                                <th>Booth</th>
-                                <th>User</th>
-                                {/* <th>Supplier</th> */}
-                                <th>Item</th>
-                                {/* <th>Status</th> */}
+                                <th>Lokasi</th>
+                                <th>Suplier</th>
+                                <th>Pembeli</th>
+                                <th>Barang</th>
                                 <th style={{ textAlign: 'right' }}>Total</th>
                                 <th></th>
                             </tr>
@@ -218,16 +338,13 @@ export default function RekapPembelianPage() {
                                         </td>
                                         <td style={{ whiteSpace: 'nowrap' }}>
                                             <div>{formatDate(purchase.date)}</div>
-                                            <div style={{ fontSize: 11, color: 'var(--brown-400)' }}>
-                                                {formatTime(purchase.date)}
-                                            </div>
                                         </td>
                                         {/* <td className={tableStyles.monoCell} style={{ fontWeight: 700 }}>
                                             #{String(purchase.id).padStart(4, '0')}
                                         </td> */}
                                         <td>{purchase.booth_name ?? '-'}</td>
+                                        <td>{purchase.supplier ?? '-'}</td>
                                         <td>{purchase.user_name ?? '-'}</td>
-                                        {/* <td>{purchase.supplier ?? '-'}</td> */}
                                         <td className={tableStyles.monoCell}>
                                             {purchase.total_item ?? '-'} detail
                                         </td>
@@ -278,7 +395,7 @@ export default function RekapPembelianPage() {
                                                                     {it.item_name ?? it.name}
                                                                 </span>
                                                                 <span style={{ color: 'var(--brown-500)', minWidth: 60 }}>
-                                                                    {it.qty} {it.unit ?? ''}
+                                                                    {parseFloat(it.qty)} {it.unit ?? ''}
                                                                 </span>
                                                                 <span style={{ color: 'var(--brown-500)', minWidth: 90, textAlign: 'right' }}>
                                                                     {formatRp(it.unit_price ?? it.price)}

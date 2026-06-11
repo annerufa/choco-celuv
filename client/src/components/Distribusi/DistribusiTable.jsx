@@ -26,7 +26,9 @@ const statusVariant = {
     'dikirim': 'warning',
     'sampai': 'warning',
     'sesuai': 'success',
+    'diterima': 'success',
     'kurang': 'danger',
+    'dibatalkan': 'danger',
 };
 
 export default function DistribusiTable() {

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 // const purchase = require('../controllers/purchaseController');
 const { create, cancel, getAll, getById, getByLoc } = require('../controllers/purchaseController');
+const { getAllLocations } = require('../controllers/stockLocController');
 const auth = require('../middleware/authenticate');
 
 // router.get('/', auth, purchase.getAll);
@@ -18,6 +19,7 @@ const auth = require('../middleware/authenticate');
 // PATCH  /api/purchase/:id/cancel → batalkan purchase
 
 router.get('/', auth, getAll);
+router.get('/stock-locations', auth, getAllLocations);
 router.post('/', auth, create);
 // router.get('/:loc_id', auth, getByLoc);
 router.patch('/:id/cancel', auth, cancel);

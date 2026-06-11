@@ -81,15 +81,13 @@ const getRekapPenjualan = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
-
 const getRekapPembelian = async (req, res) => {
     try {
-        const { startDate, endDate } = getDateRange(req);
-        const { loc_id: locId, status } = req.query;
+        const { from, to, loc_id: locId, status } = req.query;
 
         const data = await Sale.getRekapPembelian({
-            startDate,
-            endDate,
+            startDate: from,
+            endDate: to,
             locId: locId || null,
             status: status || null,
         });
@@ -109,4 +107,36 @@ const getRekapDistribusi = async (req, res) => {
     }
 };
 
-module.exports = { getProducts, createSale, getRekap, getSummary, getRekapPenjualan, getRekapPembelian, getRekapDistribusi };
+const getSalesTrend = async (req, res) => {
+    try {
+        if (req.user.role !== 'pemilik')
+            return response(403, null, 'Akses ditolak', res);
+
+        const { from, to, booth_id } = req.query;
+        if (!from || !to)
+            return response(400, null, 'Parameter from dan to wajib diisi', res);
+
+        const data = await Sale.getSalesTrend({ from, to, booth_id: booth_id || null });
+        response(200, data, 'Berhasil', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+const getSalesPerBooth = async (req, res) => {
+    try {
+        if (req.user.role !== 'pemilik')
+            return response(403, null, 'Akses ditolak', res);
+
+        const { from, to } = req.query;
+        if (!from || !to)
+            return response(400, null, 'Parameter from dan to wajib diisi', res);
+
+        const data = await Sale.getSalesPerBooth({ from, to });
+        response(200, data, 'Berhasil', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+
+module.exports = { getSalesTrend, getSalesPerBooth, getProducts, createSale, getRekap, getSummary, getRekapPenjualan, getRekapPembelian, getRekapDistribusi };
