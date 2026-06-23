@@ -127,6 +127,7 @@ export default function SetupBarangBoothModal({
                     <span className={styles.colMax}>Stok maks</span>
                     <span className={styles.colActive}>Aktif</span>
                     <span className={styles.colCanPurchase}>Bisa Beli</span> {/* ✅ tambah */}
+
                 </div>
 
                 {/* ROWS */}
@@ -144,29 +145,32 @@ export default function SetupBarangBoothModal({
 
                             {/* Safety stok */}
                             <div className={styles.fieldWrap}>
-                                <input
-                                    type="number" min="0"
-                                    className={`${styles.numInput} ${errors[`${row.booth_id}_safety_stock`] ? styles.inputError : ''}`}
-                                    value={row.safety_stock}
-                                    onChange={e => updateRow(row.booth_id, 'safety_stock', e.target.value)}
-                                    disabled={!row.is_active}
-                                    placeholder="0"
-                                />
-                                {errors[`${row.booth_id}_safety_stock`] && (
-                                    <span className={styles.errMsg}>{errors[`${row.booth_id}_safety_stock`]}</span>
-                                )}
+                                <div className={styles.inputGroup}>
+                                    <input
+                                        type="number" min="0"
+                                        className={`${styles.numInput} ${errors[`${row.booth_id}_safety_stock`] ? styles.inputError : ''}`}
+                                        value={row.safety_stock}
+                                        onChange={e => updateRow(row.booth_id, 'safety_stock', e.target.value)}
+                                        disabled={!row.is_active}
+                                        placeholder="0"
+                                    />
+                                    <span className={styles.inputUnit}>{item.unit}</span>
+                                </div>
                             </div>
 
                             {/* Min */}
                             <div className={styles.fieldWrap}>
-                                <input
-                                    type="number" min="0"
-                                    className={`${styles.numInput} ${errors[`${row.booth_id}_min`] ? styles.inputError : ''}`}
-                                    value={row.min}
-                                    onChange={e => updateRow(row.booth_id, 'min', e.target.value)}
-                                    disabled={!row.is_active}
-                                    placeholder="0"
-                                />
+                                <div className={styles.inputGroup}>
+                                    <input
+                                        type="number" min="0"
+                                        className={`${styles.numInput} ${errors[`${row.booth_id}_min`] ? styles.inputError : ''}`}
+                                        value={row.min}
+                                        onChange={e => updateRow(row.booth_id, 'min', e.target.value)}
+                                        disabled={!row.is_active}
+                                        placeholder="0"
+                                    />
+                                    <span className={styles.inputUnit}>{item.unit}</span>
+                                </div>
                                 {errors[`${row.booth_id}_min`] && (
                                     <span className={styles.errMsg}>{errors[`${row.booth_id}_min`]}</span>
                                 )}
@@ -174,14 +178,17 @@ export default function SetupBarangBoothModal({
 
                             {/* Max */}
                             <div className={styles.fieldWrap}>
-                                <input
-                                    type="number" min="0"
-                                    className={`${styles.numInput} ${errors[`${row.booth_id}_max`] ? styles.inputError : ''}`}
-                                    value={row.max}
-                                    onChange={e => updateRow(row.booth_id, 'max', e.target.value)}
-                                    disabled={!row.is_active}
-                                    placeholder="0"
-                                />
+                                <div className={styles.inputGroup}>
+                                    <input
+                                        type="number" min="0"
+                                        className={`${styles.numInput} ${errors[`${row.booth_id}_max`] ? styles.inputError : ''}`}
+                                        value={row.max}
+                                        onChange={e => updateRow(row.booth_id, 'max', e.target.value)}
+                                        disabled={!row.is_active}
+                                        placeholder="0"
+                                    />
+                                    <span className={styles.inputUnit}>{item.unit}</span>
+                                </div>
                                 {errors[`${row.booth_id}_max`] && (
                                     <span className={styles.errMsg}>{errors[`${row.booth_id}_max`]}</span>
                                 )}

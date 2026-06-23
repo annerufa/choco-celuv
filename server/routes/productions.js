@@ -5,6 +5,7 @@ const router = express.Router();
 const { getProductions, getRekapProduksi, getActiveRecipes, getProductionDetail, getAdonanBooth, createProduction, updateProduction, deleteProduction } = require('../controllers/productionController');
 const auth = require('../middleware/authenticate');
 const withUserLocation = require('../middleware/withUserLocation');
+const response = require('../helpers/response');
 
 router.get('/', auth, getProductions);       // GET  /api/productions
 router.get('/rekap', auth, getRekapProduksi);     // GET  /api/productions/rekap?from=&to=&booth_id=
@@ -32,7 +33,7 @@ router.patch('/expire-check', async (req, res) => {
 });
 router.get('/batches/expiring-soon', async (req, res) => {
     const [rows] = await db.query(`
-        SELECT b.id, b.expired_at, b.qty, b.status
+        SELECT b.id, b.expired_at, b.total_qty, b.status
         FROM batches b
         JOIN productions p ON p.id = b.production_id
         WHERE b.status IN ('ACTIVE', 'FROZEN')

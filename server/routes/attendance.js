@@ -9,9 +9,11 @@ const {
     getOpen,
     getMine,
     getTodayOwner,
-    insertManual
+    insertManual,
+    checkToday
 } = require('../controllers/attendanceController');
 
+router.get('/check-today', checkToday);
 router.get('/today', getAttendanceToday);
 router.get('/range', getAttendanceRange);
 router.post('/clockin', clockIn);

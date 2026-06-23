@@ -240,6 +240,171 @@ const getRekapPenjualan = async (userId, startDate, endDate) => {
     return { summary, list };
 };
 
+const getRekapPenjualanHPP = async (from, to, booth_id = null) => {
+    const params = [from, to];
+    const boothFilter = booth_id ? 'AND s.booth_id = ?' : '';
+    if (booth_id) params.push(booth_id);
+
+    // ── Step 1: ambil semua sale_items dalam periode + data HPP ──
+    const [rows] = await db.query(`
+        SELECT
+            DATE(s.created_at)          AS tanggal,
+            s.id                        AS sale_id,
+            s.booth_id,
+            b.name                      AS booth_name,
+            s.payment_method,
+            s.grand_total,
+            s.created_at                AS waktu,
+ 
+            -- sale item detail
+            si.product_id,
+            p.name                      AS product_name,
+            p.size,
+            p.adonan_ml,
+            si.qty,
+            si.is_less_ice,
+            si.unit_price,
+            si.total_price,
+ 
+            -- HPP adonan dari batch (sudah di-snapshot saat produksi)
+            bt.hpp_per_ml
+ 
+        FROM sales s
+        JOIN booth b        ON b.id = s.booth_id
+        JOIN batches bt     ON bt.id = s.batch_id
+        JOIN sale_items si  ON si.sale_id = s.id
+        JOIN products p     ON p.id = si.product_id
+        WHERE DATE(s.created_at) BETWEEN ? AND ?
+        ${boothFilter}
+        ORDER BY s.created_at ASC
+    `, params);
+
+    if (rows.length === 0) return [];
+
+    // ── Step 2: ambil HPP packaging per product + applies_to ──
+    const productIds = [...new Set(rows.map(r => r.product_id))];
+    const placeholders = productIds.map(() => '?').join(',');
+
+    const [components] = await db.query(`
+        SELECT
+            pc.product_id,
+            pc.applies_to,
+            pc.qty          AS comp_qty,
+            i.avg_price     AS item_avg_price
+        FROM product_components pc
+        JOIN items i ON i.id = pc.item_id
+        WHERE pc.product_id IN (${placeholders})
+          AND i.avg_price IS NOT NULL
+    `, productIds);
+
+    // Buat map: product_id → { hpp_regular, hpp_less_ice }
+    const packagingMap = {};
+    for (const pid of productIds) {
+        const comps = components.filter(c => c.product_id === pid);
+
+        const regular = comps
+            .filter(c => c.applies_to === 'all' || c.applies_to === 'regular')
+            .reduce((acc, c) => acc + Number(c.comp_qty) * Number(c.item_avg_price), 0);
+
+        const lessIce = comps
+            .filter(c => c.applies_to === 'all' || c.applies_to === 'less_ice')
+            .reduce((acc, c) => acc + Number(c.comp_qty) * Number(c.item_avg_price), 0);
+
+        packagingMap[pid] = { regular, lessIce };
+    }
+
+    // ── Step 3: hitung HPP & laba per baris ──
+    const enriched = rows.map(row => {
+        const hppAdonan = Number(row.hpp_per_ml ?? 0) * Number(row.adonan_ml) * Number(row.qty);
+
+        const packaging = packagingMap[row.product_id] ?? { regular: 0, lessIce: 0 };
+        const hppPackaging = row.is_less_ice
+            ? packaging.lessIce * Number(row.qty)
+            : packaging.regular * Number(row.qty);
+
+        const totalHpp = hppAdonan + hppPackaging;
+        const laba = Number(row.total_price) - totalHpp;
+
+        return {
+            ...row,
+            hpp_adonan: Math.round(hppAdonan),
+            hpp_packaging: Math.round(hppPackaging),
+            total_hpp: Math.round(totalHpp),
+            laba: Math.round(laba),
+        };
+    });
+
+    // ── Step 4: group per hari ──
+    const byDate = {};
+    for (const row of enriched) {
+        const tgl = row.tanggal instanceof Date
+            ? row.tanggal.toLocaleDateString('en-CA')  // YYYY-MM-DD, timezone-safe
+            : String(row.tanggal).slice(0, 10);
+
+        if (!byDate[tgl]) {
+            byDate[tgl] = {
+                tanggal: tgl,
+                booth_id: row.booth_id,   // null kalau multi-booth
+                booth_name: row.booth_name,
+                total_pendapatan: 0,
+                total_hpp: 0,
+                total_laba: 0,
+                jumlah_transaksi: 0,
+                detail_per_transaksi: [],
+                _saleIds: new Set(),
+            };
+        }
+
+        const day = byDate[tgl];
+        day.total_pendapatan += Number(row.total_price);
+        day.total_hpp += row.total_hpp;
+        day.total_laba += row.laba;
+
+        if (!day._saleIds.has(row.sale_id)) {
+            day.jumlah_transaksi++;
+            day._saleIds.add(row.sale_id);
+        }
+
+        // Detail per transaksi (group by sale_id)
+        let transaksi = day.detail_per_transaksi.find(t => t.sale_id === row.sale_id);
+        if (!transaksi) {
+            transaksi = {
+                sale_id: row.sale_id,
+                waktu: row.waktu,
+                payment_method: row.payment_method,
+                grand_total: Number(row.grand_total),
+                total_hpp: 0,
+                laba: 0,
+                items: [],
+            };
+            day.detail_per_transaksi.push(transaksi);
+        }
+
+        transaksi.total_hpp += row.total_hpp;
+        transaksi.laba += row.laba;
+        transaksi.items.push({
+            product_name: row.product_name,
+            size: row.size,
+            qty: row.qty,
+            is_less_ice: row.is_less_ice,
+            unit_price: Number(row.unit_price),
+            total_price: Number(row.total_price),
+            hpp_adonan: row.hpp_adonan,
+            hpp_packaging: row.hpp_packaging,
+            total_hpp: row.total_hpp,
+            laba: row.laba,
+        });
+    }
+
+    // Bersihkan _saleIds (tidak perlu dikirim ke frontend)
+    return Object.values(byDate).map(({ _saleIds, ...rest }) => ({
+        ...rest,
+        total_pendapatan: Math.round(rest.total_pendapatan),
+        total_hpp: Math.round(rest.total_hpp),
+        total_laba: Math.round(rest.total_laba),
+    }));
+};
+
 // purchasesModel.js
 const getRekapPembelian = async ({ startDate, endDate, locId, status }) => {
     console.log('getRekapPembelian called with:', { startDate, endDate, locId, status });
@@ -381,4 +546,4 @@ const getSalesPerBooth = async ({ from, to }) => {
 
     return rows;
 };
-module.exports = { getSalesTrend, getSalesPerBooth, getProducts, getSummary, createSale, getRekap, getRekapPenjualan, getRekapPembelian, getRekapDistribusi };
+module.exports = { getRekapPenjualanHPP, getSalesTrend, getSalesPerBooth, getProducts, getSummary, createSale, getRekap, getRekapPenjualan, getRekapPembelian, getRekapDistribusi };

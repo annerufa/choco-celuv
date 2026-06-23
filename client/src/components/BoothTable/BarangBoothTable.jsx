@@ -12,6 +12,7 @@ export default function BarangBoothTable({ items, boothList, loading, error }) {
 
     // Kumpulkan setting barang ini dari semua booth
     function openSetup(item) {
+        console.log('item:', item);
         const settings = boothList.map(booth => ({
             booth_id: booth.id,
             booth_name: booth.name,
@@ -20,6 +21,7 @@ export default function BarangBoothTable({ items, boothList, loading, error }) {
             max: item.boothSettings?.[booth.id]?.max ?? 0,
             is_active: item.boothSettings?.[booth.id]?.is_active ?? true,
             can_purchase: item.boothSettings?.[booth.id]?.can_purchase ?? false, // ✅ ini yang hilang
+
         }));
         setSetupModal({ open: true, item, settings });
     }

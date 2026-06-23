@@ -37,6 +37,7 @@ function buildMatrix(rows) {
                 id: row.item_id,
                 name: row.item_name,
                 category: row.category,
+                unit: row.unit ?? '',
                 booths: {},
             };
         }
@@ -169,6 +170,7 @@ export default function DataBarangBoothPage() {
             min: item.booths[booth.id]?.min ?? 0,
             max: item.booths[booth.id]?.max ?? 0,
             is_active: item.booths[booth.id] !== null,
+            unit: item.booths[booth.id]?.unit ?? '',
             can_purchase: item.booths[booth.id]?.can_purchase ?? false, // ← tambah ini
         }));
         setSetupModal({ open: true, item, settings });

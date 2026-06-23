@@ -1,6 +1,7 @@
 // controllers/scheduleController.js
 const Schedule = require('../models/scheduleModel');
 const response = require('../helpers/response');
+const db = require('../connection');
 
 const getAllSchedules = async (req, res) => {
     try {
@@ -108,5 +109,33 @@ const updateSchedule = async (req, res) => {
         response(500, null, err.message, res);
     }
 };
+const checkJadwalHariIni = async (req, res) => {
+    const { id, booth_id } = req.user; // dari JWT
+    // const id = req.user.id; // untuk logging/debugging
+    // Jam WIB yang benar, apapun timezone server
+    const jamSekarang = new Date().toLocaleTimeString('en-GB', {
+        timeZone: 'Asia/Jakarta',
+        hour12: false,
+    }); // → "HH:MM:SS"
+    console.log(`Cek jadwal untuk employee_id=${id}, booth_id=${booth_id} pada jam ${jamSekarang}`);
 
-module.exports = { getAllSchedules, getSchedule, getMySchedule, updateSchedule, getScheduleHistory, createSchedule, deactivateSchedule, reactivateSchedule };
+    const [rows] = await db.query(
+        `SELECT id, shift, expected_clock_in, expected_clock_out
+     FROM employee_schedules
+     WHERE employee_id = ?
+       AND booth_id = ?
+       AND is_active = 1
+       AND ? BETWEEN expected_clock_in AND expected_clock_out`,
+        [id, booth_id, jamSekarang]
+    );
+
+    const adaJadwal = rows.length > 0;
+
+    return response(200, {
+        adaJadwal,
+        jadwal: adaJadwal ? rows[0] : null,
+        jamSekarang,
+    }, adaJadwal ? 'Jadwal ditemukan' : 'Tidak ada jadwal aktif saat ini', res);
+};
+
+module.exports = { checkJadwalHariIni, getAllSchedules, getSchedule, getMySchedule, updateSchedule, getScheduleHistory, createSchedule, deactivateSchedule, reactivateSchedule };

@@ -153,5 +153,26 @@ const insertManual = async (req, res) => {
         response(code, null, err.message, res);
     }
 };
+const checkToday = async (req, res) => {
+    try {
+        const data = await Attendance.checkTodayStatus(req.user.id);
+        response(200, {
+            sudahAbsen: data !== null,
+            detail: data || null,
+        }, 'Berhasil mengecek status absensi hari ini', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
 
-module.exports = { getAttendanceToday, getAttendanceRange, clockIn, clockOut, getOpen, getMine, getTodayOwner, insertManual };
+module.exports = {
+    getAttendanceToday,
+    getAttendanceRange,
+    clockIn,
+    clockOut,
+    getOpen,
+    getMine,
+    getTodayOwner,
+    insertManual,
+    checkToday
+};

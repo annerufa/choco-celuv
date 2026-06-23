@@ -26,11 +26,11 @@ export default function HomePenjaga({ setPage }) {
   const r = ROLES.kasir;
   const { user } = useAuth();
 
-  const { data, loading } = useApi('/sales/shift-summary');
+  const { data: apiData, loading } = useApi('/sales/shift-summary');
 
-  const summary = data?.summary ?? {};
-  const transaksi = Array.isArray(data?.transaksi) ? data.transaksi : [];
-
+  // const summary = Array.isArray(apiData) ? apiData[0] : apiData ?? {};
+  const summary = Array.isArray(apiData) ? (apiData[0] ?? {}) : (apiData ?? {});
+  const transaksi = Array.isArray(apiData?.transaksi) ? apiData.transaksi : [];
   const getInitial = (name) =>
     name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 
@@ -52,8 +52,11 @@ export default function HomePenjaga({ setPage }) {
         <div className="hero">
           <div className="hero-lbl">Penjualan Hari Ini</div>
           <div className="hero-val">
+            {/* {loading ? '...' : `Rp ${fmt(summary.total_penjualan)}`} */}
             {loading ? '...' : `Rp ${fmt(summary.total_penjualan)}`}
+
           </div>
+
           <div className="hero-minis">
             <div className="hmini">
               <div className="hmini-lbl">Transaksi</div>

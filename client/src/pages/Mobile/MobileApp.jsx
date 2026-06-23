@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import SetPasswordModal from "./SetPasswordModal";
 import axios from 'axios';
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // icons
 import { IconHome, IconStok, IconPenjaga, IconChevron, IconRekap, IconCheck, IconAbsensi, IconProfil } from "./Icons";
@@ -54,7 +54,7 @@ const NAV = {
 };
 
 // ── Page router ──────────────────────────────────────────────────────────────
-function PageRenderer({ role, page, setPage, navigate, pageParams }) {
+function PageRenderer({ role, page, setPage, navigate, pageParams, onSudahAbsen }) {
   if (role === "kurir") {
     if (page === "home") return <KurirHome setPage={setPage} prevPage={pageParams.prevPage ?? 'home'} />;
     if (page === "profil") return <KurirProfil setPage={setPage} />;
@@ -63,7 +63,7 @@ function PageRenderer({ role, page, setPage, navigate, pageParams }) {
   } else {
     if (page === "home") return <HomePenjaga setPage={setPage} prevPage={pageParams.prevPage ?? 'home'} />;
     if (page === "stok") return <StokPage setPage={setPage} />;
-    if (page === "absensi") return <AbsensiPage setPage={setPage} />;
+    if (page === "absensi") return <AbsensiPage setPage={setPage} onSudahAbsen={onSudahAbsen} />;
     if (page === "kasir") return <KasirPenjaga setPage={setPage} />;
     if (page === "profil") return <ProfilPenjaga setPage={setPage} />;  // ✅ tambah setPage
     if (page === "rekap") return <RekapPage setPage={setPage} />;     // ✅ pindah ke sini
@@ -84,6 +84,8 @@ export default function MobileApp() {
   const [role, setRole] = useState(user?.role || "");
   const [page, setPage] = useState("home");
   const [pageParams, setPageParams] = useState({});
+  const [sudahAbsen, setSudahAbsen] = useState(null);
+  const [dismissedBanner, setDismissedBanner] = useState(false);
 
   useEffect(() => {
     if (role !== 'penjaga_booth') return;
@@ -114,24 +116,33 @@ export default function MobileApp() {
     const interval = setInterval(checkExpiring, 30 * 60 * 1000);
     return () => clearInterval(interval);
   }, [role]);
-  // useEffect(() => {
-  //   if (role !== 'penjaga_booth') return; // hanya untuk penjaga
 
-  //   const checkExpiry = () => {
-  //     const token = localStorage.getItem('token');
-  //     axios.patch(`${BASE_URL}/productions/expire-check`, {}, {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //     }).catch(() => { }); // silent fail — tidak perlu alert
-  //   };
+  useEffect(() => {
+    if (role !== 'penjaga_booth') return;
 
-  //   checkExpiry(); // langsung cek saat pertama buka app
-  //   const interval = setInterval(checkExpiry, 30 * 60 * 1000); // lalu tiap 30 menit
-  //   return () => clearInterval(interval);
-  // }, [role]);
+    const checkAbsensi = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${BASE_URL}/attendance/check-today`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // setSudahAbsen(res.data?.data?.sudahAbsen ?? false);
+        setSudahAbsen(res.data?.payload?.data?.sudahAbsen ?? false);
+      } catch (err) {
+        // setSudahAbsen(true); // gagal fetch → jangan ganggu user
+        // jangan setSudahAbsen(true) — biarkan banner tetap muncul
+        console.warn('Gagal cek absensi:', err.message);
+      }
+    };
+
+    checkAbsensi();
+  }, [role]);
+
   const navigate = (pageName, params = {}) => {
     setPage(pageName);
     setPageParams(params);
   };
+
   // ✅ Cek is_update — tampilkan modal jika belum diupdate
   const needsPasswordUpdate = user?.is_update === 0 || user?.is_update === false;
 
@@ -158,6 +169,16 @@ export default function MobileApp() {
 
   // console.log("Current role:", role, "Current page:", page);
 
+  // wrap semua setter dengan log
+  const debugSetSudahAbsen = (val) => {
+    console.log('setSudahAbsen dipanggil:', val, new Error().stack);
+    setSudahAbsen(val);
+  };
+
+  const debugSetDismissed = (val) => {
+    console.log('setDismissedBanner dipanggil:', val, new Error().stack);
+    setDismissedBanner(val);
+  };
 
   if (!role || !NAV[role]) return <div>Loading...</div>;
   return (
@@ -165,6 +186,64 @@ export default function MobileApp() {
       {/* ✅ Modal blokir jika belum set password */}
       {needsPasswordUpdate && (
         <SetPasswordModal onSuccess={handlePasswordUpdated} />
+      )}
+      {/* Banner reminder absensi */}
+      {role === 'penjaga_booth' && sudahAbsen === false && !dismissedBanner && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 80, // di atas bottom nav
+            left: 16,
+            right: 16,
+            background: '#FEF3C7',
+            border: '1px solid #F59E0B',
+            borderRadius: 14,
+            padding: '12px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            fontSize: 13,
+            color: '#92400E',
+            fontWeight: 500,
+            zIndex: 100,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+          }}
+        >
+          <span>⚠️ Kamu belum absen hari ini!</span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              onClick={() => setPage('absensi')}
+              style={{
+                background: '#F59E0B',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '5px 12px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Absen
+            </button>
+            <button
+              onClick={() => setDismissedBanner(true)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                fontSize: 16,
+                cursor: 'pointer',
+                color: '#92400E',
+                lineHeight: 1,
+                padding: '2px 4px',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       )}
       {/* SCREEN */}
       <div className="screen" key={`${role}-${page}`}>
@@ -175,6 +254,7 @@ export default function MobileApp() {
           setPage={setPage}
           navigate={navigate}
           pageParams={pageParams}
+          onSudahAbsen={() => setSudahAbsen(true)}
         />
       </div>
 

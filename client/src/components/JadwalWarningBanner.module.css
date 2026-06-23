@@ -1,0 +1,46 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(28, 16, 8, 0.55);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1.5rem;
+}
+
+.card {
+    background: #fdf5ee;
+    border-radius: 16px;
+    padding: 2rem 1.75rem;
+    max-width: 330px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(28, 16, 8, 0.2);
+    border-top: 4px solid #d4500a;
+}
+
+.iconWrap {
+    margin-bottom: 1rem;
+}
+
+.title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1c1008;
+    margin-bottom: 0.5rem;
+}
+
+.desc {
+    font-size: 0.7rem;
+    color: #5a4030;
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+}
+
+.hint {
+    font-size: 0.8rem;
+    color: #d4500a;
+    font-style: italic;
+}

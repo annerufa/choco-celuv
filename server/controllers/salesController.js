@@ -139,4 +139,15 @@ const getSalesPerBooth = async (req, res) => {
     }
 };
 
-module.exports = { getSalesTrend, getSalesPerBooth, getProducts, createSale, getRekap, getSummary, getRekapPenjualan, getRekapPembelian, getRekapDistribusi };
+const getRekapPenjualanHPPHandler = async (req, res) => {
+    try {
+        const { from, to, booth_id } = req.query;
+        if (!from || !to) return response(400, null, 'Parameter from dan to wajib diisi', res);
+
+        const data = await Sale.getRekapPenjualanHPP(from, to, booth_id ?? null);
+        response(200, data, 'Berhasil', res);
+    } catch (err) {
+        response(500, null, err.message, res);
+    }
+};
+module.exports = { getRekapPenjualanHPPHandler, getSalesTrend, getSalesPerBooth, getProducts, createSale, getRekap, getSummary, getRekapPenjualan, getRekapPembelian, getRekapDistribusi };

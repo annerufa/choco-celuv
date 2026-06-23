@@ -17,7 +17,7 @@
     background: #fff;
     border-radius: var(--radius, 12px);
     width: 100%;
-    max-width: 660px;
+    max-width: 730px;
     max-height: 85vh;
     display: flex;
     flex-direction: column;
@@ -90,7 +90,7 @@
 /* ── COLUMN LABELS ────────────────────────────────────────── */
 .colLabels {
     display: grid;
-    grid-template-columns: 1fr 70px 70px 70px 53px 65px;
+    grid-template-columns: 120px 120px 120px 120px 90px 65px;
     gap: 8px;
     padding: 8px 20px;
     background: var(--brown-50);
@@ -125,7 +125,7 @@
 /* ── ROW ──────────────────────────────────────────────────── */
 .row {
     display: grid;
-    grid-template-columns: 1fr 70px 70px 70px 52px 52px;
+    grid-template-columns: 135px 120px 120px 120px 70px 52px;
     gap: 8px;
     align-items: center;
     padding: 10px 20px;
@@ -351,6 +351,18 @@
 
 .toggleBuy .toggleThumb {
     transform: translateX(14px);
+}
+
+.inputGroup {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.inputUnit {
+    font-size: 0.72rem;
+    color: var(--color-text-muted, #888);
+    white-space: nowrap;
 }
 
 /* ── RESPONSIVE ───────────────────────────────────────────── */

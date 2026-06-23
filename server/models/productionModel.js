@@ -241,7 +241,9 @@ const create = async ({ recipe_id, qty, created_by, loc_id, booth_id }) => {
             `SELECT * FROM recipes WHERE id = ?`, [recipe_id]
         );
         const [ingredients] = await conn.query(
-            `SELECT * FROM recipe_items WHERE recipe_id = ?`, [recipe_id]
+            `SELECT ri.*, i.avg_price, i.unit FROM recipe_items ri
+             JOIN items i ON i.id = ri.item_id
+             WHERE ri.recipe_id = ?`, [recipe_id]
         );
 
         // 1. Insert ke productions
@@ -255,7 +257,6 @@ const create = async ({ recipe_id, qty, created_by, loc_id, booth_id }) => {
         // 2. Kurangi stok bahan di lokasi user
         for (const ing of ingredients) {
             const usedQty = Number(ing.qty) * qty;
-
             await insertMovement(conn, {
                 item_id: ing.item_id,
                 location_id: loc_id,
@@ -266,7 +267,7 @@ const create = async ({ recipe_id, qty, created_by, loc_id, booth_id }) => {
             });
         }
 
-        // 3. Kalau mix → tambah stok output item di gudang
+        // 3a. type='mix' → tambah stok output item + UPDATE avg_price output item
         if (recipe.type === 'mix' && recipe.output_id) {
             const outputQty = Number(recipe.output_qty) * qty;
 
@@ -278,38 +279,70 @@ const create = async ({ recipe_id, qty, created_by, loc_id, booth_id }) => {
                 source_type: 'PRODUKSI',
                 source_id: production_id,
             });
+
+            // Hitung HPP per unit output dari bahan-bahan mix
+            // total_cost = SUM(ing.qty * ing.avg_price) per 1x batch
+            const totalCostPerBatch = ingredients.reduce((acc, ing) => {
+                return acc + Number(ing.qty) * Number(ing.avg_price ?? 0);
+            }, 0);
+            // HPP per gram output = total_cost / output_qty (per 1 batch)
+            const newCostPerUnit = totalCostPerBatch / Number(recipe.output_qty);
+
+            // Weighted average dengan stok yang sudah ada
+            const [[existingStock]] = await conn.query(
+                `SELECT COALESCE(current_stock, 0) AS current_stock
+                 FROM stock_per_location
+                 WHERE item_id = ? AND location_id = ?`,
+                [recipe.output_id, loc_id]
+            );
+            const [[existingItem]] = await conn.query(
+                `SELECT COALESCE(avg_price, 0) AS avg_price FROM items WHERE id = ?`,
+                [recipe.output_id]
+            );
+
+            const oldStock = Number(existingStock?.current_stock ?? 0);
+            const oldAvg = Number(existingItem?.avg_price ?? 0);
+            const newStock = outputQty; // qty yang baru diproduksi
+
+            // Weighted avg: (stok_lama × avg_lama + stok_baru × harga_baru) / total_stok
+            const weightedAvg = (oldStock > 0 || newStock > 0)
+                ? ((oldStock * oldAvg) + (newStock * newCostPerUnit)) / (oldStock + newStock)
+                : newCostPerUnit;
+
+            await conn.query(
+                `UPDATE items SET avg_price = ?, last_price = ?, updated_at = NOW()
+                 WHERE id = ?`,
+                [weightedAvg, newCostPerUnit, recipe.output_id]
+            );
         }
 
-        // 4. Kalau adonan → insert ke batches
+        // 3b. type='adonan' → hitung hpp_per_ml lalu insert batch
         if (recipe.type === 'adonan') {
-            const now = new Date();
-            console.log('Node now:', now.toISOString());
-            console.log('expired:', recipe.expiry_hours);
+            // Hitung total biaya bahan per 1 batch (output_qty ml)
+            // Untuk setiap bahan, ambil avg_price terkini (sudah ter-join di query atas)
+            const totalCostPerBatch = ingredients.reduce((acc, ing) => {
+                return acc + Number(ing.qty) * Number(ing.avg_price ?? 0);
+            }, 0);
 
-            console.log('expiry_hours raw:', recipe.expiry_hours, typeof recipe.expiry_hours);
+            // HPP per ml = total biaya / total output (ml)
+            const hppPerMl = Number(recipe.output_qty) > 0
+                ? totalCostPerBatch / Number(recipe.output_qty)
+                : 0;
 
-            // Pastikan parse ke Number, antisipasi string "6" atau 0
             const expiryHours = Number(recipe.expiry_hours);
-            const expiredAt = expiryHours > 0
-                ? new Date(now.getTime() + expiryHours * 60 * 60 * 1000)
-                    .toISOString()
-                    .slice(0, 19)
-                    .replace("T", " ")
-                : null;
 
-            console.log('expiredAt result:', expiredAt);
-            // Tiap batch = 1 row di tabel batches
             for (let i = 0; i < qty; i++) {
                 await conn.query(
                     `INSERT INTO batches
                         (production_id, location_id, booth_id, recipe_id,
-                        produced_at, expired_at, total_qty, remaining_qty, status)
-                    VALUES (?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? HOUR), ?, ?, 'ACTIVE')`,
+                         produced_at, expired_at, total_qty, remaining_qty, status, hpp_per_ml)
+                     VALUES (?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? HOUR), ?, ?, 'ACTIVE', ?)`,
                     [
                         production_id, loc_id, booth_id, recipe_id,
-                        expiryHours,        // ← interval jam langsung ke MySQL
+                        expiryHours,
                         recipe.output_qty,
                         recipe.output_qty,
+                        hppPerMl,
                     ]
                 );
             }
@@ -345,6 +378,7 @@ const create = async ({ recipe_id, qty, created_by, loc_id, booth_id }) => {
         conn.release();
     }
 };
+
 // ── GET by id ────────────────────────────────────────────────
 const getById = async (id) => {
     const [[row]] = await db.query(

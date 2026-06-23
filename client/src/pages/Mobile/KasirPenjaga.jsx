@@ -3,10 +3,13 @@ import { useState, useRef } from "react";
 import { useApi } from "../../hooks/useApi";
 import axios from "axios";
 import { IconCart, IconBack, IconCheck, IconCup } from "./Icons";
+import useJadwalCheck from '../../hooks/useJadwalCheck';
+import JadwalWarningBanner from '../../components/JadwalWarningBanner';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
 function getToken() { return localStorage.getItem("token"); }
 const authHeader = () => ({ Authorization: `Bearer ${getToken()}` });
+
 
 function formatRp(val) {
   return "Rp " + Number(val).toLocaleString("id");
@@ -444,7 +447,7 @@ function CartScreen({ cart, products, onBack, onSuccess }) {
 
 // ── Main: KasirPenjaga ────────────────────────────────────────
 export default function KasirPenjaga({ setPage }) {
-  // cart: { [productId]: { qty: number, lessIceQty: number } }
+  const { loading: loadingJadwal, adaJadwal, jadwal } = useJadwalCheck();
   const [cart, setCart] = useState({});
   const [showCart, setShowCart] = useState(false);
   const [search, setSearch] = useState("");
@@ -492,6 +495,9 @@ export default function KasirPenjaga({ setPage }) {
 
   return (
     <div className="page">
+      {!loadingJadwal && !adaJadwal && (
+        <JadwalWarningBanner jadwal={jadwal} />
+      )}
       <div className="phead">
         <div className="phead-row">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

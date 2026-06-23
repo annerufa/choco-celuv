@@ -138,7 +138,9 @@ function AbsenMap({ userLat, userLon, boothLat, boothLon, radius = 100, clockInL
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
-export default function AbsensiPage({ setPage }) {
+// export default function AbsensiPage({ setPage }) {
+
+export default function AbsensiPage({ setPage, onSudahAbsen }) {
   const [time, setTime] = useState(getNow);
   const [userPos, setUserPos] = useState(null);
   const [gpsStatus, setGpsStatus] = useState('idle'); // idle | loading | ok | denied | error
@@ -178,6 +180,31 @@ export default function AbsensiPage({ setPage }) {
   }, []);
 
   // Ambil GPS
+  // const getGPS = () => new Promise((resolve, reject) => {
+  //   setGpsStatus('loading');
+  //   if (!navigator.geolocation) {
+  //     setGpsStatus('error');
+  //     reject(new Error('GPS tidak didukung browser ini.'));
+  //     return;
+  //   }
+  //   navigator.geolocation.getCurrentPosition(
+  //     (pos) => {
+  //       const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+  //       setUserPos(coords);
+  //       setGpsStatus('ok');
+  //       resolve(coords);
+  //     },
+  //     (err) => {
+  //       setGpsStatus(err.code === 1 ? 'denied' : 'error');
+  //       reject(new Error(
+  //         err.code === 1
+  //           ? 'Akses GPS ditolak. Aktifkan lokasi di browser.'
+  //           : 'Gagal mendapatkan lokasi.'
+  //       ));
+  //     },
+  //     { enableHighAccuracy: true, timeout: 10000 }
+  //   );
+  // });
   const getGPS = () => new Promise((resolve, reject) => {
     setGpsStatus('loading');
     if (!navigator.geolocation) {
@@ -185,23 +212,33 @@ export default function AbsensiPage({ setPage }) {
       reject(new Error('GPS tidak didukung browser ini.'));
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-        setUserPos(coords);
-        setGpsStatus('ok');
-        resolve(coords);
-      },
-      (err) => {
-        setGpsStatus(err.code === 1 ? 'denied' : 'error');
-        reject(new Error(
-          err.code === 1
-            ? 'Akses GPS ditolak. Aktifkan lokasi di browser.'
-            : 'Gagal mendapatkan lokasi.'
-        ));
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+
+    const attempt = (retriesLeft) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+          setUserPos(coords);
+          setGpsStatus('ok');
+          resolve(coords);
+        },
+        (err) => {
+          if (err.code === 1 && retriesLeft > 0) {
+            // denied tapi permission granted — coba lagi setelah 500ms
+            setTimeout(() => attempt(retriesLeft - 1), 500);
+          } else {
+            setGpsStatus(err.code === 1 ? 'denied' : 'error');
+            reject(new Error(
+              err.code === 1
+                ? 'Akses GPS ditolak. Aktifkan lokasi di browser.'
+                : 'Gagal mendapatkan lokasi.'
+            ));
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    };
+
+    attempt(2); // maksimal 3x percobaan
   });
 
   const showToast = (msg, type = 'success') => {
@@ -225,6 +262,7 @@ export default function AbsensiPage({ setPage }) {
         lon,
       });
       showToast('Clock in berhasil! ✅');
+      onSudahAbsen?.();
       await refetchAll();
     } catch (err) {
       showToast(err.response?.data?.payload?.message || err.message, 'error');

@@ -371,7 +371,18 @@ const insertManual = async ({ employeeId, boothId, scheduleId, shift, status, no
   );
   return result.insertId;
 };
-
+// GET status absensi hari ini milik karyawan yang sedang login
+const checkTodayStatus = async (employeeId) => {
+  const today = new Date().toLocaleDateString('en-CA');
+  const [rows] = await db.query(
+    `SELECT id, clock_in, clock_out, status, shift
+     FROM attendance
+     WHERE employee_id = ? AND date = ? AND clock_in IS NOT NULL
+     LIMIT 1`,
+    [employeeId, today]
+  );
+  return rows[0] || null;
+};
 module.exports = {
   isWithinBooth,
   resolveStatus,
@@ -383,5 +394,6 @@ module.exports = {
   getOpen,
   getMine,
   getTodayOwner,
-  insertManual
+  insertManual,
+  checkTodayStatus
 };
